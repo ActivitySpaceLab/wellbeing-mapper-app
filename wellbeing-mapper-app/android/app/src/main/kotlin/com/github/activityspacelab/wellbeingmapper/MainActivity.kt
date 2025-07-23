@@ -1,4 +1,4 @@
-package com.github.activityspacelab.wellbeing_mapper
+package com.github.activityspacelab.wellbeingmapper
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity

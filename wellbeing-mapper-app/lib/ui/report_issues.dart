@@ -73,9 +73,9 @@ Widget reportIssueBody(BuildContext context) {
               ReportAnIssueStyle.reportIssueColor,
               context,
               emails: emails,
-              subject: 'Space Mapper: Report Issue',
+              subject: 'Wellbeing Mapper: Report Issue',
               body:
-                  'Dear Space Mapper support, \n\n I want to report the following issue:'),
+                  'Dear Wellbeing Mapper support, \n\n I want to report the following issue:'),
           customButtonWithUrl(
               AppLocalizations.of(context)?.translate("report_email_btn2") ??
                   "",
@@ -83,9 +83,9 @@ Widget reportIssueBody(BuildContext context) {
               ReportAnIssueStyle.requestFeatureColor,
               context,
               emails: emails,
-              subject: 'Space Mapper: Feature Request',
+              subject: 'Wellbeing Mapper: Feature Request',
               body:
-                  'Dear Space Mapper support, \n\n I want to request the following feature:'),
+                  'Dear Wellbeing Mapper support, \n\n I want to request the following feature:'),
         ],
       ));
 }

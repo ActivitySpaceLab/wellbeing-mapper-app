@@ -8,7 +8,7 @@ import 'package:background_fetch/background_fetch.dart';
 class NotificationService {
   static const String _lastNotificationKey = 'last_survey_notification';
   static const String _notificationCountKey = 'survey_notification_count';
-  static const String _notificationTaskId = 'com.spacemapper.survey_notification';
+  static const String _notificationTaskId = 'com.wellbeingmapper.survey_notification';
   static const String _pendingSurveyKey = 'pending_survey_prompt';
   static const int _notificationIntervalDays = 14; // 2 weeks
 

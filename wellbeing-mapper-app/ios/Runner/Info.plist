@@ -39,15 +39,15 @@
 		<true/>
 	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Space Mapper needs to access your location always and when in use in order to enable you to track your activity spaces. The location data it collects does not leave your phone unless you choose to share it by participating in a survey or by exporting it manually.</string>
+	<string>Wellbeing Mapper needs to access your location always and when in use in order to enable you to track your activity spaces. The location data it collects does not leave your phone unless you choose to share it by participating in a survey or by exporting it manually.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Space Mapper needs access your location when in the background in order to enable you to track your activity spaces. The location data it collects does not leave your phone unless you choose to share it by participating in a survey or by exporting it manually.</string>
+	<string>Wellbeing Mapper needs access your location when in the background in order to enable you to track your activity spaces. The location data it collects does not leave your phone unless you choose to share it by participating in a survey or by exporting it manually.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Space Mapper needs to access your location when in use in order to enable you to track your activity spaces. The location data it collects does not leave your phone unless you choose to share it by participating in a survey or by exporting it manually.</string>
+	<string>Wellbeing Mapper needs to access your location when in use in order to enable you to track your activity spaces. The location data it collects does not leave your phone unless you choose to share it by participating in a survey or by exporting it manually.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>Space Mapper access your motion data in order to improve location tracking of your activity spaces. The motion and location data it collects does not leave your phone unless you choose to share it by participating in a survey or by exporting it manually.</string>
+	<string>Wellbeing Mapper access your motion data in order to improve location tracking of your activity spaces. The motion and location data it collects does not leave your phone unless you choose to share it by participating in a survey or by exporting it manually.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Space Mapper uses your camera to make it possible for you to join new projects by scanning their QR codes.</string>
+	<string>Wellbeing Mapper uses your camera to make it possible for you to join new projects by scanning their QR codes.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

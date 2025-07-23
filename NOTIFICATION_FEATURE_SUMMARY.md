@@ -65,7 +65,7 @@ I've successfully implemented a recurring notification system for the Space Mapp
 ```dart
 // Runs every hour in background
 BackgroundFetch.scheduleTask(TaskConfig(
-  taskId: 'com.spacemapper.survey_notification',
+  taskId: 'com.wellbeingmapper.survey_notification',
   delay: 3600000, // 1 hour
   periodic: true,
   // ... configuration

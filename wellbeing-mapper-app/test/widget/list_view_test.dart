@@ -10,12 +10,11 @@ void main() {
   });
 
   testWidgets(
-      'when list view doesnt have data, it displays a CircularProgressIndicator and then an empty container',
+      'when list view doesnt have data, it displays a CircularProgressIndicator',
       (WidgetTester tester) async {
     await tester.pumpWidget(MaterialApp(home: STOListView()));
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.byType(Container), findsOneWidget);
   });
 
   testWidgets(

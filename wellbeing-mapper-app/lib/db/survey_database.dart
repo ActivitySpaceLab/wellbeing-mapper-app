@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'dart:convert';
 import '../models/survey_models.dart';
+import '../models/consent_models.dart';
 
 class SurveyDatabase {
   static final SurveyDatabase _instance = SurveyDatabase._internal();
@@ -26,6 +27,29 @@ class SurveyDatabase {
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    // Create consent responses table
+    await db.execute('''
+      CREATE TABLE consent_responses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        participant_code TEXT NOT NULL,
+        has_read_information INTEGER NOT NULL,
+        understands INTEGER NOT NULL,
+        fulfills_criteria INTEGER NOT NULL,
+        voluntary_participation INTEGER NOT NULL,
+        general_consent INTEGER NOT NULL,
+        lime_survey_consent INTEGER NOT NULL,
+        race_ethnicity_consent INTEGER NOT NULL,
+        health_consent INTEGER NOT NULL,
+        sexual_orientation_consent INTEGER NOT NULL,
+        location_consent INTEGER NOT NULL,
+        data_transfer_consent INTEGER NOT NULL,
+        consented_at TEXT NOT NULL,
+        participant_uuid TEXT NOT NULL UNIQUE,
+        synced INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+
     // Create initial survey responses table
     await db.execute('''
       CREATE TABLE initial_survey_responses (
@@ -285,6 +309,53 @@ class SurveyDatabase {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) FROM recurring_survey_responses');
     return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  // Consent methods
+  Future<int> insertConsent(ConsentResponse consent) async {
+    final db = await database;
+    return await db.insert(
+      'consent_responses',
+      {
+        'participant_uuid': consent.participantUuid,
+        'informed_consent': consent.informedConsent ? 1 : 0,
+        'data_processing': consent.dataProcessing ? 1 : 0,
+        'location_data': consent.locationData ? 1 : 0,
+        'survey_data': consent.surveyData ? 1 : 0,
+        'data_retention': consent.dataRetention ? 1 : 0,
+        'data_sharing': consent.dataSharing ? 1 : 0,
+        'voluntary_participation': consent.voluntaryParticipation ? 1 : 0,
+        'consented_at': consent.consentedAt.toIso8601String(),
+        'participant_signature': consent.participantSignature,
+        'synced': 0,
+      },
+    );
+  }
+
+  Future<ConsentResponse?> getConsent() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'consent_responses',
+      orderBy: 'created_at DESC',
+      limit: 1,
+    );
+    
+    if (maps.isNotEmpty) {
+      final map = maps.first;
+      return ConsentResponse(
+        participantUuid: map['participant_uuid'],
+        informedConsent: map['informed_consent'] == 1,
+        dataProcessing: map['data_processing'] == 1,
+        locationData: map['location_data'] == 1,
+        surveyData: map['survey_data'] == 1,
+        dataRetention: map['data_retention'] == 1,
+        dataSharing: map['data_sharing'] == 1,
+        voluntaryParticipation: map['voluntary_participation'] == 1,
+        consentedAt: DateTime.parse(map['consented_at']),
+        participantSignature: map['participant_signature'] ?? '',
+      );
+    }
+    return null;
   }
 
   Future<void> close() async {

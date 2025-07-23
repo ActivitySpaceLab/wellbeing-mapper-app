@@ -110,7 +110,7 @@ void backgroundFetchHeadlessTask(String taskId) async {
   print("[BackgroundFetch] HeadlessTask: $taskId");
 
   // Handle notification task
-  if (taskId == 'com.spacemapper.survey_notification') {
+  if (taskId == 'com.wellbeingmapper.survey_notification') {
     await notificationHeadlessTask(taskId);
     return;
   }

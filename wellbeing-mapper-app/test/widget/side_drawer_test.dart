@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
 
   testWidgets('Side drawers opens from home view', (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(home: HomeView("Space Mapper")));
+    await tester.pumpWidget(MaterialApp(home: HomeView("Wellbeing Mapper")));
 
     final menuBtn = find.byIcon(Icons.menu);
     await tester.tap(menuBtn);

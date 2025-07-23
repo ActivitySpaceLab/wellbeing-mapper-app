@@ -40,6 +40,7 @@ class HomeViewState extends State<HomeView>
   late bool _enabled;
   //late String _motionActivity;
   //late String _odometer;
+  Timer? _surveyPromptTimer;
 
   HomeViewState(this.appName);
 
@@ -59,16 +60,16 @@ class HomeViewState extends State<HomeView>
   }
 
   // Check for pending survey prompts and show dialog if needed
-  void _checkForPendingSurveyPrompt() async {
+  void _checkForPendingSurveyPrompt() {
     // Wait a bit for the widget to be fully built
-    await Future.delayed(Duration(milliseconds: 500));
-    
-    if (mounted) {
-      bool hasPendingPrompt = await NotificationService.hasPendingSurveyPrompt();
-      if (hasPendingPrompt) {
-        await NotificationService.showSurveyPromptDialog(context);
+    _surveyPromptTimer = Timer(Duration(milliseconds: 500), () async {
+      if (mounted) {
+        bool hasPendingPrompt = await NotificationService.hasPendingSurveyPrompt();
+        if (hasPendingPrompt && mounted) {
+          await NotificationService.showSurveyPromptDialog(context);
+        }
       }
-    }
+    });
   }
 
   @override
@@ -173,7 +174,7 @@ class HomeViewState extends State<HomeView>
       //if (taskId == 'flutter_background_fetch') {
       // Test scheduling a custom-task in fetch event.
       BackgroundFetch.scheduleTask(TaskConfig(
-          taskId: "com.transistorsoft.spacemapper",
+          taskId: "com.transistorsoft.wellbeingmapper",
           delay: 5000,
           periodic: false,
           forceAlarmManager: true,
@@ -185,7 +186,7 @@ class HomeViewState extends State<HomeView>
 /*
     // Test scheduling a custom-task.
     BackgroundFetch.scheduleTask(TaskConfig(
-        taskId: "com.transistorsoft.spacemapper",
+        taskId: "com.transistorsoft.wellbeingmapper",
         delay: 10000,
         periodic: false,
         forceAlarmManager: true,
@@ -395,13 +396,14 @@ class HomeViewState extends State<HomeView>
         ],
       ),
       //body: body,
-      drawer: new SpaceMapperSideDrawer(),
+      drawer: new WellbeingMapperSideDrawer(),
       body: MapView()
     );
   }
 
   @override
   void dispose() {
+    _surveyPromptTimer?.cancel();
     super.dispose();
   }
 }

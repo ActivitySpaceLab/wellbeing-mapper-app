@@ -441,7 +441,7 @@ The notification system provides recurring survey reminders to encourage user pa
   - Statistics tracking
 
 #### 2. Background Integration
-- **Task ID**: `com.spacemapper.survey_notification`
+- **Task ID**: `com.wellbeingmapper.survey_notification`
 - **Frequency**: Checked hourly via background_fetch
 - **Persistence**: Survives app termination and device restarts
 
@@ -456,7 +456,7 @@ The notification system provides recurring survey reminders to encourage user pa
 ```dart
 // Check every hour for notification timing
 await BackgroundFetch.scheduleTask(TaskConfig(
-  taskId: 'com.spacemapper.survey_notification',
+  taskId: 'com.wellbeingmapper.survey_notification',
   delay: 3600000, // 1 hour in milliseconds
   periodic: true,
   // ... other configuration

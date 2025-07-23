@@ -8,7 +8,7 @@ import 'package:share/share.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
     as bg;
 
-class SpaceMapperSideDrawer extends StatelessWidget {
+class WellbeingMapperSideDrawer extends StatelessWidget {
   _shareLocations() async {
     var now = new DateTime.now();
     List allLocations = await bg.BackgroundGeolocation.locations;
@@ -140,6 +140,16 @@ class SpaceMapperSideDrawer extends StatelessWidget {
               title: Text("Survey Notifications"),
               onTap: () {
                 Navigator.of(context).pushNamed('/notification_settings');
+              },
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.privacy_tip),
+              title: Text("Research Participation"),
+              subtitle: Text("Manage consent and participation settings"),
+              onTap: () {
+                Navigator.of(context).pushNamed('/participation_selection');
               },
             ),
           ),

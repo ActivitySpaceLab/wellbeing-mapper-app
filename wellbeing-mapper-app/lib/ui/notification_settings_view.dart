@@ -100,7 +100,7 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
             ),
             SizedBox(height: 12),
             Text(
-              'Space Mapper automatically reminds you to participate in surveys every 2 weeks. '
+              'Wellbeing Mapper automatically reminds you to participate in surveys every 2 weeks. '
               'These surveys help researchers understand human mobility patterns and improve the app.',
               style: TextStyle(fontSize: 14, color: Colors.grey[700]),
             ),

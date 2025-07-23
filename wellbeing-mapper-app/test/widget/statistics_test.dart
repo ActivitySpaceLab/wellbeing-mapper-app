@@ -1,5 +1,14 @@
 // COMMENTING OUT BECAUSE NEED TO CHANGE CHART PACKAGE
 
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('Statistics test placeholder', () {
+    // This is a placeholder test to prevent compilation errors
+    // Uncomment the tests below once the chart package is updated
+    expect(true, true);
+  });
+}
 
 /*
 import 'package:wellbeing_mapper/ui/statistics/statistics.dart';

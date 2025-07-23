@@ -8,6 +8,8 @@ import '../ui/web_view.dart';
 import '../ui/initial_survey_screen.dart';
 import '../ui/recurring_survey_screen.dart';
 import '../ui/survey_list_screen.dart';
+import '../ui/consent/participation_selection_screen.dart';
+import '../ui/consent/consent_form_screen.dart';
 
 class GlobalRouteData {
   static String? user_route = "brown";
@@ -20,7 +22,7 @@ class RouteGenerator {
     GlobalRouteData.user_route = settings.name;
     switch (settings.name) {
       case '/':
-        return MaterialPageRoute(builder: (_) => HomeView('Space Mapper'));
+        return MaterialPageRoute(builder: (_) => HomeView('Wellbeing Mapper'));
       case '/locations_history':
         return MaterialPageRoute(builder: (_) => STOListView());
       case '/report_an_issue':
@@ -45,6 +47,10 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => RecurringSurveyScreen());
       case '/survey_list':
         return MaterialPageRoute(builder: (_) => SurveyListScreen());
+      case '/participation_selection':
+        return MaterialPageRoute(builder: (_) => ParticipationSelectionScreen());
+      case '/consent_form':
+        return MaterialPageRoute(builder: (_) => ConsentFormScreen());
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();

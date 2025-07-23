@@ -38,7 +38,7 @@ class AppLocalizations {
   // How to call this function with an example:
   // AppLocalizations.of(context)?.translate("your_word") ?? ""; // You have to do it like that to avoid null values and pass the tests
   String? translate(String key) {
-    return _localizedStrings[key]!;
+    return _localizedStrings[key];
   }
 }
 
