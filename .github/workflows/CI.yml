@@ -35,10 +35,18 @@ jobs:
     - name: Run tests for our flutter project.
       run: |
         cd wellbeing-mapper-app
-        flutter test --coverage
+        flutter test --coverage --dart-define=FLUTTER_TEST_MODE=true --reporter=expanded --concurrency=1
+      continue-on-error: false
+        
+    - name: Check coverage file exists
+      run: |
+        ls -la wellbeing-mapper-app/coverage/ || echo "Coverage directory not found"
         
     - name: Upload coverage to codecov
+      if: always()
       uses: codecov/codecov-action@v4
       with:
-        file: wellbeing-mapper-app/coverage/lcov.info
+        file: ./wellbeing-mapper-app/coverage/lcov.info
         token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: false
+        verbose: false

@@ -4,6 +4,7 @@ import 'package:flutter_background_geolocation/flutter_background_geolocation.da
 import 'package:flutter_map/flutter_map.dart';
 //import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:wellbeing_mapper/services/test_service.dart';
 
 class MapView extends StatefulWidget {
   @override
@@ -173,13 +174,24 @@ class MapViewState extends State<MapView>
       mapController: _mapController,
       options: _mapOptions,
       children: [
-        TileLayer(
-          urlTemplate: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-          subdomains: const ['a', 'b', 'c', 'd'],
-          userAgentPackageName: 'com.github.activityspacelab.wellbeingmapper',
-          maxZoom: 20,
-          retinaMode: RetinaMode.isHighDensity(context),
-        ),
+        if (!TestService.isTestMode)
+          TileLayer(
+            urlTemplate: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+            subdomains: const ['a', 'b', 'c', 'd'],
+            userAgentPackageName: 'com.github.activityspacelab.wellbeingmapper',
+            maxZoom: 20,
+            retinaMode: RetinaMode.isHighDensity(context),
+          ),
+        if (TestService.isTestMode)
+          Container(
+            color: Colors.grey[200],
+            child: Center(
+              child: Text(
+                'Test Mode - Map Disabled',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+          ),
         if (_polyline.isNotEmpty)
           PolylineLayer(
             polylines: [
