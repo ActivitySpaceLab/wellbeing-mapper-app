@@ -1,0 +1,294 @@
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'dart:convert';
+import '../models/survey_models.dart';
+
+class SurveyDatabase {
+  static final SurveyDatabase _instance = SurveyDatabase._internal();
+  factory SurveyDatabase() => _instance;
+  SurveyDatabase._internal();
+
+  static Database? _database;
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+    String path = join(await getDatabasesPath(), 'survey_database.db');
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: _onCreate,
+    );
+  }
+
+  Future<void> _onCreate(Database db, int version) async {
+    // Create initial survey responses table
+    await db.execute('''
+      CREATE TABLE initial_survey_responses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        age INTEGER,
+        ethnicity TEXT,
+        gender TEXT,
+        sexuality TEXT,
+        birth_place TEXT,
+        lives_in_barcelona TEXT,
+        building_type TEXT,
+        household_items TEXT,
+        education TEXT,
+        climate_activism TEXT,
+        submitted_at TEXT,
+        synced INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+
+    // Create recurring survey responses table
+    await db.execute('''
+      CREATE TABLE recurring_survey_responses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        activities TEXT,
+        living_arrangement TEXT,
+        relationship_status TEXT,
+        cheerful_spirits INTEGER,
+        calm_relaxed INTEGER,
+        active_vigorous INTEGER,
+        woke_up_fresh INTEGER,
+        daily_life_interesting INTEGER,
+        cooperate_with_people INTEGER,
+        improving_skills INTEGER,
+        social_situations INTEGER,
+        family_support INTEGER,
+        family_knows_me INTEGER,
+        access_to_food INTEGER,
+        people_enjoy_time INTEGER,
+        talk_to_family INTEGER,
+        friends_support INTEGER,
+        belong_in_community INTEGER,
+        family_stands_by_me INTEGER,
+        friends_stand_by_me INTEGER,
+        treated_fairly INTEGER,
+        opportunities_responsibility INTEGER,
+        secure_with_family INTEGER,
+        opportunities_abilities INTEGER,
+        enjoy_cultural_traditions INTEGER,
+        environmental_challenges TEXT,
+        challenges_stress_level TEXT,
+        coping_help TEXT,
+        voice_note_urls TEXT,
+        image_urls TEXT,
+        submitted_at TEXT,
+        synced INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+
+    // Create sync queue table for offline functionality
+    await db.execute('''
+      CREATE TABLE sync_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_name TEXT,
+        record_id INTEGER,
+        action TEXT,
+        data TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+  }
+
+  // Initial Survey Methods
+  Future<int> insertInitialSurvey(InitialSurveyResponse survey) async {
+    final db = await database;
+    final id = await db.insert('initial_survey_responses', {
+      'age': survey.age,
+      'ethnicity': jsonEncode(survey.ethnicity),
+      'gender': survey.gender,
+      'sexuality': survey.sexuality,
+      'birth_place': survey.birthPlace,
+      'lives_in_barcelona': survey.livesInBarcelona,
+      'building_type': survey.buildingType,
+      'household_items': jsonEncode(survey.householdItems),
+      'education': survey.education,
+      'climate_activism': survey.climateActivism,
+      'submitted_at': survey.submittedAt.toIso8601String(),
+    });
+
+    // Add to sync queue
+    await _addToSyncQueue('initial_survey_responses', id, 'INSERT', survey.toJson());
+    return id;
+  }
+
+  Future<List<InitialSurveyResponse>> getInitialSurveys() async {
+    final db = await database;
+    final maps = await db.query('initial_survey_responses', orderBy: 'submitted_at DESC');
+    
+    return List.generate(maps.length, (i) {
+      return InitialSurveyResponse(
+        age: maps[i]['age'] as int?,
+        ethnicity: List<String>.from(jsonDecode(maps[i]['ethnicity'] as String)),
+        gender: maps[i]['gender'] as String?,
+        sexuality: maps[i]['sexuality'] as String?,
+        birthPlace: maps[i]['birth_place'] as String?,
+        livesInBarcelona: maps[i]['lives_in_barcelona'] as String?,
+        buildingType: maps[i]['building_type'] as String?,
+        householdItems: List<String>.from(jsonDecode(maps[i]['household_items'] as String)),
+        education: maps[i]['education'] as String?,
+        climateActivism: maps[i]['climate_activism'] as String?,
+        submittedAt: DateTime.parse(maps[i]['submitted_at'] as String),
+      );
+    });
+  }
+
+  // Recurring Survey Methods
+  Future<int> insertRecurringSurvey(RecurringSurveyResponse survey) async {
+    final db = await database;
+    final id = await db.insert('recurring_survey_responses', {
+      'activities': jsonEncode(survey.activities),
+      'living_arrangement': survey.livingArrangement,
+      'relationship_status': survey.relationshipStatus,
+      'cheerful_spirits': survey.cheerfulSpirits,
+      'calm_relaxed': survey.calmRelaxed,
+      'active_vigorous': survey.activeVigorous,
+      'woke_up_fresh': survey.wokeUpFresh,
+      'daily_life_interesting': survey.dailyLifeInteresting,
+      'cooperate_with_people': survey.cooperateWithPeople,
+      'improving_skills': survey.improvingSkills,
+      'social_situations': survey.socialSituations,
+      'family_support': survey.familySupport,
+      'family_knows_me': survey.familyKnowsMe,
+      'access_to_food': survey.accessToFood,
+      'people_enjoy_time': survey.peopleEnjoyTime,
+      'talk_to_family': survey.talkToFamily,
+      'friends_support': survey.friendsSupport,
+      'belong_in_community': survey.belongInCommunity,
+      'family_stands_by_me': survey.familyStandsByMe,
+      'friends_stand_by_me': survey.friendsStandByMe,
+      'treated_fairly': survey.treatedFairly,
+      'opportunities_responsibility': survey.opportunitiesResponsibility,
+      'secure_with_family': survey.secureWithFamily,
+      'opportunities_abilities': survey.opportunitiesAbilities,
+      'enjoy_cultural_traditions': survey.enjoyCulturalTraditions,
+      'environmental_challenges': survey.environmentalChallenges,
+      'challenges_stress_level': survey.challengesStressLevel,
+      'coping_help': survey.copingHelp,
+      'voice_note_urls': survey.voiceNoteUrls != null ? jsonEncode(survey.voiceNoteUrls) : null,
+      'image_urls': survey.imageUrls != null ? jsonEncode(survey.imageUrls) : null,
+      'submitted_at': survey.submittedAt.toIso8601String(),
+    });
+
+    // Add to sync queue
+    await _addToSyncQueue('recurring_survey_responses', id, 'INSERT', survey.toJson());
+    return id;
+  }
+
+  Future<List<RecurringSurveyResponse>> getRecurringSurveys() async {
+    final db = await database;
+    final maps = await db.query('recurring_survey_responses', orderBy: 'submitted_at DESC');
+    
+    return List.generate(maps.length, (i) {
+      return RecurringSurveyResponse(
+        activities: List<String>.from(jsonDecode(maps[i]['activities'] as String)),
+        livingArrangement: maps[i]['living_arrangement'] as String?,
+        relationshipStatus: maps[i]['relationship_status'] as String?,
+        cheerfulSpirits: maps[i]['cheerful_spirits'] as int?,
+        calmRelaxed: maps[i]['calm_relaxed'] as int?,
+        activeVigorous: maps[i]['active_vigorous'] as int?,
+        wokeUpFresh: maps[i]['woke_up_fresh'] as int?,
+        dailyLifeInteresting: maps[i]['daily_life_interesting'] as int?,
+        cooperateWithPeople: maps[i]['cooperate_with_people'] as int?,
+        improvingSkills: maps[i]['improving_skills'] as int?,
+        socialSituations: maps[i]['social_situations'] as int?,
+        familySupport: maps[i]['family_support'] as int?,
+        familyKnowsMe: maps[i]['family_knows_me'] as int?,
+        accessToFood: maps[i]['access_to_food'] as int?,
+        peopleEnjoyTime: maps[i]['people_enjoy_time'] as int?,
+        talkToFamily: maps[i]['talk_to_family'] as int?,
+        friendsSupport: maps[i]['friends_support'] as int?,
+        belongInCommunity: maps[i]['belong_in_community'] as int?,
+        familyStandsByMe: maps[i]['family_stands_by_me'] as int?,
+        friendsStandByMe: maps[i]['friends_stand_by_me'] as int?,
+        treatedFairly: maps[i]['treated_fairly'] as int?,
+        opportunitiesResponsibility: maps[i]['opportunities_responsibility'] as int?,
+        secureWithFamily: maps[i]['secure_with_family'] as int?,
+        opportunitiesAbilities: maps[i]['opportunities_abilities'] as int?,
+        enjoyCulturalTraditions: maps[i]['enjoy_cultural_traditions'] as int?,
+        environmentalChallenges: maps[i]['environmental_challenges'] as String?,
+        challengesStressLevel: maps[i]['challenges_stress_level'] as String?,
+        copingHelp: maps[i]['coping_help'] as String?,
+        voiceNoteUrls: maps[i]['voice_note_urls'] != null 
+            ? List<String>.from(jsonDecode(maps[i]['voice_note_urls'] as String))
+            : null,
+        imageUrls: maps[i]['image_urls'] != null 
+            ? List<String>.from(jsonDecode(maps[i]['image_urls'] as String))
+            : null,
+        submittedAt: DateTime.parse(maps[i]['submitted_at'] as String),
+      );
+    });
+  }
+
+  // Sync functionality
+  Future<void> _addToSyncQueue(String tableName, int recordId, String action, Map<String, dynamic> data) async {
+    final db = await database;
+    await db.insert('sync_queue', {
+      'table_name': tableName,
+      'record_id': recordId,
+      'action': action,
+      'data': jsonEncode(data),
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getPendingSyncItems() async {
+    final db = await database;
+    return await db.query('sync_queue', orderBy: 'created_at ASC');
+  }
+
+  Future<void> markSynced(int syncId) async {
+    final db = await database;
+    await db.delete('sync_queue', where: 'id = ?', whereArgs: [syncId]);
+  }
+
+  Future<void> markSurveyAsSynced(String tableName, int recordId) async {
+    final db = await database;
+    await db.update(
+      tableName,
+      {'synced': 1},
+      where: 'id = ?',
+      whereArgs: [recordId],
+    );
+  }
+
+  // Utility methods
+  Future<bool> hasCompletedInitialSurvey() async {
+    final db = await database;
+    final result = await db.query('initial_survey_responses', limit: 1);
+    return result.isNotEmpty;
+  }
+
+  Future<DateTime?> getLastRecurringSurveyDate() async {
+    final db = await database;
+    final result = await db.query(
+      'recurring_survey_responses',
+      orderBy: 'submitted_at DESC',
+      limit: 1,
+    );
+    
+    if (result.isNotEmpty) {
+      return DateTime.parse(result.first['submitted_at'] as String);
+    }
+    return null;
+  }
+
+  Future<int> getRecurringSurveyCount() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) FROM recurring_survey_responses');
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<void> close() async {
+    final db = await database;
+    db.close();
+  }
+}

@@ -5,6 +5,9 @@ import '../ui/home_view.dart';
 import '../ui/list_view.dart';
 import '../ui/report_issues.dart';
 import '../ui/web_view.dart';
+import '../ui/initial_survey_screen.dart';
+import '../ui/recurring_survey_screen.dart';
+import '../ui/survey_list_screen.dart';
 
 class GlobalRouteData {
   static String? user_route = "brown";
@@ -36,6 +39,12 @@ class RouteGenerator {
         return _errorRoute();
       case '/notification_settings':
         return MaterialPageRoute(builder: (_) => NotificationSettingsView());
+      case '/initial_survey':
+        return MaterialPageRoute(builder: (_) => InitialSurveyScreen());
+      case '/recurring_survey':
+        return MaterialPageRoute(builder: (_) => RecurringSurveyScreen());
+      case '/survey_list':
+        return MaterialPageRoute(builder: (_) => SurveyListScreen());
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();

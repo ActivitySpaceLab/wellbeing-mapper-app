@@ -14,8 +14,8 @@ jobs:
       # A set of different configurations of the virtual environment.
       matrix:
         device:
-          - "iPhone 8"
-          - "iPhone 12 Pro Max"
+          - "iPhone 15"
+          - "iPhone 15 Pro Max"
       # When set to true, GitHub cancels all in-progress jobs if any matrix job
       # fails.
       fail-fast: false
@@ -50,7 +50,7 @@ jobs:
       # https://github.com/marketplace/actions/flutter-action
       - uses: subosito/flutter-action@v1
         with:
-          flutter-version: '3.0.0'
+          flutter-version: '3.27.1'
           channel: 'stable' # or: 'dev' or 'beta'
       - run: "flutter clean"
         working-directory: wellbeing-mapper-app

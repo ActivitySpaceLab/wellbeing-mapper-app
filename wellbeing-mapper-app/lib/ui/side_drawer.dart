@@ -106,6 +106,36 @@ class SpaceMapperSideDrawer extends StatelessWidget {
           ),
           Card(
             child: ListTile(
+              leading: const Icon(Icons.assignment),
+              title: Text("Initial Survey"),
+              subtitle: Text("Complete your initial demographics survey"),
+              onTap: () {
+                Navigator.of(context).pushNamed('/initial_survey');
+              },
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.assignment_turned_in),
+              title: Text("Wellbeing Survey"),
+              subtitle: Text("Bi-weekly wellbeing check-in"),
+              onTap: () {
+                Navigator.of(context).pushNamed('/recurring_survey');
+              },
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.history),
+              title: Text("Survey History"),
+              subtitle: Text("View completed surveys"),
+              onTap: () {
+                Navigator.of(context).pushNamed('/survey_list');
+              },
+            ),
+          ),
+          Card(
+            child: ListTile(
               leading: const Icon(Icons.notifications_outlined),
               title: Text("Survey Notifications"),
               onTap: () {
