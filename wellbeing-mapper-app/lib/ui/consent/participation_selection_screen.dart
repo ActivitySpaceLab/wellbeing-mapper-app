@@ -122,108 +122,108 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(height: 48),
-                  
-                  // Private Use Section
-                  Card(
-                    elevation: 4,
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.person, color: Colors.green),
-                              SizedBox(width: 8),
-                              Text(
-                                'Personal Use',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                    
+                    // Private Use Section
+                    Card(
+                      elevation: 4,
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.person, color: Colors.green),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Personal Use',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            'Use the app for your personal wellbeing tracking. Your data stays on your device and is not shared.',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _selectPrivateUse,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 12),
+                              ],
                             ),
-                            child: Text('Use Privately'),
-                          ),
-                        ],
+                            SizedBox(height: 12),
+                            Text(
+                              'Use the app for your personal wellbeing tracking. Your data stays on your device and is not shared.',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _selectPrivateUse,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: Text('Use Privately'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  SizedBox(height: 24),
-                  
-                  // Research Participation Section
-                  Card(
-                    elevation: 4,
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.school, color: Colors.blue),
-                              SizedBox(width: 8),
-                              Text(
-                                'Join Research',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                    
+                    SizedBox(height: 24),
+                    
+                    // Research Participation Section
+                    Card(
+                      elevation: 4,
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.school, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Join Research',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              'Participate in our research study. You\'ll need a participant code provided by the research team.',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            SizedBox(height: 16),
+                            TextField(
+                              controller: _participantCodeController,
+                              decoration: InputDecoration(
+                                labelText: 'Participant Code',
+                                hintText: 'Enter your code here',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.code),
                               ),
-                            ],
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            'Participate in our research study. You\'ll need a participant code provided by the research team.',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          SizedBox(height: 16),
-                          TextField(
-                            controller: _participantCodeController,
-                            decoration: InputDecoration(
-                              labelText: 'Participant Code',
-                              hintText: 'Enter your code here',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.code),
+                              textCapitalization: TextCapitalization.characters,
                             ),
-                            textCapitalization: TextCapitalization.characters,
-                          ),
-                          SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _joinResearch,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 12),
+                            SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _joinResearch,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              child: Text('Join Research Study'),
                             ),
-                            child: Text('Join Research Study'),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  SizedBox(height: 32),
-                  Text(
-                    'You can change this choice later in the app settings.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                    
+                    SizedBox(height: 32),
+                    Text(
+                      'You can change this choice later in the app settings.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
                     SizedBox(height: 40), // Bottom spacing
                   ],
                 ),
