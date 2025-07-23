@@ -224,12 +224,10 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
                     ),
                     textAlign: TextAlign.center,
                   ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+                    SizedBox(height: 40), // Bottom spacing
+                  ],
+                ),
+              ),
             ),
     );
   }
