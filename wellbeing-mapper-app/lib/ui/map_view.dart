@@ -176,8 +176,12 @@ class MapViewState extends State<MapView>
       options: _mapOptions,
       children: [
         TileLayer(
-            urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            subdomains: ['a', 'b', 'c']),
+          urlTemplate: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+          subdomains: const ['a', 'b', 'c', 'd'],
+          userAgentPackageName: 'com.github.activityspacelab.wellbeingmapper',
+          maxZoom: 20,
+          retinaMode: RetinaMode.isHighDensity(context),
+        ),
         if (_polyline.isNotEmpty)
           PolylineLayer(
             polylines: [

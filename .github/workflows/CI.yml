@@ -14,16 +14,11 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
         
-    # Setup FVM
-    - name: Setup FVM
-      uses: kuhnroyal/flutter-fvm-config-action@v2
-      with:
-        path: 'wellbeing-mapper-app'
-        
-    - name: Setup Flutter via FVM
+    # Setup FVM and Flutter
+    - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version-file: 'wellbeing-mapper-app/.fvmrc'
+        flutter-version: '3.27.1'
         channel: 'stable'
         cache: true
          
@@ -41,7 +36,6 @@ jobs:
       run: |
         cd wellbeing-mapper-app
         flutter test
-      working-directory: wellbeing-mapper-app
       
     - name: Upload coverage to codecov
       uses: codecov/codecov-action@v1
