@@ -69,11 +69,13 @@ class ConsentResponse {
 class ParticipationSettings {
   final bool isResearchParticipant;
   final String? participantCode;
+  final String? researchSite; // 'barcelona' or 'gauteng'
   final DateTime createdAt;
 
   ParticipationSettings({
     required this.isResearchParticipant,
     this.participantCode,
+    this.researchSite,
     required this.createdAt,
   });
 
@@ -82,15 +84,17 @@ class ParticipationSettings {
     return ParticipationSettings(
       isResearchParticipant: false,
       participantCode: null,
+      researchSite: null,
       createdAt: DateTime.now(),
     );
   }
 
   /// Factory method for research participants
-  factory ParticipationSettings.researchParticipant(String participantCode) {
+  factory ParticipationSettings.researchParticipant(String participantCode, String researchSite) {
     return ParticipationSettings(
       isResearchParticipant: true,
       participantCode: participantCode,
+      researchSite: researchSite,
       createdAt: DateTime.now(),
     );
   }
@@ -99,6 +103,7 @@ class ParticipationSettings {
     return {
       'isResearchParticipant': isResearchParticipant,
       'participantCode': participantCode,
+      'researchSite': researchSite,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -107,6 +112,7 @@ class ParticipationSettings {
     return ParticipationSettings(
       isResearchParticipant: json['isResearchParticipant'] ?? false,
       participantCode: json['participantCode'],
+      researchSite: json['researchSite'],
       createdAt: json['createdAt'] != null 
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),

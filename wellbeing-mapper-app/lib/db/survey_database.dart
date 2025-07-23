@@ -157,10 +157,13 @@ class SurveyDatabase {
         sexuality: maps[i]['sexuality'] as String?,
         birthPlace: maps[i]['birth_place'] as String?,
         livesInBarcelona: maps[i]['lives_in_barcelona'] as String?,
+        suburb: maps[i]['suburb'] as String?,
         buildingType: maps[i]['building_type'] as String?,
         householdItems: List<String>.from(jsonDecode(maps[i]['household_items'] as String)),
         education: maps[i]['education'] as String?,
         climateActivism: maps[i]['climate_activism'] as String?,
+        generalHealth: maps[i]['general_health'] as String?,
+        researchSite: maps[i]['research_site'] as String? ?? 'barcelona',
         submittedAt: DateTime.parse(maps[i]['submitted_at'] as String),
       );
     });
@@ -217,6 +220,7 @@ class SurveyDatabase {
         activities: List<String>.from(jsonDecode(maps[i]['activities'] as String)),
         livingArrangement: maps[i]['living_arrangement'] as String?,
         relationshipStatus: maps[i]['relationship_status'] as String?,
+        generalHealth: maps[i]['general_health'] as String?,
         cheerfulSpirits: maps[i]['cheerful_spirits'] as int?,
         calmRelaxed: maps[i]['calm_relaxed'] as int?,
         activeVigorous: maps[i]['active_vigorous'] as int?,
@@ -248,6 +252,7 @@ class SurveyDatabase {
         imageUrls: maps[i]['image_urls'] != null 
             ? List<String>.from(jsonDecode(maps[i]['image_urls'] as String))
             : null,
+        researchSite: maps[i]['research_site'] as String? ?? 'barcelona',
         submittedAt: DateTime.parse(maps[i]['submitted_at'] as String),
       );
     });

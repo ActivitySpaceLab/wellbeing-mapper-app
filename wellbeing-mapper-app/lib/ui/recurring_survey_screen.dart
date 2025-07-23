@@ -494,6 +494,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           activities: List<String>.from(formData['activities'] ?? []),
           livingArrangement: formData['livingArrangement'],
           relationshipStatus: formData['relationshipStatus'],
+          generalHealth: formData['generalHealth'],
           cheerfulSpirits: formData['cheerfulSpirits']?.round(),
           calmRelaxed: formData['calmRelaxed']?.round(),
           activeVigorous: formData['activeVigorous']?.round(),
@@ -521,6 +522,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           copingHelp: formData['copingHelp'],
           voiceNoteUrls: _voiceNoteUrls.isNotEmpty ? _voiceNoteUrls : null,
           imageUrls: _selectedImages.isNotEmpty ? _selectedImages.map((f) => f.path).toList() : null,
+          researchSite: 'barcelona', // Default for now, should be loaded from preferences
           submittedAt: DateTime.now(),
         );
 

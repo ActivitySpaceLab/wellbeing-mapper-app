@@ -4,11 +4,14 @@ class InitialSurveyResponse {
   final String? gender;
   final String? sexuality;
   final String? birthPlace;
-  final String? livesInBarcelona;
+  final String? livesInBarcelona; // For Barcelona site only
+  final String? suburb; // For Gauteng site only
   final String? buildingType;
   final List<String> householdItems;
   final String? education;
   final String? climateActivism;
+  final String? generalHealth; // For Gauteng site only
+  final String researchSite; // 'barcelona' or 'gauteng'
   final DateTime submittedAt;
 
   InitialSurveyResponse({
@@ -18,10 +21,13 @@ class InitialSurveyResponse {
     this.sexuality,
     this.birthPlace,
     this.livesInBarcelona,
+    this.suburb,
     this.buildingType,
     required this.householdItems,
     this.education,
     this.climateActivism,
+    this.generalHealth,
+    required this.researchSite,
     required this.submittedAt,
   });
 
@@ -33,10 +39,13 @@ class InitialSurveyResponse {
       'sexuality': sexuality,
       'birthPlace': birthPlace,
       'livesInBarcelona': livesInBarcelona,
+      'suburb': suburb,
       'buildingType': buildingType,
       'householdItems': householdItems,
       'education': education,
       'climateActivism': climateActivism,
+      'generalHealth': generalHealth,
+      'researchSite': researchSite,
       'submittedAt': submittedAt.toIso8601String(),
     };
   }
@@ -49,10 +58,13 @@ class InitialSurveyResponse {
       sexuality: json['sexuality'],
       birthPlace: json['birthPlace'],
       livesInBarcelona: json['livesInBarcelona'],
+      suburb: json['suburb'],
       buildingType: json['buildingType'],
       householdItems: List<String>.from(json['householdItems'] ?? []),
       education: json['education'],
       climateActivism: json['climateActivism'],
+      generalHealth: json['generalHealth'],
+      researchSite: json['researchSite'] ?? 'barcelona',
       submittedAt: DateTime.parse(json['submittedAt']),
     );
   }
@@ -62,6 +74,7 @@ class RecurringSurveyResponse {
   final List<String> activities;
   final String? livingArrangement;
   final String? relationshipStatus;
+  final String? generalHealth; // For Gauteng site only
   
   // Wellbeing questions (0-5 scale)
   final int? cheerfulSpirits;
@@ -96,12 +109,14 @@ class RecurringSurveyResponse {
   final List<String>? voiceNoteUrls;
   final List<String>? imageUrls;
   
+  final String researchSite; // 'barcelona' or 'gauteng'
   final DateTime submittedAt;
 
   RecurringSurveyResponse({
     required this.activities,
     this.livingArrangement,
     this.relationshipStatus,
+    this.generalHealth,
     this.cheerfulSpirits,
     this.calmRelaxed,
     this.activeVigorous,
@@ -129,6 +144,7 @@ class RecurringSurveyResponse {
     this.copingHelp,
     this.voiceNoteUrls,
     this.imageUrls,
+    required this.researchSite,
     required this.submittedAt,
   });
 
@@ -137,6 +153,7 @@ class RecurringSurveyResponse {
       'activities': activities,
       'livingArrangement': livingArrangement,
       'relationshipStatus': relationshipStatus,
+      'generalHealth': generalHealth,
       'cheerfulSpirits': cheerfulSpirits,
       'calmRelaxed': calmRelaxed,
       'activeVigorous': activeVigorous,
@@ -164,6 +181,7 @@ class RecurringSurveyResponse {
       'copingHelp': copingHelp,
       'voiceNoteUrls': voiceNoteUrls,
       'imageUrls': imageUrls,
+      'researchSite': researchSite,
       'submittedAt': submittedAt.toIso8601String(),
     };
   }
@@ -173,6 +191,7 @@ class RecurringSurveyResponse {
       activities: List<String>.from(json['activities'] ?? []),
       livingArrangement: json['livingArrangement'],
       relationshipStatus: json['relationshipStatus'],
+      generalHealth: json['generalHealth'],
       cheerfulSpirits: json['cheerfulSpirits'],
       calmRelaxed: json['calmRelaxed'],
       activeVigorous: json['activeVigorous'],
@@ -200,6 +219,7 @@ class RecurringSurveyResponse {
       copingHelp: json['copingHelp'],
       voiceNoteUrls: json['voiceNoteUrls'] != null ? List<String>.from(json['voiceNoteUrls']) : null,
       imageUrls: json['imageUrls'] != null ? List<String>.from(json['imageUrls']) : null,
+      researchSite: json['researchSite'] ?? 'barcelona',
       submittedAt: DateTime.parse(json['submittedAt']),
     );
   }

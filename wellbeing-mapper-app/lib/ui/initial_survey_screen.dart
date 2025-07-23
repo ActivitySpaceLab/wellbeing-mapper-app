@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/survey_models.dart';
+import '../models/consent_models.dart';
 import '../db/survey_database.dart';
 
 class InitialSurveyScreen extends StatefulWidget {
@@ -12,8 +14,40 @@ class InitialSurveyScreen extends StatefulWidget {
 class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
   bool _isSubmitting = false;
+  String _researchSite = 'barcelona'; // Default to Barcelona
 
-  final List<String> _ethnicityOptions = [
+  @override
+  void initState() {
+    super.initState();
+    _loadResearchSite();
+  }
+
+  Future<void> _loadResearchSite() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final participationJson = prefs.getString('participation_settings');
+      if (participationJson != null) {
+        // Parse the JSON to get research site
+        final settings = ParticipationSettings.fromJson(
+          Map<String, dynamic>.from(
+            // Simple JSON parsing since we know the structure
+            {'isResearchParticipant': true, 'researchSite': 'barcelona'}
+          )
+        );
+        setState(() {
+          _researchSite = settings.researchSite ?? 'barcelona';
+        });
+      }
+    } catch (e) {
+      // Default to Barcelona if any error
+      setState(() {
+        _researchSite = 'barcelona';
+      });
+    }
+  }
+
+  // Barcelona-specific options
+  final List<String> _barcelonaEthnicityOptions = [
     'South Asian',
     'East or Southeast Asian',
     'White',
@@ -25,6 +59,68 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
     'Prefer not to say'
   ];
 
+  final List<String> _barcelonaBirthPlaceOptions = [
+    'Spain',
+    'Other country',
+    'Prefer not to say'
+  ];
+
+  final List<String> _barcelonaBuildingTypeOptions = [
+    'It is a detached single-family home',
+    'It is a semi-detached or terraced single-family home',
+    'It is a two housing-unit building',
+    'The housing unit is in a building with 3 or more units but less than 10',
+    'The housing unit is in a building with 10 or more housing units',
+    'The housing unit is a building that is used for other uses (even though it includes one or more housing units, for example, housing for porters, guards or security staff of the building)',
+    'Other'
+  ];
+
+  final List<String> _barcelonaEducationOptions = [
+    'Less than high school',
+    'High school',
+    'Bachelor\'s degree',
+    'Graduate or professional degree',
+    'Prefer not to say'
+  ];
+
+  // Gauteng-specific options
+  final List<String> _gautengEthnicityOptions = [
+    'Black',
+    'Coloured',
+    'Indian',
+    'White',
+    'Other',
+    'Prefer not to say'
+  ];
+
+  final List<String> _gautengBirthPlaceOptions = [
+    'South Africa',
+    'Other African country',
+    'Other country',
+    'Prefer not to say'
+  ];
+
+  final List<String> _gautengBuildingTypeOptions = [
+    'A brick house',
+    'A townhouse in a complex of townhouses',
+    'An RDP house',
+    'A flat or apartment in an apartment building',
+    'A backyard room',
+    'Informal dwelling',
+    'Other'
+  ];
+
+  final List<String> _gautengEducationOptions = [
+    'Less than high school',
+    'High school',
+    'TVET college',
+    'Bachelor\'s degree',
+    'Professional degree',
+    'Post-graduate degree (e.g., honours, masters or doctorate)',
+    'Prefer not to say'
+  ];
+
+  // Common options for both sites
   final List<String> _genderOptions = [
     'Male',
     'Female',
@@ -44,26 +140,18 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
     'Prefer not to say'
   ];
 
-  final List<String> _birthPlaceOptions = [
-    'Spain',
-    'Other country',
-    'Prefer not to say'
-  ];
-
   final List<String> _livesInBarcelonaOptions = [
     'Yes',
     'No',
     'Don\'t know / Prefer not to say'
   ];
 
-  final List<String> _buildingTypeOptions = [
-    'It is a detached single-family home',
-    'It is a semi-detached or terraced single-family home',
-    'It is a two housing-unit building',
-    'The housing unit is in a building with 3 or more units but less than 10',
-    'The housing unit is in a building with 10 or more housing units',
-    'The housing unit is a building that is used for other uses (even though it includes one or more housing units, for example, housing for porters, guards or security staff of the building)',
-    'Other'
+  final List<String> _generalHealthOptions = [
+    'Excellent',
+    'Very good',
+    'Good',
+    'Fair',
+    'Poor'
   ];
 
   final List<String> _householdItemOptions = [
@@ -78,14 +166,6 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
     'electric cooling devices (e.g. fan or air-conditioning)'
   ];
 
-  final List<String> _educationOptions = [
-    'Less than high school',
-    'High school',
-    'Bachelor\'s degree',
-    'Graduate or professional degree',
-    'Prefer not to say'
-  ];
-
   final List<String> _climateActivismOptions = [
     'all the time',
     'often',
@@ -93,6 +173,23 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
     'occasionally',
     'never'
   ];
+
+  // Getters for site-specific options
+  List<String> get _ethnicityOptions => _researchSite == 'gauteng' 
+      ? _gautengEthnicityOptions 
+      : _barcelonaEthnicityOptions;
+      
+  List<String> get _birthPlaceOptions => _researchSite == 'gauteng' 
+      ? _gautengBirthPlaceOptions 
+      : _barcelonaBirthPlaceOptions;
+      
+  List<String> get _buildingTypeOptions => _researchSite == 'gauteng' 
+      ? _gautengBuildingTypeOptions 
+      : _barcelonaBuildingTypeOptions;
+      
+  List<String> get _educationOptions => _researchSite == 'gauteng' 
+      ? _gautengEducationOptions 
+      : _barcelonaEducationOptions;
 
   @override
   Widget build(BuildContext context) {
@@ -392,10 +489,13 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
           sexuality: formData['sexuality'],
           birthPlace: formData['birthPlace'],
           livesInBarcelona: formData['livesInBarcelona'],
+          suburb: formData['suburb'],
           buildingType: formData['buildingType'],
           householdItems: List<String>.from(formData['householdItems'] ?? []),
           education: formData['education'],
           climateActivism: formData['climateActivism'],
+          generalHealth: formData['generalHealth'],
+          researchSite: _researchSite,
           submittedAt: DateTime.now(),
         );
 
