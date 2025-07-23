@@ -99,10 +99,8 @@ class MapViewState extends State<MapView>
 
   void _onLocation(bg.Location location) {
     LatLng ll = new LatLng(location.coords.latitude, location.coords.longitude);
-    // Only move if controller is ready
-    if (_mapController != null) {
-      _mapController.move(ll, _mapOptions.initialZoom);
-    }
+    // Move map to current location
+    _mapController.move(ll, _mapOptions.initialZoom);
     print('hee 2');
     _updateCurrentPositionMarker(ll);
 

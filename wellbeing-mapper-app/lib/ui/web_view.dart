@@ -142,16 +142,6 @@ class _MyWebViewState extends State<MyWebView> {
     );
   }
 
-  JavaScriptChannelParams _toasterJavascriptChannel(BuildContext context) {
-    return JavaScriptChannelParams(
-        name: 'Toaster',
-        onMessageReceived: (JavaScriptMessage message) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message.message)),
-          );
-        });
-  }
-
   void _setFormLocationHistory() async {
     //sleep(Duration(seconds: 1));
 
