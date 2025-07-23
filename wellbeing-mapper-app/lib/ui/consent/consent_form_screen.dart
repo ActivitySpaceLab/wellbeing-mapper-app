@@ -129,11 +129,18 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           ? Center(child: CircularProgressIndicator())
           : FormBuilder(
               key: _formKey,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.all(16),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight - 32, // Account for padding
+                      ),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
                     Card(
                       color: Colors.blue[50],
                       child: Padding(
@@ -314,8 +321,12 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
     );

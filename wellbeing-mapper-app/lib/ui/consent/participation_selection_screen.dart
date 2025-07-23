@@ -92,35 +92,36 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Icon(
-                    Icons.map,
-                    size: 80,
-                    color: Colors.blueGrey,
-                  ),
-                  SizedBox(height: 32),
-                  Text(
-                    'Welcome to Wellbeing Mapper',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blueGrey[800],
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(height: 40), // Top spacing
+                    Icon(
+                      Icons.map,
+                      size: 80,
+                      color: Colors.blueGrey,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Track your wellbeing and explore your activity spaces',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[600],
+                    SizedBox(height: 32),
+                    Text(
+                      'Welcome to Wellbeing Mapper',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueGrey[800],
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 48),
+                    SizedBox(height: 16),
+                    Text(
+                      'Track your wellbeing and explore your activity spaces',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 48),
                   
                   // Private Use Section
                   Card(
@@ -223,8 +224,12 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
                     ),
                     textAlign: TextAlign.center,
                   ),
-                ],
-              ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
     );
   }

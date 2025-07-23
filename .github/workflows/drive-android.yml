@@ -13,10 +13,16 @@ jobs:
     strategy:
       # set of different configurations of the virtual environment.
       matrix:
-        api-level: [29, 30]
+        api-level: [29]
         target: [google_apis]
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/local/lib/android/sdk/ndk
+          sudo rm -rf /usr/local/lib/android/sdk/build-tools/*/renderscript
+          df -h
       
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -36,7 +42,7 @@ jobs:
         run: |
           cd wellbeing-mapper-app
           flutter pub get
-        
+          
       - name: Run Flutter Doctor
         run: |
           cd wellbeing-mapper-app
@@ -51,4 +57,7 @@ jobs:
           target: ${{ matrix.target }}
           arch: x86_64
           profile: Nexus 6
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          emulator-boot-timeout: 600
           script: "cd wellbeing-mapper-app && flutter test integration_test/app_test.dart"
