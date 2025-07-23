@@ -4,14 +4,13 @@
 
 How old are you?
 
-Do you identify yourself as: (Select all that apply)
-■	South Asian
-■	East or Southeast Asian
-■	White
-■	Latina/o
-■	Maghrebi or Arab
+In which suburb or community in Gauteng do you live?
+
+Do you identify yourself as: 
 ■	Black
-■	Romani or Gypsy
+■	Coloured
+■	Indian
+■	White
 ■	Other
 ■	Prefer not to say
 
@@ -34,22 +33,19 @@ Do you identify yourself as:
 
 
 Where were you born?
-■	Spain
+■	South Africa
+■	Other African country
 ■	Other country
 ■	Prefer not to say
 
-Do you currently live in Barcelona?
-■	Yes
-■	No
-■	Don't know / Prefer not to say
 
 What best describes the type of building that you live in? Please choose only one of the following:
-■	It is a detached single-family home
-■	It is a semi-detached or terraced single-family home
-■	It is a two housing-unit building
-■	The housing unit is in a building with 3 or more units but less than 10
-■	The housing unit is in a building with 10 or more housing units
-■	The housing unit is a building that is used for other uses (even though it includes one or more housing units, for example, housing for porters, guards or security staff of the building)
+■	A brick house
+■	A townhouse in a complex of townhouses
+■	An RDP house
+■	A flat or apartment in an apartment building
+■	A backyard room 
+■	Informal dwelling
 ■	Other
 
 Does the household that you live in have any of the following? (mark all that apply)
@@ -66,8 +62,10 @@ Does the household that you live in have any of the following? (mark all that ap
 What is your highest level of completed education?
 ■	Less than high school
 ■	High school
+■	TVET college 
 ■	Bachelor's degree
-■	Graduate or professional degree
+■	Professional degree
+■	Post-graduate degree (e.g., honours, masters or doctorate)
 ■	Prefer not to say
 
 Are you involved in climate activism?
@@ -76,6 +74,7 @@ Are you involved in climate activism?
 ■	sometimes 
 ■	occasionally 
 ■	never
+ 
 
 ## Questions to ask on surveys every 2 weeks:
 
@@ -94,18 +93,26 @@ What did you do with your time in the last two weeks? Mark ALL the choices that 
 12 = Volunteered
 13 = Exercised
 14 = Vacation
-  15 =  Other (specify ____________________________)
+15 =  Other (specify ____________________________)
 
 In the last two weeks, did you live alone or with others?	
 1 = alone
 2 = others
 
 What is your current relationship status? (Select the single best option) 
+
 1 = Single
 2 = In a committed relationship/married
 3 = Separated 
 4 = Divorced 
 5 = Widowed 
+
+Would you say that in general your health is:
+1 = Excellent
+2 = Very good
+3 = Good
+4 = Fair
+5 = Poor
 
 How have you felt in the past 2 weeks: 
 
@@ -185,8 +192,7 @@ My family know a lot about me.
 4 = Quite a bit
 5 = A lot
 
-If I am hungry, I can get food to eat.	
-1 = Not at all
+If I am hungry, I can get food to eat.	1 = Not at all
 2 = A little
 3 = Somewhat	
 4 = Quite a bit
@@ -241,15 +247,13 @@ I am treated fairly in my community.
 4 = Quite a bit
 5 = A lot
 
-I have opportunities to show others that I can act responsibly.	
-1 = Not at all
+I have opportunities to show others that I can act responsibly.	1 = Not at all
 2 = A little
 3 = Somewhat	
 4 = Quite a bit
 5 = A lot
 
-I feel secure when I am with my family.	
-1 = Not at all
+I feel secure when I am with my family.	1 = Not at all
 2 = A little
 3 = Somewhat	
 4 = Quite a bit
@@ -271,10 +275,11 @@ I enjoy my family's/partner’s cultural and family traditions.
 
 Digital diary space
 
-Please respond – using text or a voice note or images with an explanation – to the following three prompts
-
+Please respond to the following three prompts
 What environmental challenges (e.g., poor air quality, heat, extreme weather) did you experience in the past 2 weeks?
 
 How stressful were these environmental challenges for you?
 
+
 Who or what helped you to manage/cope with these environmental challenges?
+
