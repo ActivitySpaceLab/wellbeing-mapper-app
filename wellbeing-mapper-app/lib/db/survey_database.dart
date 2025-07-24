@@ -22,8 +22,9 @@ class SurveyDatabase {
     String path = join(await getDatabasesPath(), 'survey_database.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Bumped version to trigger migration
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -32,20 +33,16 @@ class SurveyDatabase {
     await db.execute('''
       CREATE TABLE consent_responses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        participant_code TEXT NOT NULL,
-        has_read_information INTEGER NOT NULL,
-        understands INTEGER NOT NULL,
-        fulfills_criteria INTEGER NOT NULL,
-        voluntary_participation INTEGER NOT NULL,
-        general_consent INTEGER NOT NULL,
-        lime_survey_consent INTEGER NOT NULL,
-        race_ethnicity_consent INTEGER NOT NULL,
-        health_consent INTEGER NOT NULL,
-        sexual_orientation_consent INTEGER NOT NULL,
-        location_consent INTEGER NOT NULL,
-        data_transfer_consent INTEGER NOT NULL,
-        consented_at TEXT NOT NULL,
         participant_uuid TEXT NOT NULL UNIQUE,
+        informed_consent INTEGER NOT NULL,
+        data_processing INTEGER NOT NULL,
+        location_data INTEGER NOT NULL,
+        survey_data INTEGER NOT NULL,
+        data_retention INTEGER NOT NULL,
+        data_sharing INTEGER NOT NULL,
+        voluntary_participation INTEGER NOT NULL,
+        consented_at TEXT NOT NULL,
+        participant_signature TEXT NOT NULL,
         synced INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
@@ -138,6 +135,67 @@ class SurveyDatabase {
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Migrate consent_responses table to new schema
+      // First, check if the table exists and if it has the old structure
+      final List<Map<String, dynamic>> tableInfo = await db.rawQuery(
+        "PRAGMA table_info(consent_responses)"
+      );
+      
+      // Check if table has old column names
+      bool hasOldSchema = tableInfo.any((column) => column['name'] == 'participant_code');
+      
+      if (hasOldSchema) {
+        // Create new table with correct schema
+        await db.execute('''
+          CREATE TABLE consent_responses_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            participant_uuid TEXT NOT NULL UNIQUE,
+            informed_consent INTEGER NOT NULL,
+            data_processing INTEGER NOT NULL,
+            location_data INTEGER NOT NULL,
+            survey_data INTEGER NOT NULL,
+            data_retention INTEGER NOT NULL,
+            data_sharing INTEGER NOT NULL,
+            voluntary_participation INTEGER NOT NULL,
+            consented_at TEXT NOT NULL,
+            participant_signature TEXT NOT NULL,
+            synced INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+          )
+        ''');
+        
+        // Migrate data from old table to new table (mapping old columns to new ones)
+        await db.execute('''
+          INSERT INTO consent_responses_new (
+            participant_uuid, informed_consent, data_processing, location_data,
+            survey_data, data_retention, data_sharing, voluntary_participation,
+            consented_at, participant_signature, synced, created_at
+          )
+          SELECT 
+            participant_uuid,
+            has_read_information,
+            general_consent,
+            location_consent,
+            general_consent,
+            general_consent,
+            data_transfer_consent,
+            voluntary_participation,
+            consented_at,
+            participant_code,
+            synced,
+            created_at
+          FROM consent_responses
+        ''');
+        
+        // Drop old table and rename new table
+        await db.execute('DROP TABLE consent_responses');
+        await db.execute('ALTER TABLE consent_responses_new RENAME TO consent_responses');
+      }
+    }
   }
 
   // Initial Survey Methods

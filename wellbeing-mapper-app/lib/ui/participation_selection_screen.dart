@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../models/consent_models.dart';
 
 class ParticipationSelectionScreen extends StatefulWidget {
@@ -251,7 +252,7 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
   Future<void> _savePrivateUserSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final settings = ParticipationSettings.privateUser();
-    await prefs.setString('participation_settings', settings.toJson().toString());
+    await prefs.setString('participation_settings', jsonEncode(settings.toJson()));
   }
 
   void _navigateToMainApp() {

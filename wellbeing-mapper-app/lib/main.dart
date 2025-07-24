@@ -154,6 +154,10 @@ void main() {
     await NotificationService.initialize();
 
     runApp(new MyApp());
+  }).catchError((error) {
+    print('Error initializing app: $error');
+    // Still run the app even if there's an error
+    runApp(new MyApp());
   });
 
   /// Register BackgroundGeolocation headless-task.
@@ -197,8 +201,51 @@ class MyApp extends StatelessWidget {
         // from the list (English, in this case).
         return supportedLocales.first;
       },
-      initialRoute: '/',
+      home: AppInitializer(),
       onGenerateRoute: RouteGenerator.generateRoute,
+    );
+  }
+}
+
+/// Widget to determine which screen to show on app startup
+class AppInitializer extends StatefulWidget {
+  @override
+  _AppInitializerState createState() => _AppInitializerState();
+}
+
+class _AppInitializerState extends State<AppInitializer> {
+  @override
+  void initState() {
+    super.initState();
+    _determineInitialRoute();
+  }
+
+  void _determineInitialRoute() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? participationSettings = prefs.getString('participation_settings');
+      
+      if (participationSettings != null && participationSettings.isNotEmpty) {
+        // User has completed participation selection, go to home
+        Navigator.of(context).pushReplacementNamed('/');
+      } else {
+        // User hasn't selected participation mode yet
+        Navigator.of(context).pushReplacementNamed('/participation_selection');
+      }
+    } catch (error) {
+      print('Error determining initial route: $error');
+      // Default to participation selection on error
+      Navigator.of(context).pushReplacementNamed('/participation_selection');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Show a loading screen while determining the route
+    return Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }

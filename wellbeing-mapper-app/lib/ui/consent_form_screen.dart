@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
 import '../models/consent_models.dart';
 import '../db/survey_database.dart';
 
@@ -363,7 +364,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
       // Save participation settings
       final prefs = await SharedPreferences.getInstance();
       final settings = ParticipationSettings.researchParticipant(widget.participantCode, widget.researchSite);
-      await prefs.setString('participation_settings', settings.toJson().toString());
+      await prefs.setString('participation_settings', jsonEncode(settings.toJson()));
 
       // Show success and navigate
       _showSuccessDialog(uuid);

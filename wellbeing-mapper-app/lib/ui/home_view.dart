@@ -81,108 +81,127 @@ class HomeViewState extends State<HomeView>
   }
 
   void initPlatformState() async {
-    SharedPreferences prefs = await _prefs;
-    String? sampleId = prefs.getString("sample_id");
-    String? userUUID = prefs.getString("user_uuid");
+    try {
+      SharedPreferences prefs = await _prefs;
+      String? sampleId = prefs.getString("sample_id");
+      String? userUUID = prefs.getString("user_uuid");
+      String? participationSettings = prefs.getString("participation_settings");
 
-    if (sampleId == null || userUUID == null) {
-      prefs.setString("user_uuid", Uuid().v4());
-      prefs.setString("sample_id", ENV.DEFAULT_SAMPLE_ID);
+      if (sampleId == null || userUUID == null) {
+        prefs.setString("user_uuid", Uuid().v4());
+        prefs.setString("sample_id", ENV.DEFAULT_SAMPLE_ID);
+        userUUID = prefs.getString("user_uuid");
+        sampleId = prefs.getString("sample_id");
+      }
+
+      // Only configure background services if user has completed participation selection
+      if (participationSettings != null && participationSettings.isNotEmpty) {
+        _configureBackgroundGeolocation(userUUID, sampleId);
+        _configureBackgroundFetch();
+      } else {
+        print('Participation settings not found, skipping background service configuration');
+      }
+    } catch (error) {
+      print('Error in initPlatformState: $error');
     }
-
-    _configureBackgroundGeolocation(userUUID, sampleId);
-    _configureBackgroundFetch();
   }
 
   // ignore: non_constant_identifier_names
   void _configureBackgroundGeolocation(user_uuid, sample_id) async {
-    // 1.  Listen to events (See docs for all 13 available events).
-    bg.BackgroundGeolocation.onLocation(_onLocation, _onLocationError);
-    bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
+    try {
+      // 1.  Listen to events (See docs for all 13 available events).
+      bg.BackgroundGeolocation.onLocation(_onLocation, _onLocationError);
+      bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
 //    bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
-    bg.BackgroundGeolocation.onProviderChange(_onProviderChange);
-    bg.BackgroundGeolocation.onHttp(_onHttp);
-    bg.BackgroundGeolocation.onConnectivityChange(_onConnectivityChange);
-    bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
-    bg.BackgroundGeolocation.onGeofence(_onGeofence);
-    bg.BackgroundGeolocation.onSchedule(_onSchedule);
-    bg.BackgroundGeolocation.onPowerSaveChange(_onPowerSaveChange);
-    bg.BackgroundGeolocation.onEnabledChange(_onEnabledChange);
-    bg.BackgroundGeolocation.onNotificationAction(_onNotificationAction);
+      bg.BackgroundGeolocation.onProviderChange(_onProviderChange);
+      bg.BackgroundGeolocation.onHttp(_onHttp);
+      bg.BackgroundGeolocation.onConnectivityChange(_onConnectivityChange);
+      bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
+      bg.BackgroundGeolocation.onGeofence(_onGeofence);
+      bg.BackgroundGeolocation.onSchedule(_onSchedule);
+      bg.BackgroundGeolocation.onPowerSaveChange(_onPowerSaveChange);
+      bg.BackgroundGeolocation.onEnabledChange(_onEnabledChange);
+      bg.BackgroundGeolocation.onNotificationAction(_onNotificationAction);
 
-    // 2.  Configure the plugin
-    bg.BackgroundGeolocation.ready(bg.Config(
-            // Convenience option to automatically configure the SDK to post to Transistor Demo server.
-            // Logging & Debug
-            reset: false,
-            debug: false,
-            logLevel: bg.Config.LOG_LEVEL_VERBOSE,
-            // Geolocation options
-            desiredAccuracy: bg.Config.DESIRED_ACCURACY_NAVIGATION,
-            distanceFilter: 10.0,
-            stopTimeout: 1,
-            // HTTP & Persistence
-            autoSync: false,
-            persistMode: bg.Config.PERSIST_MODE_ALL,
-            maxDaysToPersist: 30,
-            maxRecordsToPersist: -1,
-            // Application options
-            stopOnTerminate: false,
-            startOnBoot: true,
-            enableHeadless: true,
-            heartbeatInterval: 60))
-        .then((bg.State state) {
-      print('[ready] ${state.toMap()}');
+      // 2.  Configure the plugin
+      bg.BackgroundGeolocation.ready(bg.Config(
+              // Convenience option to automatically configure the SDK to post to Transistor Demo server.
+              // Logging & Debug
+              reset: false,
+              debug: false,
+              logLevel: bg.Config.LOG_LEVEL_VERBOSE,
+              // Geolocation options
+              desiredAccuracy: bg.Config.DESIRED_ACCURACY_NAVIGATION,
+              distanceFilter: 10.0,
+              stopTimeout: 1,
+              // HTTP & Persistence
+              autoSync: false,
+              persistMode: bg.Config.PERSIST_MODE_ALL,
+              maxDaysToPersist: 30,
+              maxRecordsToPersist: -1,
+              // Application options
+              stopOnTerminate: false,
+              startOnBoot: true,
+              enableHeadless: true,
+              heartbeatInterval: 60))
+          .then((bg.State state) {
+        print('[ready] ${state.toMap()}');
 
-      if (state.schedule!.isNotEmpty) {
-        bg.BackgroundGeolocation.startSchedule();
-      }
-      setState(() {
-        _enabled = state.enabled;
-        //_isMoving = state.isMoving!;
+        if (state.schedule!.isNotEmpty) {
+          bg.BackgroundGeolocation.startSchedule();
+        }
+        setState(() {
+          _enabled = state.enabled;
+          //_isMoving = state.isMoving!;
+        });
+      }).catchError((error) {
+        print('[ready] ERROR: $error');
       });
-    }).catchError((error) {
-      print('[ready] ERROR: $error');
-    });
+    } catch (error) {
+      print('[_configureBackgroundGeolocation] ERROR: $error');
+    }
   }
 
   // Configure BackgroundFetch (not required by BackgroundGeolocation).
   void _configureBackgroundFetch() async {
-    print("test 6");
-    BackgroundFetch.configure(
-        BackgroundFetchConfig(
-            minimumFetchInterval: 15,
-            startOnBoot: true,
-            stopOnTerminate: false,
-            enableHeadless: true,
-            requiresStorageNotLow: false,
-            requiresBatteryNotLow: false,
-            requiresCharging: false,
-            requiresDeviceIdle: false,
-            requiredNetworkType: NetworkType.NONE), (String taskId) async {
-      print("[BackgroundFetch] received event $taskId");
-      print("test 7");
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      int count = 0;
-      if (prefs.get("fetch-count") != null) {
-        count = prefs.getInt("fetch-count")!;
-      }
-      prefs.setInt("fetch-count", ++count);
-      print('[BackgroundFetch] count: $count');
+    try {
+      print("Configuring BackgroundFetch");
+      BackgroundFetch.configure(
+          BackgroundFetchConfig(
+              minimumFetchInterval: 15,
+              startOnBoot: true,
+              stopOnTerminate: false,
+              enableHeadless: true,
+              requiresStorageNotLow: false,
+              requiresBatteryNotLow: false,
+              requiresCharging: false,
+              requiresDeviceIdle: false,
+              requiredNetworkType: NetworkType.NONE), (String taskId) async {
+        print("[BackgroundFetch] received event $taskId");
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        int count = 0;
+        if (prefs.get("fetch-count") != null) {
+          count = prefs.getInt("fetch-count")!;
+        }
+        prefs.setInt("fetch-count", ++count);
+        print('[BackgroundFetch] count: $count');
 
-      //If condition below commented out by Otis, not sure how or why taskId would have this value
-      //if (taskId == 'flutter_background_fetch') {
-      // Test scheduling a custom-task in fetch event.
-      BackgroundFetch.scheduleTask(TaskConfig(
-          taskId: "com.transistorsoft.wellbeingmapper",
-          delay: 5000,
-          periodic: false,
-          forceAlarmManager: true,
-          stopOnTerminate: false,
-          enableHeadless: true));
-      //}
-      BackgroundFetch.finish(taskId);
-    });
+        //If condition below commented out by Otis, not sure how or why taskId would have this value
+        //if (taskId == 'flutter_background_fetch') {
+        // Test scheduling a custom-task in fetch event.
+        BackgroundFetch.scheduleTask(TaskConfig(
+            taskId: "com.transistorsoft.wellbeingmapper",
+            delay: 5000,
+            periodic: false,
+            forceAlarmManager: true,
+            stopOnTerminate: false,
+            enableHeadless: true));
+        //}
+        BackgroundFetch.finish(taskId);
+      });
+    } catch (error) {
+      print('[_configureBackgroundFetch] ERROR: $error');
+    }
 /*
     // Test scheduling a custom-task.
     BackgroundFetch.scheduleTask(TaskConfig(
