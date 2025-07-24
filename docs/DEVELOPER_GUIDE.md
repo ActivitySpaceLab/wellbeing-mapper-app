@@ -22,7 +22,8 @@ This application supports the Planet4Health research initiative "[Mental wellbei
 8. [Development Workflow](#development-workflow)
 9. [Server Setup](#server-setup)
 10. [Testing](#testing)
-11. [Deployment](#deployment)
+11. [Screenshots & Visual Documentation](#screenshots--visual-documentation)
+12. [Deployment](#deployment)
 
 ## Architecture Overview
 
@@ -552,6 +553,69 @@ flutter test test/widget/
 # Integration tests
 flutter test integration_test/
 ```
+
+## Screenshots & Visual Documentation
+
+### Automated Screenshot System
+
+The app includes a comprehensive screenshot system for documenting the user interface and generating visual documentation. This system is particularly useful for:
+
+- **Feature Documentation**: Visual guides for new developers
+- **QA Testing**: Verifying UI consistency across updates
+- **Research Documentation**: Screenshots for research team reports
+- **App Store Materials**: Generating store listing screenshots
+
+### Quick Start
+
+Generate screenshots using the automated system:
+
+```bash
+# Show instructions and setup environment
+./generate_screenshots.sh
+
+# Manual screenshot capture workflow
+./generate_screenshots.sh --manual
+
+# Automated capture (experimental)
+./generate_screenshots.sh --automated
+
+# Show detailed capture instructions
+./generate_screenshots.sh --instructions
+```
+
+### Key Features Captured
+
+The screenshot system documents all major app workflows:
+
+1. **🔘 Participation Selection**: Private, Barcelona, and Gauteng research modes
+2. **📝 Survey Interface**: Site-specific surveys and form interactions
+3. **🗺️ Map Views**: Location tracking and visualization
+4. **⚙️ Settings**: Data upload, privacy controls, and configuration
+5. **📊 Data Management**: Upload status and encryption indicators
+6. **ℹ️ Information Screens**: Consent forms, privacy policy, help
+
+### Screenshot Organization
+
+Screenshots are automatically organized into:
+- `screenshots/manual/` - Manually captured screenshots
+- `screenshots/automated/` - Automated capture results
+- `screenshots/organized/` - Auto-organized by type and date
+- `screenshots/report.html` - Interactive HTML report
+
+### Integration with Development
+
+The screenshot system integrates with the development workflow:
+
+```bash
+# Capture screenshots after feature implementation
+./generate_screenshots.sh --automated
+
+# Update visual documentation
+git add screenshots/
+git commit -m "Update app screenshots for new feature"
+```
+
+For detailed instructions and advanced usage, see [`screenshots/README.md`](../screenshots/README.md).
 
 ## Deployment
 

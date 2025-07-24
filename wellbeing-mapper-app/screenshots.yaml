@@ -1,0 +1,81 @@
+# Screenshots configuration file
+# This defines the devices and settings for automated screenshot capture
+
+# Device configurations for screenshot testing
+devices:
+  # iOS Devices
+  - name: 'iPhone-15-Pro'
+    platform: ios
+    size: '393x852'
+    pixel_ratio: 3.0
+    
+  - name: 'iPhone-15-Pro-Max'
+    platform: ios  
+    size: '430x932'
+    pixel_ratio: 3.0
+    
+  - name: 'iPad-Pro-12.9'
+    platform: ios
+    size: '1024x1366'
+    pixel_ratio: 2.0
+    
+  # Android Devices  
+  - name: 'Pixel-8'
+    platform: android
+    size: '412x892'
+    pixel_ratio: 2.75
+    
+  - name: 'Pixel-8-Pro'
+    platform: android
+    size: '448x998'
+    pixel_ratio: 2.94
+    
+  - name: 'Samsung-Galaxy-S24'
+    platform: android
+    size: '384x832'
+    pixel_ratio: 3.0
+
+# Screenshot settings
+screenshots:
+  # Output directory for screenshots
+  path: 'screenshots/'
+  
+  # Naming pattern for screenshot files
+  # Available variables: {name}, {platform}, {device}, {timestamp}
+  naming: '{device}_{name}'
+  
+  # Image format (png, jpg)
+  format: 'png'
+  
+  # Screenshot quality (1-100 for jpg, ignored for png)
+  quality: 95
+  
+  # Frame the device screenshots with device bezels
+  frame: true
+  
+  # Background color for framed screenshots (hex color)
+  background: '#FFFFFF'
+
+# Test configuration
+tests:
+  # Integration test file to run
+  test_file: 'integration_test/screenshot_test.dart'
+  
+  # Timeout for each test (in seconds)
+  timeout: 120
+  
+  # Flutter drive arguments
+  flutter_args:
+    - '--dart-define=FLUTTER_TEST_MODE=true'
+    - '--release'
+
+# Post-processing options
+processing:
+  # Automatically organize screenshots by device
+  organize_by_device: true
+  
+  # Create a combined image showing all devices
+  create_showcase: true
+  
+  # Generate an HTML report
+  generate_report: true
