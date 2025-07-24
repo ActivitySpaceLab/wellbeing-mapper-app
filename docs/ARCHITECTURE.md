@@ -4,6 +4,8 @@
 
 Wellbeing Mapper follows a layered architecture pattern designed for maintainability, testability, and scalability. The application is built using Flutter and implements a clean separation of concerns to support mental wellbeing mapping in environmental & climate context as part of the Planet4Health research project.
 
+The architecture now includes multi-site research participation with end-to-end encryption for secure data transmission to research servers in Barcelona, Spain and Gauteng, South Africa.
+
 ## Architectural Layers
 
 ### 1. Presentation Layer (`ui/`)
@@ -11,9 +13,12 @@ The presentation layer handles all user interface components and user interactio
 
 #### Key Components:
 - **HomeView**: Main application screen with location tracking controls
-- **MapView**: Interactive map displaying location history
+- **MapView**: Interactive map displaying location history  
 - **ListView**: Chronological list of recorded locations
-- **ProjectViews**: Project management and participation interfaces
+- **ParticipationSelectionScreen**: Three-way research participation selection
+- **ConsentFormScreen**: Dynamic site-specific consent forms
+- **DataUploadScreen**: Encrypted research data upload interface
+- **Survey Screens**: Site-specific survey interfaces
 - **WebView**: Survey and external content integration
 
 #### Responsibilities:
@@ -21,33 +26,40 @@ The presentation layer handles all user interface components and user interactio
 - User input handling
 - State management for UI components
 - Navigation between screens
+- Research participation workflow management
 
-### 2. Business Logic Layer (`models/` and core services)
+### 2. Business Logic Layer (`models/`, `services/`)
 This layer contains the application's business rules and data processing logic.
 
 #### Key Components:
 - **RouteGenerator**: Application navigation and routing
 - **CustomLocation**: Location data processing and management
-- **Project**: Research project participation logic
+- **DataUploadService**: Encrypted data transmission service
+- **ConsentModels**: Research consent and participation management
+- **SurveyModels**: Site-specific survey data structures
 - **LocationManager**: Location tracking coordination
 
 #### Responsibilities:
 - Data validation and processing
+- Encryption and security operations
 - Business rule implementation
 - Service coordination
-- State management
+- Multi-site research logic
+- Upload scheduling and synchronization
 
 ### 3. Data Layer (`db/` and `models/`)
 The data layer manages all data persistence and retrieval operations.
 
 #### Key Components:
-- **Database Classes**: SQLite database management
-- **Model Classes**: Data structure definitions
+- **SurveyDatabase**: Enhanced SQLite database with location tracking
+- **Model Classes**: Data structure definitions with encryption support
 - **Storage Services**: File and preference management
+- **LocationTrack**: Location data for research uploads
 
 #### Responsibilities:
-- Data persistence
-- Database operations
+- Data persistence with encryption support
+- Database operations for surveys and location tracking
+- Local data synchronization
 - Data model definitions
 - Cache management
 
@@ -56,7 +68,7 @@ This layer handles platform-specific functionality and external service integrat
 
 #### Key Components:
 - **Background Geolocation**: Native location tracking
-- **Authentication Services**: User identification
+- **Authentication Services**: User identification  
 - **Environment Configuration**: App settings
 - **External APIs**: Third-party service integration
 
@@ -66,24 +78,67 @@ This layer handles platform-specific functionality and external service integrat
 - Background processing
 - Hardware abstraction
 
+## Security & Encryption Architecture
+
+### Hybrid Encryption System
+The app implements a sophisticated encryption system for secure research data transmission:
+
+```
+Local Data → AES-256-GCM → RSA-4096-OAEP → Base64 → HTTPS → Research Server
+     ↓              ↓              ↓           ↓         ↓
+Survey Responses   Fast Encryption  Key Security  Transit   Secure Storage
+Location Tracks    Large Data      Public Key    Format    Private Key Only
+Demographics       Performance     Exchange      Network   Decryption
+```
+
+#### Encryption Components:
+- **DataUploadService**: Core encryption and upload coordination
+- **ServerConfig**: Research site configuration with embedded public keys
+- **EncryptionResult**: Encryption operation results and metadata
+- **LocationTrack**: Location data structures for research uploads
+
+#### Security Features:
+- **RSA-4096 Public Key Cryptography**: Asymmetric encryption for key exchange
+- **AES-256-GCM**: Symmetric encryption for data payload (authenticated encryption)
+- **Unique Session Keys**: Fresh AES key generated for each upload
+- **Site Isolation**: Separate key pairs for Barcelona and Gauteng research sites
+- **Forward Secrecy**: Compromised uploads don't affect other uploads
+
+### Multi-Site Research Architecture
+```
+App Configuration:
+├── Barcelona Research Site
+│   ├── Public Key (embedded in app)
+│   ├── Server: barcelona-research.domain.com
+│   └── Site-specific surveys and consent
+├── Gauteng Research Site  
+│   ├── Public Key (embedded in app)
+│   ├── Server: gauteng-research.domain.com
+│   └── Site-specific surveys and consent
+└── Private Mode
+    └── No data transmission (local only)
+```
+
 ## Component Interaction Diagram
 
 ```mermaid
 graph TB
     subgraph "Presentation Layer"
-        A[HomeView]
-        B[MapView]
-        C[ListView]
-        D[ProjectViews]
-        E[WebView]
+        A[ParticipationSelectionScreen]
+        B[ConsentFormScreen]
+        C[DataUploadScreen]
+        D[HomeView]
+        E[MapView]
+        F[SurveyScreens]
     end
     
     subgraph "Business Logic Layer"
-        F[RouteGenerator]
-        G[CustomLocation]
-        H[Project]
-        I[LocationManager]
-        J[ProjectManager]
+        G[DataUploadService]
+        H[ConsentModels]
+        I[SurveyModels]
+        J[RouteGenerator]
+        K[CustomLocation]
+        L[LocationManager]
     end
     
     subgraph "Data Layer"

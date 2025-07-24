@@ -2,7 +2,452 @@
 
 ## Overview
 
-This document provides detailed information about the Wellbeing Mapper codebase APIs, including class methods, database schemas, and integration points. This reference is intended for developers working on the codebase for the Planet4Health project case study on mental wellbeing in environmental & climate context.
+This document provides detailed information about the Wellbeing Mapper codebase APIs, including class methods, database schemas, encryption services, and integration points. This reference is intended for developers working on the codebase for the Planet4Health project case study on mental wellbeing in environmental & climate context.
+
+The app now supports multi-site research participation with end-to-end encryption for secure data transmission to research servers in Barcelona, Spain and Gauteng, South Africa.
+
+## Research Participation APIs
+
+### ParticipationSettings
+
+Manages user participation preferences and research site configuration.
+
+```dart
+class ParticipationSettings {
+  final bool isResearchParticipant;
+  final String? participantCode;        // Site-specific participant identifier
+  final String? researchSite;          // 'barcelona' or 'gauteng'
+  final DateTime createdAt;
+
+  // Factory constructors
+  factory ParticipationSettings.privateUser()
+  factory ParticipationSettings.researchParticipant(String participantCode, String researchSite)
+  
+  // JSON serialization
+  Map<String, dynamic> toJson()
+  factory ParticipationSettings.fromJson(Map<String, dynamic> json)
+}
+```
+
+### ConsentResponse
+
+Handles informed consent for research participation with detailed consent tracking.
+
+```dart
+class ConsentResponse {
+  final String participantUuid;         // Anonymous UUID identifier
+  final bool informedConsent;
+  final bool dataProcessing;
+  final bool locationData;
+  final bool surveyData;
+  final bool dataRetention;
+  final bool dataSharing;
+  final bool voluntaryParticipation;
+  final DateTime consentedAt;
+  final String participantSignature;
+
+  // Validation
+  bool hasGivenValidConsent()
+  
+  // JSON serialization
+  Map<String, dynamic> toJson()
+  factory ConsentResponse.fromJson(Map<String, dynamic> json)
+}
+```
+
+## Encryption & Data Upload APIs
+
+### DataUploadService
+
+Core service for encrypting and uploading research data to secure servers.
+
+```dart
+class DataUploadService {
+  // Configuration
+  static const Map<String, ServerConfig> _serverConfigs = {
+    'barcelona': ServerConfig(...),
+    'gauteng': ServerConfig(...)
+  };
+
+  // Main upload method
+  static Future<UploadResult> uploadParticipantData({
+    required String researchSite,
+    required List<InitialSurveyResponse> initialSurveys,
+    required List<RecurringSurveyResponse> recurringSurveys,
+    required List<LocationTrack> locationTracks,
+    required String participantUuid,
+  })
+
+  // Encryption
+  static Future<EncryptionResult> encryptData(Map<String, dynamic> data, String researchSite)
+  
+  // Upload scheduling
+  static Future<bool> shouldUploadData(String researchSite)
+  static Future<void> markUploadCompleted(String researchSite, String uploadId)
+  
+  // Location data management
+  static Future<List<LocationTrack>> getRecentLocationTracks()
+}
+```
+
+#### ServerConfig
+
+Configuration for research site servers with embedded public keys.
+
+```dart
+class ServerConfig {
+  final String baseUrl;              // HTTPS server URL
+  final String uploadEndpoint;       // API endpoint path
+  final String publicKey;            // RSA-4096 public key (PEM format)
+}
+```
+
+#### EncryptionResult
+
+Result of data encryption operations.
+
+```dart
+class EncryptionResult {
+  final bool success;
+  final String? encryptedData;       // Base64 encoded: rsa_key|aes_data
+  final Map<String, dynamic>? encryptionMetadata;
+  final String? error;
+}
+```
+
+#### UploadResult
+
+Result of data upload operations to research servers.
+
+```dart
+class UploadResult {
+  final bool success;
+  final String? uploadId;            // UUID for tracking uploads
+  final String? error;
+  final DateTime? uploadedAt;
+}
+```
+
+### LocationTrack
+
+Location tracking data structure for research uploads.
+
+```dart
+class LocationTrack {
+  final double latitude;
+  final double longitude;
+  final double? accuracy;            // Accuracy in meters
+  final DateTime timestamp;
+  final bool synced;                 // Upload synchronization status
+
+  Map<String, dynamic> toJson()
+  factory LocationTrack.fromJson(Map<String, dynamic> json)
+}
+```
+
+## Survey System APIs
+
+### Enhanced Survey Models
+
+Survey models now support site-specific questions and research site tracking.
+
+#### InitialSurveyResponse
+
+```dart
+class InitialSurveyResponse {
+  final String id;
+  final String participantUuid;
+  final String? researchSite;       // NEW: Site-specific surveys
+  final int wellbeingScore;
+  final int stressLevel;
+  final String mood;
+  final List<String> activities;
+  final String? ethnicity;          // Site-specific options
+  final String? buildingType;       // Site-specific options
+  final DateTime submittedAt;
+  
+  Map<String, dynamic> toJson()
+  factory InitialSurveyResponse.fromJson(Map<String, dynamic> json)
+}
+```
+
+#### RecurringSurveyResponse
+
+```dart
+class RecurringSurveyResponse {
+  final String id;
+  final String participantUuid;
+  final String? researchSite;       // NEW: Site-specific surveys
+  final int wellbeingScore;
+  final int stressLevel;
+  final String mood;
+  final String? suburb;             // Gauteng-specific
+  final String? generalHealth;      // Gauteng-specific
+  final DateTime submittedAt;
+  
+  Map<String, dynamic> toJson()
+  factory RecurringSurveyResponse.fromJson(Map<String, dynamic> json)
+}
+```
+
+## Database APIs
+
+### SurveyDatabase
+
+Enhanced database class with location tracking and encryption support.
+
+```dart
+class SurveyDatabase {
+  // Survey operations
+  Future<int> insertInitialSurvey(InitialSurveyResponse survey)
+  Future<List<InitialSurveyResponse>> getInitialSurveys()
+  Future<int> insertRecurringSurvey(RecurringSurveyResponse survey)
+  Future<List<RecurringSurveyResponse>> getRecurringSurveys()
+  
+  // Consent operations
+  Future<int> insertConsent(ConsentResponse consent)
+  Future<ConsentResponse?> getConsent()
+  
+  // Location tracking (NEW)
+  Future<int> insertLocationTrack(Map<String, dynamic> locationData)
+  Future<List<LocationTrack>> getLocationTracksSince(DateTime since)
+  Future<List<LocationTrack>> getAllLocationTracks()
+  Future<void> markLocationTracksAsSynced(List<String> trackIds)
+  
+  // Utility methods
+  Future<DateTime?> getLastRecurringSurveyDate()
+  Future<int> getRecurringSurveyCount()
+  Future<List<Map<String, dynamic>>> getPendingSyncItems()
+}
+```
+
+#### Database Schema
+
+##### location_tracks table (NEW)
+```sql
+CREATE TABLE location_tracks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  latitude REAL NOT NULL,
+  longitude REAL NOT NULL,
+  accuracy REAL,
+  timestamp TEXT NOT NULL,
+  synced INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+##### Enhanced survey tables
+- `initial_surveys`: Added `research_site` column
+- `recurring_surveys`: Added `research_site`, `suburb`, `general_health` columns
+- `consent_responses`: Complete consent tracking with all required fields
+
+## UI Components APIs
+
+### DataUploadScreen
+
+User interface for managing research data uploads.
+
+```dart
+class DataUploadScreen extends StatefulWidget {
+  // Main screen for upload management
+  // Shows upload status, data summary, and privacy information
+  // Handles encrypted data transmission to research servers
+}
+
+class _DataUploadScreenState extends State<DataUploadScreen> {
+  // State management
+  bool _isLoading;
+  String? _participantUuid;
+  String? _researchSite;
+  DateTime? _lastUpload;
+  bool _canUpload;
+  
+  // Core methods
+  Future<void> _loadParticipantInfo()
+  Future<void> _uploadData()
+  
+  // UI builders
+  Widget _buildParticipantInfo()
+  Widget _buildUploadStatus()
+  Widget _buildDataSummary()
+  Widget _buildUploadButton()
+  Widget _buildPrivacyNote()
+}
+```
+
+### ParticipationSelectionScreen
+
+Enhanced three-way participation selection interface.
+
+```dart
+class ParticipationSelectionScreen extends StatefulWidget {
+  // Supports three modes:
+  // 1. Private usage (no data sharing)
+  // 2. Barcelona research participation
+  // 3. Gauteng research participation
+}
+
+class _ParticipationSelectionScreenState extends State<ParticipationSelectionScreen> {
+  String _selectedMode;             // 'private', 'barcelona', 'gauteng'
+  TextEditingController _participantCodeController;
+  
+  // Site-specific UI rendering
+  Widget _buildParticipationOption(String mode)
+  Widget _buildParticipantCodeInput(String site)
+  
+  // Navigation to consent forms
+  void _proceedToConsent(String site, String participantCode)
+}
+```
+
+### ConsentFormScreen
+
+Dynamic consent form generation based on research site.
+
+```dart
+class ConsentFormScreen extends StatefulWidget {
+  final String participantCode;
+  final String researchSite;       // 'barcelona' or 'gauteng'
+}
+
+class _ConsentFormScreenState extends State<ConsentFormScreen> {
+  // Site-specific content generation
+  String _getConsentTitle()
+  String _getConsentContent()
+  String _getLocationConsentText()
+  
+  // Consent processing
+  Future<void> _submitConsent()
+  ConsentResponse _buildConsentResponse()
+}
+```
+
+## Encryption Technical Specifications
+
+### Hybrid Encryption Process
+
+1. **AES-256-GCM Encryption**:
+   - Generate random 256-bit AES key
+   - Generate random 96-bit IV
+   - Encrypt JSON payload with AES-256-GCM
+   - Produces: `encrypted_data + auth_tag`
+
+2. **RSA-4096-OAEP Key Encryption**:
+   - Encrypt AES key with research site's RSA public key
+   - Use OAEP padding with SHA-256
+   - Produces: `encrypted_aes_key`
+
+3. **Final Payload**:
+   - Format: `base64(encrypted_aes_key)|base64(encrypted_data+auth_tag)`
+   - Metadata: `{"algorithm": "RSA-OAEP-AES-256-GCM", "iv": "base64_iv", ...}`
+
+### Server-Side Decryption
+
+```javascript
+// Node.js decryption example
+function decryptUpload(encryptedPayload, encryptionMetadata, privateKey) {
+  const [encryptedAESKeyB64, encryptedDataB64] = encryptedPayload.split('|');
+  
+  // Decrypt AES key with RSA private key
+  const aesKey = crypto.privateDecrypt({
+    key: privateKey,
+    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+    oaepHash: 'sha256'
+  }, Buffer.from(encryptedAESKeyB64, 'base64'));
+  
+  // Decrypt data with AES-256-GCM
+  const iv = Buffer.from(encryptionMetadata.iv, 'base64');
+  const encryptedData = Buffer.from(encryptedDataB64, 'base64');
+  const authTag = encryptedData.slice(-16);
+  const ciphertext = encryptedData.slice(0, -16);
+  
+  const decipher = crypto.createDecipherGCM('aes-256-gcm', aesKey);
+  decipher.setIV(iv);
+  decipher.setAuthTag(authTag);
+  
+  let decrypted = decipher.update(ciphertext, null, 'utf8');
+  decrypted += decipher.final('utf8');
+  
+  return JSON.parse(decrypted);
+}
+```
+
+## REST API Specifications
+
+### Upload Endpoint
+
+**POST** `/api/v1/participant-data`
+
+**Request Headers**:
+```
+Content-Type: application/json
+User-Agent: WellbeingMapper/1.0
+```
+
+**Request Body**:
+```json
+{
+  "uploadId": "uuid-v4",
+  "participantUuid": "uuid-v4",
+  "researchSite": "barcelona" | "gauteng",
+  "encryptedData": "base64-encoded-payload",
+  "encryptionMetadata": {
+    "algorithm": "RSA-OAEP-AES-256-GCM",
+    "keySize": 4096,
+    "iv": "base64-iv",
+    "timestamp": "ISO-8601-timestamp"
+  },
+  "dataPeriod": {
+    "start": "ISO-8601-timestamp",
+    "end": "ISO-8601-timestamp"
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "uploadId": "uuid-v4",
+  "receivedAt": "ISO-8601-timestamp",
+  "message": "Data uploaded successfully"
+}
+```
+
+### Decrypted Data Structure
+
+After server-side decryption, the payload contains:
+
+```json
+{
+  "participantUuid": "uuid-v4",
+  "researchSite": "barcelona" | "gauteng",
+  "uploadTimestamp": "ISO-8601-timestamp",
+  "surveys": [
+    {
+      "type": "initial" | "recurring",
+      "submittedAt": "ISO-8601-timestamp",
+      "responses": {
+        "wellbeingScore": 1-10,
+        "stressLevel": 1-10,
+        "mood": "string",
+        "suburb": "string",           // Gauteng only
+        "generalHealth": "string",    // Gauteng only
+        "ethnicity": "string",        // Site-specific options
+        "buildingType": "string"      // Site-specific options
+      }
+    }
+  ],
+  "locationTracks": [
+    {
+      "timestamp": "ISO-8601-timestamp",
+      "latitude": -90.0 to 90.0,
+      "longitude": -180.0 to 180.0,
+      "accuracy": 0.0-1000.0
+    }
+  ]
+}
+```
 
 ## Core Classes API
 

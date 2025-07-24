@@ -4,6 +4,8 @@
 
 Wellbeing Mapper is a privacy-focused Flutter mobile application that enables users to map their mental wellbeing in environmental & climate context. As part of the Planet4Health project case study, the app facilitates research into how environmental and climate factors impact psychological health by allowing users to correlate location data with mental wellbeing indicators.
 
+The app now supports **multi-site research participation** with end-to-end encryption for secure data transmission to research servers in Barcelona, Spain and Gauteng, South Africa.
+
 ### Planet4Health Integration
 
 This application supports the Planet4Health research initiative "[Mental wellbeing in environmental & climate context](https://planet4health.eu/mental-wellbeing-in-environmental-climate-context/)", which addresses the growing recognition that environmental and climate changes contribute to mental health challenges including climate-related psychological distress.
@@ -11,14 +13,16 @@ This application supports the Planet4Health research initiative "[Mental wellbei
 ## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
-2. [Core Components](#core-components)
-3. [Data Flow](#data-flow)
-4. [File Structure](#file-structure)
-5. [Key Features](#key-features)
-6. [Getting Started](#getting-started)
-7. [Development Workflow](#development-workflow)
-8. [Testing](#testing)
-9. [Deployment](#deployment)
+2. [Research Participation System](#research-participation-system)
+3. [Encryption & Security](#encryption--security)
+4. [Core Components](#core-components)
+5. [Data Flow](#data-flow)
+6. [File Structure](#file-structure)
+7. [Getting Started](#getting-started)
+8. [Development Workflow](#development-workflow)
+9. [Server Setup](#server-setup)
+10. [Testing](#testing)
+11. [Deployment](#deployment)
 
 ## Architecture Overview
 
@@ -30,10 +34,10 @@ Wellbeing Mapper follows a modular Flutter architecture with clear separation of
 │  (Views, Widgets, User Interface)       │
 ├─────────────────────────────────────────┤
 │              Business Logic             │
-│     (State Management, Controllers)     │
+│   (Encryption, State, Controllers)      │
 ├─────────────────────────────────────────┤
 │               Data Layer                │
-│   (Models, Databases, API Services)     │
+│ (Models, Databases, Encrypted Uploads)  │
 ├─────────────────────────────────────────┤
 │             Platform Layer              │
 │  (Background Services, Native Plugins)  │
@@ -42,11 +46,99 @@ Wellbeing Mapper follows a modular Flutter architecture with clear separation of
 
 ### Key Technologies Used
 
-- **Flutter Framework**: Cross-platform mobile development
-- **SQLite**: Local data storage
+- **Flutter Framework**: Cross-platform mobile development (3.27.1 required)
+- **SQLite**: Local data storage with location tracking
+- **RSA + AES Encryption**: Hybrid encryption for secure data transmission
 - **Background Geolocation**: Location tracking when app is closed
 - **WebView**: For project surveys and external content
 - **SharedPreferences**: User settings and simple data storage
+- **HTTP**: Encrypted data uploads to research servers
+
+## Research Participation System
+
+### Three Usage Modes
+
+1. **Private Mode**: 
+   - Personal mental health tracking only
+   - No data sharing or transmission
+   - All data stays on device
+
+2. **Barcelona Research**:
+   - Participate in Spanish research study
+   - Location consent and tracking
+   - Site-specific surveys and demographics
+   - Encrypted bi-weekly data uploads
+
+3. **Gauteng Research**:
+   - Participate in South African research study  
+   - Enhanced demographic questions (ethnicity, building type)
+   - Health status tracking
+   - Encrypted bi-weekly data uploads
+
+### Participation Flow
+
+```mermaid
+graph TD
+    A[App Launch] --> B[Participation Selection]
+    B --> C{User Choice}
+    C -->|Private| D[Private Mode Setup]
+    C -->|Barcelona| E[Barcelona Consent Form]
+    C -->|Gauteng| F[Gauteng Consent Form]
+    E --> G[Barcelona Survey Setup]
+    F --> H[Gauteng Survey Setup]
+    G --> I[Enable Location Tracking]
+    H --> I
+    I --> J[Begin Data Collection]
+    J --> K[Bi-weekly Upload Schedule]
+```
+
+## Encryption & Security
+
+### Hybrid Encryption System
+
+The app uses a two-layer encryption approach for maximum security:
+
+1. **AES-256-GCM**: Encrypts the actual data (fast, efficient)
+2. **RSA-4096-OAEP**: Encrypts the AES key (secure key exchange)
+
+### Data Flow
+
+```
+Participant Data → JSON → AES Encrypt → RSA Encrypt Key → Base64 → HTTPS → Server
+      ↓                      ↓              ↓               ↓        ↓
+Survey Responses      Random AES Key   Research Team    Network   Secure Storage
+Location Tracks       Per Upload       Public Key       Transit   Private Key Decrypt
+```
+
+### Security Features
+
+- **Site Isolation**: Separate RSA key pairs for each research site
+- **Forward Secrecy**: Each upload uses a unique AES key
+- **Authenticated Encryption**: GCM mode prevents data tampering
+- **Anonymous Identifiers**: Only UUID participant IDs, no personal data
+- **Local-First**: Data encrypted before leaving device
+
+### Key Management
+
+Public keys are embedded in the app at build time:
+
+```dart
+// In lib/services/data_upload_service.dart
+static const Map<String, ServerConfig> _serverConfigs = {
+  'barcelona': ServerConfig(
+    baseUrl: 'https://barcelona-server.com',
+    publicKey: '''-----BEGIN PUBLIC KEY-----
+    [RSA-4096 PUBLIC KEY FOR BARCELONA]
+    -----END PUBLIC KEY-----''',
+  ),
+  'gauteng': ServerConfig(
+    baseUrl: 'https://gauteng-server.com', 
+    publicKey: '''-----BEGIN PUBLIC KEY-----
+    [RSA-4096 PUBLIC KEY FOR GAUTENG]
+    -----END PUBLIC KEY-----''',
+  ),
+};
+```
 
 ## Core Components
 
@@ -247,29 +339,137 @@ wellbeing-mapper-app/lib/
 ## Getting Started
 
 ### Prerequisites
-- Flutter SDK (>=2.14.0 <=4.0.0)
-- Android Studio / Xcode for platform-specific development
-- Device with location services capability
+- **Flutter SDK**: 3.27.1 (required - use FVM for version management)
+- **Dart SDK**: 3.6.0 (included with Flutter)
+- **Android Studio / Xcode**: For platform-specific development
+- **Device with location services**: GPS capability required
+- **OpenSSL**: For generating encryption keys (research setup)
 
-### Installation
+### Quick Start
+
 ```bash
+# Install FVM for Flutter version management
+dart pub global activate fvm
+
 # Clone the repository
 git clone [repository-url]
-
-# Navigate to project directory
 cd wellbeing-mapper-app/wellbeing-mapper-app
 
+# Use correct Flutter version
+fvm use 3.27.1
+
 # Install dependencies
-flutter pub get
+fvm flutter pub get
 
 # Run the app
-flutter run
+fvm flutter run
 ```
 
 ### Configuration
-1. **Environment Setup**: Configure `util/env.dart` with appropriate server URLs
-2. **Permissions**: Ensure location permissions are properly configured in platform files
-3. **API Keys**: Set up any required API keys for mapping and geocoding services
+
+#### 1. Environment Setup
+Configure `util/env.dart` with appropriate server URLs and settings.
+
+#### 2. Permissions
+Ensure location permissions are properly configured in platform files:
+- **Android**: `android/app/src/main/AndroidManifest.xml`
+- **iOS**: `ios/Runner/Info.plist`
+
+#### 3. Research Server Setup (For Research Teams)
+
+**Generate RSA Key Pairs:**
+```bash
+# For Barcelona research site
+openssl genrsa -out barcelona_private_key.pem 4096
+openssl rsa -in barcelona_private_key.pem -pubout -out barcelona_public_key.pem
+
+# For Gauteng research site  
+openssl genrsa -out gauteng_private_key.pem 4096
+openssl rsa -in gauteng_private_key.pem -pubout -out gauteng_public_key.pem
+```
+
+**Update App Configuration:**
+Edit `lib/services/data_upload_service.dart` and replace the placeholder public keys:
+
+```dart
+static const Map<String, ServerConfig> _serverConfigs = {
+  'barcelona': ServerConfig(
+    baseUrl: 'https://your-barcelona-server.com',
+    uploadEndpoint: '/api/v1/participant-data',
+    publicKey: '''-----BEGIN PUBLIC KEY-----
+[PASTE YOUR BARCELONA PUBLIC KEY HERE]
+-----END PUBLIC KEY-----''',
+  ),
+  'gauteng': ServerConfig(
+    baseUrl: 'https://your-gauteng-server.com',
+    uploadEndpoint: '/api/v1/participant-data', 
+    publicKey: '''-----BEGIN PUBLIC KEY-----
+[PASTE YOUR GAUTENG PUBLIC KEY HERE]
+-----END PUBLIC KEY-----''',
+  ),
+};
+```
+
+**Rebuild App:**
+```bash
+fvm flutter clean
+fvm flutter pub get
+fvm flutter build apk --release
+```
+
+#### 4. Server Setup
+For detailed server setup instructions, see:
+- [Server Setup Guide](SERVER_SETUP.md)
+- [Encryption Configuration Guide](ENCRYPTION_SETUP.md)
+
+## Server Setup
+
+### Research Data Collection Server
+
+Each research site requires a secure HTTPS server with:
+
+1. **REST API endpoint** for encrypted data uploads
+2. **Private key storage** for data decryption  
+3. **Database** for storing encrypted participant data
+4. **Processing pipeline** for decrypting and analyzing data
+
+### Minimum Server Requirements
+- **OS**: Ubuntu 20.04 LTS or equivalent
+- **RAM**: 8GB recommended
+- **Storage**: 100GB minimum (SSD recommended)
+- **SSL Certificate**: Valid HTTPS certificate
+- **Database**: PostgreSQL 13+ or MongoDB 4.4+
+
+### API Endpoint Implementation
+
+**Node.js Example:**
+```javascript
+app.post('/api/v1/participant-data', async (req, res) => {
+  const { uploadId, participantUuid, researchSite, encryptedData, encryptionMetadata } = req.body;
+  
+  try {
+    // Store encrypted data (cannot be read without private key)
+    await database.storeEncryptedUpload({
+      uploadId,
+      participantUuid,
+      researchSite,
+      encryptedPayload: encryptedData,
+      metadata: encryptionMetadata,
+      receivedAt: new Date()
+    });
+    
+    res.json({ 
+      success: true, 
+      uploadId: uploadId,
+      message: 'Data received and stored securely' 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Upload failed' });
+  }
+});
+```
+
+For complete server implementation, see [Server Setup Guide](SERVER_SETUP.md).
 
 ## Development Workflow
 

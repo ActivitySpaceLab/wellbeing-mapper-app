@@ -71,10 +71,33 @@ If this project is useful for you, please consider starring this repository and 
 * **Mental Health Mapping**: Track your mental wellbeing alongside your location data to understand environmental influences on your psychological health.
 * **Environmental Context**: Correlate your wellbeing data with environmental factors like air quality, green spaces, and climate conditions.
 * **Privacy-First Design**: Your data is only stored on your phone, so only you have access to it.
+* **Multi-Site Research Support**: Participate in research studies in Barcelona, Spain or Gauteng, South Africa with site-specific surveys and consent forms.
+* **End-to-End Encryption**: Research data is encrypted with military-grade RSA+AES encryption before transmission to protect participant privacy.
+* **Secure Data Upload**: Bi-weekly encrypted uploads of survey responses and location data to authorized research servers.
 * **Climate-Health Research**: Optionally contribute anonymized data to advance scientific understanding of climate-related psychological impacts.
 * **Minimally Intrusive**: Designed to conserve battery power and run efficiently in the background.
-* **Complete Control**: Turn tracking on and off whenever you want.
+* **Complete Control**: Turn tracking on and off whenever you want. Withdraw from research participation at any time.
 * **Open Source**: Free, open source software. You'll never have to pay anything or watch any ads to use it.
+
+## Research Participation
+
+### Three Usage Modes
+1. **Private Mode**: Use the app purely for personal mental health tracking with no data sharing
+2. **Barcelona Research**: Participate in the Barcelona, Spain study with location consent and Spanish research protocols
+3. **Gauteng Research**: Participate in the Gauteng, South Africa study with ethnicity demographics and health questions
+
+### Data Security
+- All research data is encrypted using RSA-4096 public key cryptography before upload
+- Location tracking data is stored locally and only shared with explicit consent
+- Participant identifiers are anonymized UUIDs with no personal information
+- Research teams can only decrypt data with their corresponding private keys
+
+### For Researchers
+See the [Server Setup Guide](docs/SERVER_SETUP.md) and [Encryption Configuration Guide](docs/ENCRYPTION_SETUP.md) for detailed instructions on:
+- Setting up data collection servers
+- Configuring RSA public/private key pairs
+- Managing participant data securely
+- Database schema and API specifications
 
 ## Download the app
 For more information about the Planet4Health project, please visit the [Planet4Health website](https://planet4health.eu) and learn about the [Mental wellbeing in environmental & climate context case study](https://planet4health.eu/mental-wellbeing-in-environmental-climate-context/).

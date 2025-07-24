@@ -153,6 +153,26 @@ class WellbeingMapperSideDrawer extends StatelessWidget {
               },
             ),
           ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.cloud_upload),
+              title: Text("Research Data Upload"),
+              subtitle: Text("Upload encrypted data to research servers"),
+              onTap: () {
+                Navigator.of(context).pushNamed('/data_upload');
+              },
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.cloud_upload),
+              title: Text("Research Data Upload"),
+              subtitle: Text("Upload encrypted data to research servers"),
+              onTap: () {
+                Navigator.of(context).pushNamed('/data_upload');
+              },
+            ),
+          ),
 /*           Card(
             child: ListTile(
               leading: const Icon(Icons.bar_chart),

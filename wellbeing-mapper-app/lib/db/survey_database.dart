@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import 'dart:convert';
 import '../models/survey_models.dart';
 import '../models/consent_models.dart';
+import '../services/data_upload_service.dart';
 
 class SurveyDatabase {
   static final SurveyDatabase _instance = SurveyDatabase._internal();
@@ -105,6 +106,22 @@ class SurveyDatabase {
         voice_note_urls TEXT,
         image_urls TEXT,
         submitted_at TEXT,
+        synced INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+
+    // Create location tracks table
+    await db.execute('''
+      CREATE TABLE location_tracks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        accuracy REAL,
+        altitude REAL,
+        speed REAL,
+        activity TEXT,
         synced INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
@@ -361,6 +378,71 @@ class SurveyDatabase {
       );
     }
     return null;
+  }
+
+  // Location Tracking Methods
+  Future<int> insertLocationTrack(Map<String, dynamic> locationData) async {
+    final db = await database;
+    final id = await db.insert('location_tracks', {
+      'timestamp': locationData['timestamp'] ?? DateTime.now().toIso8601String(),
+      'latitude': locationData['latitude'],
+      'longitude': locationData['longitude'],
+      'accuracy': locationData['accuracy'],
+      'altitude': locationData['altitude'],
+      'speed': locationData['speed'],
+      'activity': locationData['activity'],
+    });
+
+    return id;
+  }
+
+  Future<List<LocationTrack>> getLocationTracksSince(DateTime since) async {
+    final db = await database;
+    final maps = await db.query(
+      'location_tracks',
+      where: 'timestamp >= ?',
+      whereArgs: [since.toIso8601String()],
+      orderBy: 'timestamp ASC',
+    );
+
+    return List.generate(maps.length, (i) {
+      return LocationTrack(
+        timestamp: DateTime.parse(maps[i]['timestamp'] as String),
+        latitude: maps[i]['latitude'] as double,
+        longitude: maps[i]['longitude'] as double,
+        accuracy: maps[i]['accuracy'] as double?,
+        altitude: maps[i]['altitude'] as double?,
+        speed: maps[i]['speed'] as double?,
+        activity: maps[i]['activity'] as String?,
+      );
+    });
+  }
+
+  Future<List<LocationTrack>> getAllLocationTracks() async {
+    final db = await database;
+    final maps = await db.query('location_tracks', orderBy: 'timestamp DESC');
+
+    return List.generate(maps.length, (i) {
+      return LocationTrack(
+        timestamp: DateTime.parse(maps[i]['timestamp'] as String),
+        latitude: maps[i]['latitude'] as double,
+        longitude: maps[i]['longitude'] as double,
+        accuracy: maps[i]['accuracy'] as double?,
+        altitude: maps[i]['altitude'] as double?,
+        speed: maps[i]['speed'] as double?,
+        activity: maps[i]['activity'] as String?,
+      );
+    });
+  }
+
+  Future<void> markLocationTracksAsSynced(List<int> ids) async {
+    final db = await database;
+    await db.update(
+      'location_tracks',
+      {'synced': 1},
+      where: 'id IN (${ids.map((_) => '?').join(',')})',
+      whereArgs: ids,
+    );
   }
 
   Future<void> close() async {

@@ -10,6 +10,7 @@ import '../ui/recurring_survey_screen.dart';
 import '../ui/survey_list_screen.dart';
 import '../ui/participation_selection_screen.dart';
 import '../ui/consent_form_screen.dart';
+import '../ui/data_upload_screen.dart';
 
 class GlobalRouteData {
   static String? user_route = "brown";
@@ -59,6 +60,8 @@ class RouteGenerator {
           );
         }
         return _errorRoute();
+      case '/data_upload':
+        return MaterialPageRoute(builder: (_) => DataUploadScreen());
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();
