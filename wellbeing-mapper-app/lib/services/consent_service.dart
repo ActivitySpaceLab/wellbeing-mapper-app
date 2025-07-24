@@ -17,13 +17,19 @@ class ConsentService {
   static Future<ParticipationSettings?> getParticipationSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final settingsJson = prefs.getString(_participationSettingsKey);
-    
+    print('[consent_service.dart] getParticipationSettings raw: '
+        '${settingsJson ?? 'null'}');
     if (settingsJson == null) {
       return null;
     }
-    
-    final settingsMap = jsonDecode(settingsJson);
-    return ParticipationSettings.fromJson(settingsMap);
+    try {
+      final settingsMap = jsonDecode(settingsJson);
+      print('[consent_service.dart] getParticipationSettings decoded: $settingsMap');
+      return ParticipationSettings.fromJson(settingsMap);
+    } catch (e) {
+      print('[consent_service.dart] ERROR decoding participation_settings: $e');
+      return null;
+    }
   }
 
   /// Save consent response

@@ -21,9 +21,22 @@ class RouteGenerator {
     // Getting arguments passed in while calling Navigator.pushNamed
     final args = settings.arguments;
     GlobalRouteData.user_route = settings.name;
+    print('[route_generator.dart] generateRoute called for: ${settings.name}');
     switch (settings.name) {
       case '/':
-        return MaterialPageRoute(builder: (_) => HomeView('Wellbeing Mapper'));
+        print('[route_generator.dart] Creating HomeView route');
+        return MaterialPageRoute(builder: (_) {
+          print('[route_generator.dart] About to create HomeView');
+          try {
+            return HomeView('Wellbeing Mapper');
+          } catch (e) {
+            print('[route_generator.dart] ERROR creating HomeView: $e');
+            return Scaffold(
+              appBar: AppBar(title: Text('Error')),
+              body: Center(child: Text('Error loading home screen: $e')),
+            );
+          }
+        });
       case '/locations_history':
         return MaterialPageRoute(builder: (_) => STOListView());
       case '/report_an_issue':

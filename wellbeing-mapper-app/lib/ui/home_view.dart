@@ -23,11 +23,16 @@ JsonEncoder encoder = new JsonEncoder.withIndent("     ");
 /// The main home-screen of the AdvancedApp.  Builds the Scaffold of the App.
 ///
 class HomeView extends StatefulWidget {
-  HomeView(this.appName);
+  HomeView(this.appName) {
+    print('[home_view.dart] HomeView constructor called with appName: $appName');
+  }
   final String appName;
 
   @override
-  State createState() => HomeViewState(appName);
+  State createState() {
+    print('[home_view.dart] HomeView createState called');
+    return HomeViewState(appName);
+  }
 }
 
 class HomeViewState extends State<HomeView>
@@ -42,18 +47,34 @@ class HomeViewState extends State<HomeView>
   //late String _odometer;
   Timer? _surveyPromptTimer;
 
-  HomeViewState(this.appName);
+  HomeViewState(this.appName) {
+    print('[home_view.dart] HomeViewState constructor called with appName: $appName');
+  }
 
   @override
   void initState() {
     super.initState();
-    print("here 1");
+    print('[home_view.dart] HomeView initState called');
     WidgetsBinding.instance.addObserver(this);
 
-    //_isMoving = false;
     _enabled = true;
-    //_motionActivity = 'UNKNOWN';
-    //_odometer = '0';
+
+    // Debug: Try to load participation settings
+
+    SharedPreferences.getInstance().then((prefs) {
+      final settings = prefs.getString('participation_settings');
+      print('[home_view.dart] participation_settings in HomeView: '
+          '${settings ?? 'null'}');
+      if (settings != null) {
+        try {
+          final decoded = jsonDecode(settings);
+          print('[home_view.dart] participation_settings decoded: $decoded');
+          print('[home_view.dart] isResearchParticipant: ${decoded['isResearchParticipant']}');
+        } catch (e) {
+          print('[home_view.dart] ERROR decoding participation_settings: $e');
+        }
+      }
+    });
 
     initPlatformState();
     _checkForPendingSurveyPrompt();
@@ -81,13 +102,18 @@ class HomeViewState extends State<HomeView>
   }
 
   void initPlatformState() async {
+    print('[home_view.dart] initPlatformState starting');
     try {
       SharedPreferences prefs = await _prefs;
       String? sampleId = prefs.getString("sample_id");
       String? userUUID = prefs.getString("user_uuid");
       String? participationSettings = prefs.getString("participation_settings");
 
+      print('[home_view.dart] initPlatformState - sampleId: $sampleId, userUUID: $userUUID');
+      print('[home_view.dart] initPlatformState - participationSettings: $participationSettings');
+
       if (sampleId == null || userUUID == null) {
+        print('[home_view.dart] initPlatformState - creating new UUID/sampleId');
         prefs.setString("user_uuid", Uuid().v4());
         prefs.setString("sample_id", ENV.DEFAULT_SAMPLE_ID);
         userUUID = prefs.getString("user_uuid");
@@ -96,13 +122,16 @@ class HomeViewState extends State<HomeView>
 
       // Only configure background services if user has completed participation selection
       if (participationSettings != null && participationSettings.isNotEmpty) {
+        print('[home_view.dart] initPlatformState - configuring background services');
         _configureBackgroundGeolocation(userUUID, sampleId);
         _configureBackgroundFetch();
+        print('[home_view.dart] initPlatformState - background services configured');
       } else {
-        print('Participation settings not found, skipping background service configuration');
+        print('[home_view.dart] Participation settings not found, skipping background service configuration');
       }
+      print('[home_view.dart] initPlatformState completed successfully');
     } catch (error) {
-      print('Error in initPlatformState: $error');
+      print('[home_view.dart] Error in initPlatformState: $error');
     }
   }
 

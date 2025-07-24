@@ -52,14 +52,18 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
             SizedBox(height: 16),
             Text(
               'Wellbeing Mapper',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), // Reduced font size
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             SizedBox(height: 8),
             Text(
               'A privacy-focused app for mapping your mental wellbeing',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]), // Reduced font size
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
