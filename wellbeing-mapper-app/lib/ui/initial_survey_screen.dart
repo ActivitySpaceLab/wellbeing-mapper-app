@@ -225,6 +225,10 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
               SizedBox(height: 24),
               _buildEducationField(),
               SizedBox(height: 24),
+              if (_researchSite == 'gauteng') ...[
+                _buildGeneralHealthField(),
+                SizedBox(height: 24),
+              ],
               _buildClimateActivismField(),
               SizedBox(height: 32),
               _buildSubmitButton(),
@@ -421,6 +425,23 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
           border: InputBorder.none,
         ),
         options: _climateActivismOptions.map((option) => 
+          FormBuilderFieldOption(value: option, child: Text(option))
+        ).toList(),
+        validator: FormBuilderValidators.required(errorText: 'Please select an option'),
+      ),
+    );
+  }
+
+  Widget _buildGeneralHealthField() {
+    return _buildSectionCard(
+      title: 'General Health',
+      subtitle: 'How would you describe your general health?',
+      child: FormBuilderRadioGroup<String>(
+        name: 'generalHealth',
+        decoration: InputDecoration(
+          border: InputBorder.none,
+        ),
+        options: _generalHealthOptions.map((option) => 
           FormBuilderFieldOption(value: option, child: Text(option))
         ).toList(),
         validator: FormBuilderValidators.required(errorText: 'Please select an option'),

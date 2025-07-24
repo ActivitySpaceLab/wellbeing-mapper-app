@@ -144,7 +144,7 @@ Widget displayService(String name, Icon icon) {
 }
 
 Widget customButtonWithUrl(String text, String? openUrl,
-    MaterialStateProperty<Color?> backgroundColor, BuildContext context,
+    WidgetStateProperty<Color?> backgroundColor, BuildContext context,
     {List<String>? emails, String? subject, String? body}) {
   return Container(
       width: MediaQuery.of(context).size.width *
@@ -152,7 +152,7 @@ Widget customButtonWithUrl(String text, String? openUrl,
       child: TextButton(
         style: ButtonStyle(
             backgroundColor: backgroundColor,
-            shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+            shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                 RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(
                         ReportAnIssueStyle.buttonBorderRadius),

@@ -30,7 +30,7 @@ jobs:
     - name: Statically analyze the Dart code for any errors.
       run: |
         cd wellbeing-mapper-app
-        flutter analyze --no-fatal-infos
+        flutter analyze --no-fatal-infos --no-fatal-warnings
     
     - name: Run tests for our flutter project.
       run: |

@@ -16,9 +16,9 @@ class ReportAnIssueStyle {
 
   //Buttons
   static const buttonBorderRadius = 18.0;
-  static MaterialStateProperty<Color?> reportIssueColor =
-      MaterialStateProperty.all(Colors.red[100]);
-  static MaterialStateProperty<Color?> requestFeatureColor =
-      MaterialStateProperty.all(Colors.lightBlue[100]);
+  static WidgetStateProperty<Color?> reportIssueColor =
+      WidgetStateProperty.all(Colors.red[100]);
+  static WidgetStateProperty<Color?> requestFeatureColor =
+      WidgetStateProperty.all(Colors.lightBlue[100]);
   static const buttonWidthPercentage = 0.6; //Double from 0 to 1
 }
