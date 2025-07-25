@@ -19,7 +19,7 @@ This case study aims to:
 [![CI tests](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/actions/workflows/CI.yml/badge.svg)](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/actions/workflows/CI.yml)
 [![drive_test iOS](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/actions/workflows/drive-ios.yml/badge.svg)](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/actions/workflows/drive-ios.yml)
 [![drive_test Android](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/actions/workflows/drive-android.yml/badge.svg)](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/actions/workflows/drive-android.yml)
-[![codecov](https://codecov.io/gh/ActivitySpaceLab/wellbeing-mapper-app/branch/master/graph/badge.svg?token=HBJXBV7VR6)](https://codecov.io/gh/ActivitySpaceLab/wellbeing-mapper-app)
+[![codecov](https://codecov.io/gh/ActivitySpaceLab/wellbeing-mapper-app/branch/main/graph/badge.svg?token=HBJXBV7VR6)](https://codecov.io/gh/ActivitySpaceLab/wellbeing-mapper-app)
 [![Documentation](https://img.shields.io/badge/docs-available-brightgreen.svg)](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/tree/main/docs)
 
 ## Screenshots
