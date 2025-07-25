@@ -113,7 +113,15 @@ class _DataUploadScreenState extends State<DataUploadScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Research Data Upload'),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Research Data Upload',
+            style: TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         backgroundColor: Colors.blue,
       ),
       body: Padding(

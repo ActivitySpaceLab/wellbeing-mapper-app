@@ -132,7 +132,15 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bi-weekly Wellbeing Survey'),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Bi-weekly Wellbeing Survey',
+            style: TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         backgroundColor: Colors.green,
       ),
       body: SingleChildScrollView(

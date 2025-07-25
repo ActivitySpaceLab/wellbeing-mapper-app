@@ -195,7 +195,15 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Initial Survey'),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Initial Survey',
+            style: TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         backgroundColor: Colors.blue,
       ),
       body: SingleChildScrollView(

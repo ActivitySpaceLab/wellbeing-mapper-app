@@ -17,7 +17,15 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Welcome to Wellbeing Mapper'),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Welcome to Wellbeing Mapper',
+            style: TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         backgroundColor: Colors.blue,
         automaticallyImplyLeading: false,
       ),
@@ -48,7 +56,7 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
         padding: EdgeInsets.all(20.0),
         child: Column(
           children: [
-            Icon(Icons.favorite, size: 64, color: Colors.red),
+            Icon(Icons.handshake, size: 64, color: Colors.blueGrey),
             SizedBox(height: 16),
             Text(
               'Wellbeing Mapper',

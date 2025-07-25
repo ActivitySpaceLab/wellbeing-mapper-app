@@ -65,6 +65,7 @@ dependencies:
   path_provider_platform_interface: ^2.0.6
   path_provider_foundation: ^2.1.1  # for iOS/macOS
   path_provider_android: ^2.0.24    # for Android
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:

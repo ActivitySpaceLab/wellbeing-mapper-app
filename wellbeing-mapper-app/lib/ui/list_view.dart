@@ -19,9 +19,15 @@ class _STOListViewState extends State<STOListView> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-            title: Text(
-                AppLocalizations.of(context)?.translate("locations_history") ??
-                    "")),
+            title: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                AppLocalizations.of(context)?.translate("locations_history") ?? "",
+                style: TextStyle(fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            )),
         body: FutureBuilder<List<CustomLocation>>(
           future: CustomLocationsManager.getLocations(25),
           builder: (context, snapshot) {

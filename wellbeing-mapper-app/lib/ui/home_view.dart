@@ -452,7 +452,15 @@ class HomeViewState extends State<HomeView>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(appName),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            appName,
+            style: TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         centerTitle: true,
         backgroundColor: Colors.blueGrey,
         systemOverlayStyle:

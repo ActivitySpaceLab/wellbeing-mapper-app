@@ -57,7 +57,15 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Survey Notifications'),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Survey Notifications',
+            style: TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         backgroundColor: Colors.blueGrey,
       ),
       body: _isLoading

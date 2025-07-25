@@ -114,7 +114,15 @@ class _MyWebViewState extends State<MyWebView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Project'),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Project',
+            style: TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         // This drop down menu demonstrates that Flutter widgets can be shown over the web view.
         /*actions: <Widget>[
           NavigationControls(_controller.future),

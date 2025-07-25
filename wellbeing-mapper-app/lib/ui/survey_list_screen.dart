@@ -41,7 +41,15 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Survey History'),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Survey History',
+            style: TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         backgroundColor: Colors.purple,
       ),
       body: _isLoading

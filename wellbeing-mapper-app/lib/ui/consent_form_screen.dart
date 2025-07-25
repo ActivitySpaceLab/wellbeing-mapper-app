@@ -70,7 +70,15 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_showInformationSheet ? 'Information Sheet' : 'Consent Form'),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            _showInformationSheet ? 'Information Sheet' : 'Consent Form',
+            style: TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         backgroundColor: Colors.blue,
       ),
       body: _showInformationSheet ? _buildInformationSheet() : _buildConsentForm(),
