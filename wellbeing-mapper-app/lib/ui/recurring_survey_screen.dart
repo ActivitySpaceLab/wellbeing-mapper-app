@@ -408,19 +408,6 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     );
   }
 
-  Widget _buildTextQuestion(String name, String question) {
-    return FormBuilderTextField(
-      name: name,
-      decoration: InputDecoration(
-        labelText: question,
-        border: OutlineInputBorder(),
-        alignLabelWithHint: true,
-      ),
-      maxLines: 3,
-      minLines: 2,
-    );
-  }
-
   Widget _buildVoiceNotesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
