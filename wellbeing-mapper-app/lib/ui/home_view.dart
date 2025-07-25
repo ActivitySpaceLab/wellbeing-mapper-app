@@ -38,6 +38,10 @@ class HomeView extends StatefulWidget {
 class HomeViewState extends State<HomeView>
     with TickerProviderStateMixin<HomeView>, WidgetsBindingObserver {
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  
+  // Static flag to prevent multiple background geolocation configurations
+  static bool _backgroundGeoConfigured = false;
+  
   //late TabController _tabController;
 
   late String appName;
@@ -120,12 +124,33 @@ class HomeViewState extends State<HomeView>
         sampleId = prefs.getString("sample_id");
       }
 
+        // Configure background geolocation for ALL users (private and research)
+        // The difference is in server sync settings, not location tracking capability
+        // Only configure once to prevent multiple initializations
+        if (!_backgroundGeoConfigured) {
+          _configureBackgroundGeolocation(userUUID, sampleId);
+          _backgroundGeoConfigured = true;
+        } else {
+          print('[home_view.dart] Background geolocation already configured, skipping');
+        }
+
       // Only configure background services if user has completed participation selection
       if (participationSettings != null && participationSettings.isNotEmpty) {
-        print('[home_view.dart] initPlatformState - configuring background services');
-        _configureBackgroundGeolocation(userUUID, sampleId);
-        _configureBackgroundFetch();
-        print('[home_view.dart] initPlatformState - background services configured');
+        try {
+          final participationData = jsonDecode(participationSettings);
+          final isResearchParticipant = participationData['isResearchParticipant'] ?? false;
+          
+          print('[home_view.dart] initPlatformState - User participation status: ${isResearchParticipant ? "Research Participant" : "Private User"}');
+          
+          // ALL users need background geolocation for tracking, but configured differently
+          // Move to async to avoid blocking UI
+          _configureBackgroundServicesAsync(userUUID, sampleId, isResearchParticipant);
+          
+        } catch (e) {
+          print('[home_view.dart] Error parsing participation settings: $e');
+          // Default to private user configuration on error
+          _configureBackgroundServicesAsync(userUUID, sampleId, false);
+        }
       } else {
         print('[home_view.dart] Participation settings not found, skipping background service configuration');
       }
@@ -135,60 +160,57 @@ class HomeViewState extends State<HomeView>
     }
   }
 
+ 
   // ignore: non_constant_identifier_names
   void _configureBackgroundGeolocation(user_uuid, sample_id) async {
-    try {
-      // 1.  Listen to events (See docs for all 13 available events).
-      bg.BackgroundGeolocation.onLocation(_onLocation, _onLocationError);
-      bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
+    // 1.  Listen to events (See docs for all 13 available events).
+    bg.BackgroundGeolocation.onLocation(_onLocation, _onLocationError);
+    bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
 //    bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
-      bg.BackgroundGeolocation.onProviderChange(_onProviderChange);
-      bg.BackgroundGeolocation.onHttp(_onHttp);
-      bg.BackgroundGeolocation.onConnectivityChange(_onConnectivityChange);
-      bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
-      bg.BackgroundGeolocation.onGeofence(_onGeofence);
-      bg.BackgroundGeolocation.onSchedule(_onSchedule);
-      bg.BackgroundGeolocation.onPowerSaveChange(_onPowerSaveChange);
-      bg.BackgroundGeolocation.onEnabledChange(_onEnabledChange);
-      bg.BackgroundGeolocation.onNotificationAction(_onNotificationAction);
+    bg.BackgroundGeolocation.onProviderChange(_onProviderChange);
+    bg.BackgroundGeolocation.onHttp(_onHttp);
+    bg.BackgroundGeolocation.onConnectivityChange(_onConnectivityChange);
+    bg.BackgroundGeolocation.onHeartbeat(_onHeartbeat);
+    bg.BackgroundGeolocation.onGeofence(_onGeofence);
+    bg.BackgroundGeolocation.onSchedule(_onSchedule);
+    bg.BackgroundGeolocation.onPowerSaveChange(_onPowerSaveChange);
+    bg.BackgroundGeolocation.onEnabledChange(_onEnabledChange);
+    bg.BackgroundGeolocation.onNotificationAction(_onNotificationAction);
 
-      // 2.  Configure the plugin
-      bg.BackgroundGeolocation.ready(bg.Config(
-              // Convenience option to automatically configure the SDK to post to Transistor Demo server.
-              // Logging & Debug
-              reset: false,
-              debug: false,
-              logLevel: bg.Config.LOG_LEVEL_VERBOSE,
-              // Geolocation options
-              desiredAccuracy: bg.Config.DESIRED_ACCURACY_NAVIGATION,
-              distanceFilter: 10.0,
-              stopTimeout: 1,
-              // HTTP & Persistence
-              autoSync: false,
-              persistMode: bg.Config.PERSIST_MODE_ALL,
-              maxDaysToPersist: 30,
-              maxRecordsToPersist: -1,
-              // Application options
-              stopOnTerminate: false,
-              startOnBoot: true,
-              enableHeadless: true,
-              heartbeatInterval: 60))
-          .then((bg.State state) {
-        print('[ready] ${state.toMap()}');
+    // 2.  Configure the plugin
+    bg.BackgroundGeolocation.ready(bg.Config(
+            // Convenience option to automatically configure the SDK to post to Transistor Demo server.
+            // Logging & Debug
+            reset: false,
+            debug: false,
+            logLevel: bg.Config.LOG_LEVEL_VERBOSE,
+            // Geolocation options
+            desiredAccuracy: bg.Config.DESIRED_ACCURACY_NAVIGATION,
+            distanceFilter: 10.0,
+            stopTimeout: 1,
+            // HTTP & Persistence
+            autoSync: false,
+            persistMode: bg.Config.PERSIST_MODE_ALL,
+            maxDaysToPersist: 30,
+            maxRecordsToPersist: -1,
+            // Application options
+            stopOnTerminate: false,
+            startOnBoot: true,
+            enableHeadless: true,
+            heartbeatInterval: 60))
+        .then((bg.State state) {
+      print('[ready] ${state.toMap()}');
 
-        if (state.schedule!.isNotEmpty) {
-          bg.BackgroundGeolocation.startSchedule();
-        }
-        setState(() {
-          _enabled = state.enabled;
-          //_isMoving = state.isMoving!;
-        });
-      }).catchError((error) {
-        print('[ready] ERROR: $error');
+      if (state.schedule!.isNotEmpty) {
+        bg.BackgroundGeolocation.startSchedule();
+      }
+      setState(() {
+        _enabled = state.enabled;
+        //_isMoving = state.isMoving!;
       });
-    } catch (error) {
-      print('[_configureBackgroundGeolocation] ERROR: $error');
-    }
+    }).catchError((error) {
+      print('[ready] ERROR: $error');
+    });
   }
 
   // Configure BackgroundFetch (not required by BackgroundGeolocation).
@@ -241,6 +263,22 @@ class HomeViewState extends State<HomeView>
         stopOnTerminate: false,
         enableHeadless: true));
         */
+  }
+
+  // Configure background services asynchronously to avoid blocking UI
+  void _configureBackgroundServicesAsync(user_uuid, sample_id, bool isResearchParticipant) async {
+    print('[home_view.dart] Starting async background services configuration for ${isResearchParticipant ? "research participant" : "private user"}');
+    try {
+      // Schedule background service configuration for next frame to avoid blocking UI
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future.delayed(Duration(milliseconds: 100)); // Small delay to ensure UI renders
+        
+        // Configure BackgroundFetch
+        _configureBackgroundFetch();
+      });
+    } catch (error) {
+      print('[home_view.dart] Error in _configureBackgroundServicesAsync: $error');
+    }
   }
 
   void _onClickEnable(enabled) async {

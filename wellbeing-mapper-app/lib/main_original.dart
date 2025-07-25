@@ -1,7 +1,6 @@
 import 'package:wellbeing_mapper/models/route_generator.dart';
 import 'package:wellbeing_mapper/util/env.dart';
 import 'package:wellbeing_mapper/services/notification_service.dart';
-import 'package:wellbeing_mapper/ui/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -103,34 +102,37 @@ void backgroundGeolocationHeadlessTask(bg.HeadlessEvent headlessEvent) async {
   }
 }
 
-/// Function to handle background fetch events
-void backgroundFetchHeadlessTask(HeadlessTask task) async {
-  var taskId = task.taskId;
-  var timeout = task.timeout;
-  if (timeout) {
-    print("[BackgroundFetch] HeadlessTask timeout: $taskId");
-    BackgroundFetch.finish(taskId);
+/// Handles BackgroundFetch events in headless mode.
+/// Used to periodically perform background tasks, such as updating location or syncing data.
+void backgroundFetchHeadlessTask(String taskId) async {
+  // Get current-position from BackgroundGeolocation in headless mode.
+  //bg.Location location = await bg.BackgroundGeolocation.getCurrentPosition(samples: 1);
+  print("[BackgroundFetch] HeadlessTask: $taskId");
+
+  // Handle notification task
+  if (taskId == 'com.wellbeingmapper.survey_notification') {
+    await notificationHeadlessTask(taskId);
     return;
   }
 
-  print("[BackgroundFetch] HeadlessTask start: $taskId");
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  int count = 0;
+  if (prefs.get("fetch-count") != null) {
+    count = prefs.getInt("fetch-count")!;
+  }
+  prefs.setInt("fetch-count", ++count);
+  print('[BackgroundFetch] count: $count');
 
-  //
-  // Perform your work here.
-  //
-
+  // Signal completion of the background fetch task.
   BackgroundFetch.finish(taskId);
 }
 
 /// App entry point.
 /// Initializes shared preferences, sets up user UUID, and registers background tasks.
 void main() {
-  print('[main.dart] Starting app initialization...');
   WidgetsFlutterBinding.ensureInitialized();
 
   SharedPreferences.getInstance().then((SharedPreferences prefs) async {
-    print('[main.dart] SharedPreferences loaded');
-    
     // Create random user ID if not yet created.
     String? sampleId = prefs.getString("sample_id");
     String? userUUID = prefs.getString("user_uuid");
@@ -145,35 +147,25 @@ void main() {
           prefs.getString("user_uuid") ?? ""; // Set the global userUUID
     }
 
-    print('[main.dart] userUUID: $userUUID');
-    print('[main.dart] sampleId: $sampleId');
+    print('userUUID: $userUUID');
+    print('sampleId: $sampleId');
 
     // Initialize notification service
-    try {
-      await NotificationService.initialize();
-      print('[main.dart] NotificationService initialized');
-    } catch (error) {
-      print('[main.dart] Error initializing NotificationService: $error');
-    }
+    await NotificationService.initialize();
 
-    // Register headless tasks with error handling to prevent UI blocking
-    try {
-      print('[main.dart] Registering headless tasks...');
-      bg.BackgroundGeolocation.registerHeadlessTask(backgroundGeolocationHeadlessTask);
-      BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
-      print('[main.dart] Headless tasks registered successfully');
-    } catch (error) {
-      print('[main.dart] Error registering headless tasks (non-fatal): $error');
-      // Continue app startup even if headless task registration fails
-    }
-    
-    print('[main.dart] Launching app...');
     runApp(new MyApp());
   }).catchError((error) {
-    print('[main.dart] Error initializing app: $error');
+    print('Error initializing app: $error');
     // Still run the app even if there's an error
     runApp(new MyApp());
   });
+
+  /// Register BackgroundGeolocation headless-task.
+  bg.BackgroundGeolocation.registerHeadlessTask(
+      backgroundGeolocationHeadlessTask);
+
+  /// Register BackgroundFetch headless-task.
+  BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
 }
 
 /// The root widget of the application.
@@ -181,12 +173,11 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    print('[main.dart] MyApp build() called');
     return MaterialApp(
-      title: 'Wellbeing Mapper',
       debugShowCheckedModeBanner: false,
       supportedLocales: [
-        Locale('en', ''), // English, no country code. The first element of this list is the default language
+        Locale('en',
+            ''), // English, no country code. The first element of this list is the default language
         Locale('es', ''), // Spanish, no country code
         //Locale('ca', '') // Catalan, no country code
       ],
@@ -210,56 +201,51 @@ class MyApp extends StatelessWidget {
         // from the list (English, in this case).
         return supportedLocales.first;
       },
+      home: AppInitializer(),
       onGenerateRoute: RouteGenerator.generateRoute,
-      home: InitialRouteDecider(),
     );
   }
 }
 
-/// Simple widget to decide the initial route without complex navigation
-class InitialRouteDecider extends StatelessWidget {
+/// Widget to determine which screen to show on app startup
+class AppInitializer extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<String>(
-      future: _getInitialRoute(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          final route = snapshot.data!;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (route != '/') {
-              Navigator.of(context).pushReplacementNamed(route);
-            }
-          });
-          
-          if (route == '/') {
-            return HomeView('Wellbeing Mapper');
-          } else {
-            return Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-        } else {
-          return Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-      },
-    );
+  _AppInitializerState createState() => _AppInitializerState();
+}
+
+class _AppInitializerState extends State<AppInitializer> {
+  @override
+  void initState() {
+    super.initState();
+    _determineInitialRoute();
   }
-  
-  Future<String> _getInitialRoute() async {
+
+  void _determineInitialRoute() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? participationSettings = prefs.getString('participation_settings');
       
       if (participationSettings != null && participationSettings.isNotEmpty) {
-        return '/'; // Go to home
+        // User has completed participation selection, go to home
+        Navigator.of(context).pushReplacementNamed('/');
       } else {
-        return '/participation_selection'; // Go to participation selection
+        // User hasn't selected participation mode yet
+        Navigator.of(context).pushReplacementNamed('/participation_selection');
       }
     } catch (error) {
-      print('[InitialRouteDecider] Error: $error');
-      return '/participation_selection'; // Default to participation selection
+      print('Error determining initial route: $error');
+      // Default to participation selection on error
+      Navigator.of(context).pushReplacementNamed('/participation_selection');
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Show a loading screen while determining the route
+    return Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
   }
 }
