@@ -21,105 +21,163 @@ class GlobalData {
 /// Handles BackgroundGeolocation events when the app is in a headless state.
 /// This allows the app to respond to location and geofence events even when terminated or in the background.
 void backgroundGeolocationHeadlessTask(bg.HeadlessEvent headlessEvent) async {
-  print('📬 --> $headlessEvent');
+  try {
+    print('📬 --> $headlessEvent');
 
-  switch (headlessEvent.name) {
-    case bg.Event.TERMINATE:
-      // Handle app termination event.
-      try {
-        // Uncomment to fetch current position on terminate event.
-        // bg.Location location = await bg.BackgroundGeolocation.getCurrentPosition(samples: 1);
-        print('[getCurrentPosition] Headless: $headlessEvent');
-      } catch (error) {
-        print('[getCurrentPosition] Headless ERROR: $error');
-      }
-      break;
-    case bg.Event.HEARTBEAT:
-      // Optionally handle heartbeat event.
-      /*
-      try {
-        bg.Location location = await bg.BackgroundGeolocation.getCurrentPosition(samples: 1);
-        print('[getCurrentPosition] Headless: $location');
-      } catch (error) {
-        print('[getCurrentPosition] Headless ERROR: $error');
-      }
-      */
-      break;
-    case bg.Event.LOCATION:
-      // Handle location update event.
-      bg.Location location = headlessEvent.event;
-      print(location);
-      break;
-    case bg.Event.MOTIONCHANGE:
-      // Handle motion change event.
-      bg.Location location = headlessEvent.event;
-      print(location);
-      break;
-    case bg.Event.GEOFENCE:
-      // Handle geofence event.
-      bg.GeofenceEvent geofenceEvent = headlessEvent.event;
-      print(geofenceEvent);
-      break;
-    case bg.Event.GEOFENCESCHANGE:
-      // Handle geofences change event.
-      bg.GeofencesChangeEvent event = headlessEvent.event;
-      print(event);
-      break;
-    case bg.Event.SCHEDULE:
-      // Handle schedule event.
-      bg.State state = headlessEvent.event;
-      print(state);
-      break;
-    case bg.Event.ACTIVITYCHANGE:
-      // Handle activity change event.
-      bg.ActivityChangeEvent event = headlessEvent.event;
-      print(event);
-      break;
-    case bg.Event.HTTP:
-      // Handle HTTP event.
-      bg.HttpEvent response = headlessEvent.event;
-      print(response);
-      break;
-    case bg.Event.POWERSAVECHANGE:
-      // Handle power save mode change.
-      bool enabled = headlessEvent.event;
-      print(enabled);
-      break;
-    case bg.Event.CONNECTIVITYCHANGE:
-      // Handle connectivity change event.
-      bg.ConnectivityChangeEvent event = headlessEvent.event;
-      print(event);
-      break;
-    case bg.Event.ENABLEDCHANGE:
-      // Handle enabled state change.
-      bool enabled = headlessEvent.event;
-      print(enabled);
-      break;
-    case bg.Event.AUTHORIZATION:
-      // Handle authorization event.
-      bg.AuthorizationEvent event = headlessEvent.event;
-      print(event);
-      break;
+    switch (headlessEvent.name) {
+      case bg.Event.TERMINATE:
+        // Handle app termination event.
+        try {
+          // Uncomment to fetch current position on terminate event.
+          // bg.Location location = await bg.BackgroundGeolocation.getCurrentPosition(samples: 1);
+          print('[getCurrentPosition] Headless: $headlessEvent');
+        } catch (error) {
+          print('[getCurrentPosition] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.HEARTBEAT:
+        // Optionally handle heartbeat event.
+        /*
+        try {
+          bg.Location location = await bg.BackgroundGeolocation.getCurrentPosition(samples: 1);
+          print('[getCurrentPosition] Headless: $location');
+        } catch (error) {
+          print('[getCurrentPosition] Headless ERROR: $error');
+        }
+        */
+        break;
+      case bg.Event.LOCATION:
+        // Handle location update event.
+        try {
+          bg.Location location = headlessEvent.event;
+          print(location);
+        } catch (error) {
+          print('[LOCATION] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.MOTIONCHANGE:
+        // Handle motion change event.
+        try {
+          bg.Location location = headlessEvent.event;
+          print(location);
+        } catch (error) {
+          print('[MOTIONCHANGE] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.GEOFENCE:
+        // Handle geofence event.
+        try {
+          bg.GeofenceEvent geofenceEvent = headlessEvent.event;
+          print(geofenceEvent);
+        } catch (error) {
+          print('[GEOFENCE] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.GEOFENCESCHANGE:
+        // Handle geofences change event.
+        try {
+          bg.GeofencesChangeEvent event = headlessEvent.event;
+          print(event);
+        } catch (error) {
+          print('[GEOFENCESCHANGE] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.SCHEDULE:
+        // Handle schedule event.
+        try {
+          bg.State state = headlessEvent.event;
+          print(state);
+        } catch (error) {
+          print('[SCHEDULE] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.ACTIVITYCHANGE:
+        // Handle activity change event.
+        try {
+          bg.ActivityChangeEvent event = headlessEvent.event;
+          print(event);
+        } catch (error) {
+          print('[ACTIVITYCHANGE] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.HTTP:
+        // Handle HTTP event.
+        try {
+          bg.HttpEvent response = headlessEvent.event;
+          print(response);
+        } catch (error) {
+          print('[HTTP] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.POWERSAVECHANGE:
+        // Handle power save mode change.
+        try {
+          bool enabled = headlessEvent.event;
+          print(enabled);
+        } catch (error) {
+          print('[POWERSAVECHANGE] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.CONNECTIVITYCHANGE:
+        // Handle connectivity change event.
+        try {
+          bg.ConnectivityChangeEvent event = headlessEvent.event;
+          print(event);
+        } catch (error) {
+          print('[CONNECTIVITYCHANGE] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.ENABLEDCHANGE:
+        // Handle enabled state change.
+        try {
+          bool enabled = headlessEvent.event;
+          print(enabled);
+        } catch (error) {
+          print('[ENABLEDCHANGE] Headless ERROR: $error');
+        }
+        break;
+      case bg.Event.AUTHORIZATION:
+        // Handle authorization event.
+        try {
+          bg.AuthorizationEvent event = headlessEvent.event;
+          print(event);
+        } catch (error) {
+          print('[AUTHORIZATION] Headless ERROR: $error');
+        }
+        break;
+    }
+  } catch (error) {
+    print('[backgroundGeolocationHeadlessTask] Critical ERROR: $error');
   }
 }
 
 /// Function to handle background fetch events
 void backgroundFetchHeadlessTask(HeadlessTask task) async {
-  var taskId = task.taskId;
-  var timeout = task.timeout;
-  if (timeout) {
-    print("[BackgroundFetch] HeadlessTask timeout: $taskId");
+  try {
+    var taskId = task.taskId;
+    var timeout = task.timeout;
+    if (timeout) {
+      print("[BackgroundFetch] HeadlessTask timeout: $taskId");
+      BackgroundFetch.finish(taskId);
+      return;
+    }
+
+    print("[BackgroundFetch] HeadlessTask start: $taskId");
+
+    //
+    // Perform your work here.
+    //
+
     BackgroundFetch.finish(taskId);
-    return;
+  } catch (error) {
+    print("[BackgroundFetch] HeadlessTask ERROR: $error");
+    // Still try to finish the task
+    try {
+      BackgroundFetch.finish(task.taskId);
+    } catch (finishError) {
+      print("[BackgroundFetch] Error finishing task: $finishError");
+    }
   }
-
-  print("[BackgroundFetch] HeadlessTask start: $taskId");
-
-  //
-  // Perform your work here.
-  //
-
-  BackgroundFetch.finish(taskId);
 }
 
 /// App entry point.
@@ -159,11 +217,26 @@ void main() {
     // Register headless tasks with error handling to prevent UI blocking
     try {
       print('[main.dart] Registering headless tasks...');
-      bg.BackgroundGeolocation.registerHeadlessTask(backgroundGeolocationHeadlessTask);
-      BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
-      print('[main.dart] Headless tasks registered successfully');
+      
+      // Register background geolocation headless task with error handling
+      try {
+        bg.BackgroundGeolocation.registerHeadlessTask(backgroundGeolocationHeadlessTask);
+        print('[main.dart] BackgroundGeolocation headless task registered');
+      } catch (bgError) {
+        print('[main.dart] Error registering BackgroundGeolocation headless task: $bgError');
+      }
+      
+      // Register background fetch headless task with error handling
+      try {
+        BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+        print('[main.dart] BackgroundFetch headless task registered');
+      } catch (bfError) {
+        print('[main.dart] Error registering BackgroundFetch headless task: $bfError');
+      }
+      
+      print('[main.dart] Headless task registration completed');
     } catch (error) {
-      print('[main.dart] Error registering headless tasks (non-fatal): $error');
+      print('[main.dart] Error in headless task registration block (non-fatal): $error');
       // Continue app startup even if headless task registration fails
     }
     

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../models/survey_models.dart';
 import '../models/consent_models.dart';
 import '../db/survey_database.dart';
@@ -28,12 +29,11 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
       final participationJson = prefs.getString('participation_settings');
       if (participationJson != null) {
         // Parse the JSON to get research site
-        final settings = ParticipationSettings.fromJson(
-          Map<String, dynamic>.from(
-            // Simple JSON parsing since we know the structure
-            {'isResearchParticipant': true, 'researchSite': 'barcelona'}
-          )
+        final Map<String, dynamic> participationData = Map<String, dynamic>.from(
+          jsonDecode(participationJson)
         );
+        
+        final settings = ParticipationSettings.fromJson(participationData);
         setState(() {
           _researchSite = settings.researchSite ?? 'barcelona';
         });
@@ -209,6 +209,10 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
               SizedBox(height: 24),
               _buildAgeField(),
               SizedBox(height: 24),
+              if (_researchSite == 'gauteng') ...[
+                _buildSuburbField(),
+                SizedBox(height: 24),
+              ],
               _buildEthnicityField(),
               SizedBox(height: 24),
               _buildGenderField(),
@@ -217,8 +221,10 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
               SizedBox(height: 24),
               _buildBirthPlaceField(),
               SizedBox(height: 24),
-              _buildLivesInBarcelonaField(),
-              SizedBox(height: 24),
+              if (_researchSite == 'barcelona') ...[
+                _buildLivesInBarcelonaField(),
+                SizedBox(height: 24),
+              ],
               _buildBuildingTypeField(),
               SizedBox(height: 24),
               _buildHouseholdItemsField(),
@@ -281,6 +287,20 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
     );
   }
 
+  Widget _buildSuburbField() {
+    return _buildSectionCard(
+      title: 'Location',
+      child: FormBuilderTextField(
+        name: 'suburb',
+        decoration: InputDecoration(
+          labelText: 'In which suburb or community in Gauteng do you live?',
+          border: OutlineInputBorder(),
+        ),
+        validator: FormBuilderValidators.required(errorText: 'Please enter your suburb or community'),
+      ),
+    );
+  }
+
   Widget _buildEthnicityField() {
     return _buildSectionCard(
       title: 'Ethnicity',
@@ -293,6 +313,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
         options: _ethnicityOptions.map((option) => 
           FormBuilderFieldOption(value: option, child: Text(option))
         ).toList(),
+        orientation: OptionsOrientation.vertical,
         validator: FormBuilderValidators.compose([
           FormBuilderValidators.required(errorText: 'Please select at least one option'),
         ]),

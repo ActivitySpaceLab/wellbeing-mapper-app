@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import 'dart:convert';
 import '../models/survey_models.dart';
+import '../models/consent_models.dart';
 import '../db/survey_database.dart';
 
 class RecurringSurveyScreen extends StatefulWidget {
@@ -17,8 +20,58 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   List<File> _selectedImages = [];
   List<String> _voiceNoteUrls = [];
   final ImagePicker _picker = ImagePicker();
+  String _researchSite = 'barcelona'; // Default to Barcelona
 
-  final List<String> _activityOptions = [
+  @override
+  void initState() {
+    super.initState();
+    _loadResearchSite();
+  }
+
+  Future<void> _loadResearchSite() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final participationJson = prefs.getString('participation_settings');
+      if (participationJson != null) {
+        // Parse the JSON to get research site
+        final Map<String, dynamic> participationData = Map<String, dynamic>.from(
+          jsonDecode(participationJson)
+        );
+        
+        final settings = ParticipationSettings.fromJson(participationData);
+        setState(() {
+          _researchSite = settings.researchSite ?? 'barcelona';
+        });
+      }
+    } catch (e) {
+      // Default to Barcelona if any error
+      setState(() {
+        _researchSite = 'barcelona';
+      });
+    }
+  }
+
+  // Gauteng-specific activity options based on survey_questions_gp.md
+  final List<String> _gautengActivityOptions = [
+    'Unemployed, looking for work',
+    'Unemployed but NOT looking for work',
+    'Temporary/seasonal labour',
+    'Part-time employed',
+    'Full-time employed',
+    'Self employed',
+    'Skills development course (e.g. learnership)',
+    'Student',
+    'Retired',
+    'Homemaker',
+    'Caring for children/ill relatives',
+    'Volunteered',
+    'Exercised',
+    'Vacation',
+    'Other'
+  ];
+
+  // Barcelona activity options (original)
+  final List<String> _barcelonaActivityOptions = [
     'Employed',
     'Unemployed',
     'Student',
@@ -28,7 +81,14 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     'Other'
   ];
 
-  final List<String> _livingArrangementOptions = [
+  // Gauteng-specific living arrangement options
+  final List<String> _gautengLivingArrangementOptions = [
+    'alone',
+    'others'
+  ];
+
+  // Barcelona living arrangement options (original)
+  final List<String> _barcelonaLivingArrangementOptions = [
     'Living alone',
     'Living with family',
     'Living with friends/roommates',
@@ -36,7 +96,17 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     'Other'
   ];
 
-  final List<String> _relationshipOptions = [
+  // Gauteng-specific relationship options  
+  final List<String> _gautengRelationshipOptions = [
+    'Single',
+    'In a committed relationship/married',
+    'Separated',
+    'Divorced',
+    'Widowed'
+  ];
+
+  // Barcelona relationship options (original)
+  final List<String> _barcelonaRelationshipOptions = [
     'Single',
     'In a relationship',
     'Married',
@@ -44,6 +114,19 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     'Widowed',
     'Prefer not to say'
   ];
+
+  // Getters for site-specific options
+  List<String> get _activityOptions => _researchSite == 'gauteng' 
+      ? _gautengActivityOptions 
+      : _barcelonaActivityOptions;
+      
+  List<String> get _livingArrangementOptions => _researchSite == 'gauteng' 
+      ? _gautengLivingArrangementOptions 
+      : _barcelonaLivingArrangementOptions;
+      
+  List<String> get _relationshipOptions => _researchSite == 'gauteng' 
+      ? _gautengRelationshipOptions 
+      : _barcelonaRelationshipOptions;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +150,10 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
               SizedBox(height: 24),
               _buildRelationshipSection(),
               SizedBox(height: 24),
+              if (_researchSite == 'gauteng') ...[
+                _buildHealthSection(),
+                SizedBox(height: 24),
+              ],
               _buildWellbeingSection(),
               SizedBox(height: 24),
               _buildPersonalCharacteristicsSection(),
@@ -106,8 +193,10 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
 
   Widget _buildActivitiesSection() {
     return _buildSectionCard(
-      title: 'Current Activities',
-      subtitle: 'Select all that apply',
+      title: _researchSite == 'gauteng' 
+          ? 'What did you do with your time in the last two weeks?' 
+          : 'Current Activities',
+      subtitle: 'Mark ALL the choices that apply',
       child: FormBuilderCheckboxGroup<String>(
         name: 'activities',
         decoration: InputDecoration(border: InputBorder.none),
@@ -121,7 +210,9 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
 
   Widget _buildLivingArrangementSection() {
     return _buildSectionCard(
-      title: 'Living Arrangement',
+      title: _researchSite == 'gauteng'
+          ? 'In the last two weeks, did you live alone or with others?'
+          : 'Living Arrangement',
       child: FormBuilderRadioGroup<String>(
         name: 'livingArrangement',
         decoration: InputDecoration(border: InputBorder.none),
@@ -135,13 +226,33 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
 
   Widget _buildRelationshipSection() {
     return _buildSectionCard(
-      title: 'Relationship Status',
+      title: _researchSite == 'gauteng'
+          ? 'What is your current relationship status? (Select the single best option)'
+          : 'Relationship Status',
       child: FormBuilderRadioGroup<String>(
         name: 'relationshipStatus',
         decoration: InputDecoration(border: InputBorder.none),
         options: _relationshipOptions.map((option) => 
           FormBuilderFieldOption(value: option, child: Text(option))
         ).toList(),
+        validator: FormBuilderValidators.required(errorText: 'Please select an option'),
+      ),
+    );
+  }
+
+  Widget _buildHealthSection() {
+    return _buildSectionCard(
+      title: 'General Health',
+      child: FormBuilderRadioGroup<String>(
+        name: 'generalHealth',
+        decoration: InputDecoration(border: InputBorder.none),
+        options: [
+          FormBuilderFieldOption(value: 'Excellent', child: Text('Excellent')),
+          FormBuilderFieldOption(value: 'Very good', child: Text('Very good')),
+          FormBuilderFieldOption(value: 'Good', child: Text('Good')),
+          FormBuilderFieldOption(value: 'Fair', child: Text('Fair')),
+          FormBuilderFieldOption(value: 'Poor', child: Text('Poor')),
+        ],
         validator: FormBuilderValidators.required(errorText: 'Please select an option'),
       ),
     );
@@ -192,31 +303,82 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   }
 
   Widget _buildDigitalDiarySection() {
-    return _buildSectionCard(
-      title: 'Digital Diary',
-      subtitle: 'Please share your thoughts and experiences',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTextQuestion(
-            'environmentalChallenges',
-            'What environmental challenges have you faced in the past two weeks? (e.g., extreme weather, air pollution, noise)',
-          ),
-          SizedBox(height: 16),
-          _buildTextQuestion(
-            'challengesStressLevel',
-            'How would you rate the stress level of these challenges? Please explain.',
-          ),
-          SizedBox(height: 16),
-          _buildTextQuestion(
-            'copingHelp',
-            'What has helped you cope with these challenges?',
-          ),
-          SizedBox(height: 16),
-          _buildVoiceNotesSection(),
-          SizedBox(height: 16),
-          _buildImageSection(),
-        ],
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Digital Diary',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            
+            // First prompt as a wrapped paragraph
+            Text(
+              _researchSite == 'gauteng'
+                  ? 'What environmental challenges (e.g., poor air quality, heat, extreme weather) did you experience in the past 2 weeks?'
+                  : 'What environmental challenges have you faced in the past two weeks? (e.g., extreme weather, air pollution, noise)',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+            SizedBox(height: 8),
+            FormBuilderTextField(
+              name: 'environmentalChallenges',
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Please describe any environmental challenges...',
+              ),
+              maxLines: 3,
+              minLines: 2,
+            ),
+            
+            SizedBox(height: 20),
+            
+            // Second prompt as a wrapped paragraph
+            Text(
+              _researchSite == 'gauteng'
+                  ? 'How stressful were these environmental challenges for you?'
+                  : 'How would you rate the stress level of these challenges? Please explain.',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+            SizedBox(height: 8),
+            FormBuilderTextField(
+              name: 'challengesStressLevel',
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Please describe the stress level...',
+              ),
+              maxLines: 3,
+              minLines: 2,
+            ),
+            
+            SizedBox(height: 20),
+            
+            // Third prompt as a wrapped paragraph
+            Text(
+              _researchSite == 'gauteng'
+                  ? 'Who or what helped you to manage/cope with these environmental challenges?'
+                  : 'What has helped you cope with these challenges?',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+            SizedBox(height: 8),
+            FormBuilderTextField(
+              name: 'copingHelp',
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Please describe what helped you cope...',
+              ),
+              maxLines: 3,
+              minLines: 2,
+            ),
+            
+            SizedBox(height: 20),
+            _buildVoiceNotesSection(),
+            SizedBox(height: 16),
+            _buildImageSection(),
+          ],
+        ),
       ),
     );
   }
