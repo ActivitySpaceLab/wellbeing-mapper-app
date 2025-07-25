@@ -1,0 +1,42 @@
+# Example codecov.yaml for a Flutter/Dart project
+# Docs: https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  status:
+    project:
+      default:
+        target: 80
+        threshold: 5
+        # Only fail if coverage drops by more than 5%
+    patch:
+      default:
+        target: 80
+        threshold: 10
+        # Only fail if patch coverage drops by more than 10%
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: true
+
+ignore:
+  - "**/*.g.dart"
+  - "**/*.freezed.dart"
+  - "**/generated/*"
+  - "**/test/*"
+
+# Flags can be used for multiple test suites or platforms
+flags:
+  flutter:
+    paths:
+      - wellbeing-mapper-app/lib/
+    carryforward: true
+
+# Adjust paths if your coverage file is not in the default location
+parsers:
+  gcov:
+    branch_detection:
+      conditional: true
+      loop: true
+      method: true
+      macro: true
