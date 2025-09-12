@@ -3,7 +3,14 @@
 echo "=== COMPREHENSIVE QUALTRICS API DIAGNOSIS ==="
 echo ""
 
-QUALTRICS_TOKEN="WxyQMBmQvkPrL3H9YuKPCGhpCtccT7Z28KKwkMVt"
+# Check if QUALTRICS_API_TOKEN is set
+if [ -z "$QUALTRICS_API_TOKEN" ]; then
+    echo "❌ Error: QUALTRICS_API_TOKEN environment variable not set"
+    echo "Please set it with: export QUALTRICS_API_TOKEN=your_token_here"
+    exit 1
+fi
+
+QUALTRICS_TOKEN="$QUALTRICS_API_TOKEN"
 QUALTRICS_URL="https://pretoria.eu.qualtrics.com"
 SURVEY_ID="SV_8pudN8qTI6iQKY6"
 

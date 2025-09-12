@@ -4,7 +4,27 @@ import 'package:http/http.dart' as http;
 /// Comprehensive Qualtrics Survey Creator with Exact Question Text from Flutter App
 /// This creates surveys with the exact question text that users see in the app
 void main() async {
-  print('🚀 Creating comprehensive Qualtrics surveys with exact question text...');
+  import 'dart:convert';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+
+void main() async {
+  print('� Creating proper Qualtrics surveys with exact Flutter app question text...');
+  print('');
+
+  // Check if API token is set
+  final apiToken = Platform.environment['QUALTRICS_API_TOKEN'] ?? '';
+  if (apiToken.isEmpty) {
+    print('❌ QUALTRICS_API_TOKEN environment variable not set');
+    print('Please set it with: export QUALTRICS_API_TOKEN=your_token_here');
+    return;
+  }
+
+  try {
+    final creator = ProperQualtricsSurveyCreator(apiToken);
+    
+    final initialSurveyId = await creator.createInitialSurvey();
+    print('✅ Initial Survey Created: $initialSurveyId');
   
   try {
     final creator = ProperQualtricsSurveyCreator();
@@ -35,7 +55,9 @@ void main() async {
 
 class ProperQualtricsSurveyCreator {
   static const String _baseUrl = 'https://pretoria.eu.qualtrics.com/API/v3';
-  static const String _apiToken = 'WxyQMBmQvkPrL3H9YuKPCGhpCtccT7Z28KKwkMVt';
+  final String _apiToken;
+  
+  ProperQualtricsSurveyCreator(this._apiToken);
   
   /// Create Initial Survey with exact question text from Flutter app
   Future<String> createInitialSurvey() async {

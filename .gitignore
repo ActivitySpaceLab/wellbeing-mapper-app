@@ -1,6 +1,23 @@
+untracked
+
 # Keys
 android/key.properties
 *.pem
+
+# SECURITY - Never commit sensitive credentials
+.env
+*.env
+.env.*
+!.env.example
+
+# API Keys and Tokens
+**/api_keys.dart
+**/tokens.dart
+**/credentials.dart
+
+# Qualtrics specific
+qualtrics_config.dart
+qualtrics_tokens.dart
 
 example_data
 original_survey

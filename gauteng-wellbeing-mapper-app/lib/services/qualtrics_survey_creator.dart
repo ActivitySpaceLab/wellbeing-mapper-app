@@ -1,14 +1,21 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'secure_config.dart';
 
 /// Service for creating Qualtrics surveys that match the Flutter app structure
 class QualtricsSurveyCreator {
-  // TODO: Replace with your actual Qualtrics API credentials
   static const String _baseUrl = 'https://pretoria.eu.qualtrics.com/API/v3';
-  static const String _apiToken = 'WxyQMBmQvkPrL3H9YuKPCGhpCtccT7Z28KKwkMVt';
   
   /// Create all three surveys needed for the app
   static Future<Map<String, String>> createAllSurveys() async {
+    // Validate token is available
+    try {
+      final apiToken = SecureConfig.qualtricsApiToken;
+      print('Using secure API token configuration');
+    } catch (e) {
+      throw Exception('Qualtrics API token not configured: $e');
+    }
+    
     try {
       final initialSurveyId = await createInitialSurvey();
       final biweeklySurveyId = await createBiweeklySurvey();
@@ -89,7 +96,7 @@ class QualtricsSurveyCreator {
       final response = await http.get(
         url,
         headers: {
-          'X-API-TOKEN': _apiToken,
+          'X-API-TOKEN': SecureConfig.qualtricsApiToken,
           'Content-Type': 'application/json',
         },
       );
@@ -122,7 +129,7 @@ class QualtricsSurveyCreator {
       await http.delete(
         url,
         headers: {
-          'X-API-TOKEN': _apiToken,
+          'X-API-TOKEN': SecureConfig.qualtricsApiToken,
           'Content-Type': 'application/json',
         },
       );
@@ -141,7 +148,7 @@ class QualtricsSurveyCreator {
     final response = await http.post(
       url,
       headers: {
-        'X-API-TOKEN': _apiToken,
+        'X-API-TOKEN': SecureConfig.qualtricsApiToken,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
@@ -202,7 +209,7 @@ class QualtricsSurveyCreator {
     final response = await http.post(
       url,
       headers: {
-        'X-API-TOKEN': _apiToken,
+        'X-API-TOKEN': SecureConfig.qualtricsApiToken,
         'Content-Type': 'application/json',
       },
       body: jsonEncode(questionData),

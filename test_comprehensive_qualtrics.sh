@@ -3,14 +3,21 @@
 echo "=== Comprehensive Qualtrics Survey Structure Test ==="
 echo ""
 
-QUALTRICS_TOKEN="WxyQMBmQvkPrL3H9YuKPCGhpCtccT7Z28KKwkMVt"
+# Check if QUALTRICS_API_TOKEN is set
+if [ -z "$QUALTRICS_API_TOKEN" ]; then
+    echo "❌ Error: QUALTRICS_API_TOKEN environment variable not set"
+    echo "Please set it with: export QUALTRICS_API_TOKEN=your_token_here"
+    exit 1
+fi
+
+QUALTRICS_TOKEN="$QUALTRICS_API_TOKEN"
 QUALTRICS_URL="https://pretoria.eu.qualtrics.com"
 
-# Test all three survey IDs
+# Test all three survey IDs (updated to new surveys)
 declare -A SURVEYS
-SURVEYS["Initial Survey"]="SV_8pudN8qTI6iQKY6"
-SURVEYS["Biweekly Survey"]="SV_aXmfOtAIRmIVdfU"
-SURVEYS["Consent Survey"]="SV_eu4OVw6dpbWY5hQ"
+SURVEYS["Initial Survey"]="SV_aflSCXazOJiTkqy"
+SURVEYS["Biweekly Survey"]="SV_0D4JPS2pOapx5lk" 
+SURVEYS["Consent Survey"]="SV_3OXso1SLL2yte8C"
 
 test_survey_structure() {
     local survey_name="$1"

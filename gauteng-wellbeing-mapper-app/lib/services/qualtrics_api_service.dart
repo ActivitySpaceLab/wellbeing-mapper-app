@@ -8,12 +8,14 @@ import '../db/survey_database.dart';
 import '../models/data_sharing_consent.dart';
 import 'data_upload_service.dart'; // For LocationTrack
 import 'location_encryption_service.dart';
+import 'secure_config.dart';
 
 /// Service for syncing local survey data with Qualtrics via API
 class QualtricsApiService {
-  // TODO: Replace with your actual Qualtrics API credentials
   static const String _baseUrl = 'https://pretoria.eu.qualtrics.com/API/v3';
-  static const String _apiToken = 'WxyQMBmQvkPrL3H9YuKPCGhpCtccT7Z28KKwkMVt';
+  
+  // Get API token securely from environment variables - NEVER hardcode tokens!
+  static String get _apiToken => SecureConfig.qualtricsApiToken;
   
   // Survey IDs for the NEW fixed surveys (updated 2025-09-12) - CAPTURES ALL DATA
   static const String _initialSurveyId = 'SV_aflSCXazOJiTkqy'; // NEW Initial Survey (34 Questions QID1-QID34) - FIXED DATA COLLECTION

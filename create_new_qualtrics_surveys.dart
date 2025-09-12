@@ -2,11 +2,20 @@ import 'dart:convert';
 import 'dart:io';
 
 /// Script to create new Qualtrics surveys with proper data collection for all questions
-/// Based on the working approach from create_consent_survey_blueprint.dart
+/// SECURITY: Uses environment variables for API token - NEVER hardcode credentials!
 void main() async {
   print('🔧 Creating New Qualtrics Surveys for Fixed Data Collection...\n');
 
-  const String qualtricsToken = 'WxyQMBmQvkPrL3H9YuKPCGhpCtccT7Z28KKwkMVt';
+  // Get credentials from environment variables - SECURE!
+  final qualtricsToken = Platform.environment['QUALTRICS_API_TOKEN'] ?? 
+                         _readFromEnvFile('QUALTRICS_API_TOKEN');
+  
+  if (qualtricsToken == null || qualtricsToken.isEmpty) {
+    print('❌ SECURITY ERROR: QUALTRICS_API_TOKEN not found!');
+    print('Please set the QUALTRICS_API_TOKEN environment variable or create a .env file');
+    exit(1);
+  }
+  
   const String qualtricsUrl = 'https://pretoria.eu.qualtrics.com';
 
   final client = HttpClient();
@@ -860,4 +869,23 @@ List<Map<String, dynamic>> _getConsentSurveyQuestions() {
       "QuestionDescription": "Consent timestamp"
     }
   ];
+}
+
+/// Read environment variable from .env file (development fallback)
+String? _readFromEnvFile(String key) {
+  try {
+    final envFile = File('.env');
+    if (envFile.existsSync()) {
+      final contents = envFile.readAsStringSync();
+      final lines = contents.split('\n');
+      for (final line in lines) {
+        if (line.startsWith('$key=')) {
+          return line.substring(key.length + 1).trim();
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+  return null;
 }

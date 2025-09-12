@@ -154,7 +154,7 @@ dart test_consent_survey_simple.dart
 ### API Endpoints
 - **Base URL**: `https://pretoria.eu.qualtrics.com/API/v3`
 - **Create Response**: `POST /surveys/{surveyId}/responses`
-- **API Token**: `WxyQMBmQvkPrL3H9YuKPCGhpCtccT7Z28KKwkMVt`
+- **API Token**: `[SECURE] - Set in environment variable QUALTRICS_API_TOKEN`
 
 ---
 
