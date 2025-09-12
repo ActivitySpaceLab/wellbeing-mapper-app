@@ -15,10 +15,10 @@ class QualtricsApiService {
   static const String _baseUrl = 'https://pretoria.eu.qualtrics.com/API/v3';
   static const String _apiToken = 'WxyQMBmQvkPrL3H9YuKPCGhpCtccT7Z28KKwkMVt';
   
-  // Survey IDs for the simple text-field surveys (updated 2025-08-11)
-  static const String _initialSurveyId = 'SV_8pudN8qTI6iQKY6'; // Simple Initial Survey (Text Fields) - PUBLISHED
-  static const String _biweeklySurveyId = 'SV_aXmfOtAIRmIVdfU'; // Simple Biweekly Survey (Text Fields) - PUBLISHED  
-  static const String _consentSurveyId = 'SV_eWjaIVtwRLEMNGS'; // Blueprint Consent Survey (16 Questions QID1-QID16) - PUBLISHED
+  // Survey IDs for the NEW fixed surveys (updated 2025-09-12) - CAPTURES ALL DATA
+  static const String _initialSurveyId = 'SV_aflSCXazOJiTkqy'; // NEW Initial Survey (34 Questions QID1-QID34) - FIXED DATA COLLECTION
+  static const String _biweeklySurveyId = 'SV_0D4JPS2pOapx5lk'; // NEW Biweekly Survey (19 Questions QID1-QID19) - FIXED DATA COLLECTION  
+  static const String _consentSurveyId = 'SV_3OXso1SLL2yte8C'; // NEW Consent Survey (16 Questions QID1-QID16) - FIXED DATA COLLECTION
 
   /// Sync a completed initial survey to Qualtrics
   static Future<bool> syncInitialSurvey(Map<String, dynamic> surveyData) async {
