@@ -12,7 +12,7 @@ fi
 
 QUALTRICS_TOKEN="$QUALTRICS_API_TOKEN"
 QUALTRICS_URL="https://pretoria.eu.qualtrics.com"
-SURVEY_ID="SV_8pudN8qTI6iQKY6"
+SURVEY_ID="SV_aflSCXazOJiTkqy"  # New initial survey with 34 questions
 
 echo "1. Testing different API formats..."
 
