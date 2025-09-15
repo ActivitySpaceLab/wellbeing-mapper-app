@@ -10,7 +10,7 @@ class QualtricsSurveyCreator {
   static Future<Map<String, String>> createAllSurveys() async {
     // Validate token is available
     try {
-      final apiToken = SecureConfig.qualtricsApiToken;
+      SecureConfig.qualtricsApiToken; // Validate token exists
       print('Using secure API token configuration');
     } catch (e) {
       throw Exception('Qualtrics API token not configured: $e');
