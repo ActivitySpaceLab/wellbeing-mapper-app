@@ -15,9 +15,15 @@ android/key.properties
 **/tokens.dart
 **/credentials.dart
 
-# Qualtrics specific
+# Qualtrics specific - SECURITY: Prevent API token commits
 qualtrics_config.dart
 qualtrics_tokens.dart
+secure_config.dart
+**/create_encrypted_survey_configured.dart
+**/qualtrics_api_service*.dart
+**/qualtrics_survey_creator*.dart
+**/test_qualtrics*.dart
+**/debug_qualtrics*.dart
 
 example_data
 original_survey

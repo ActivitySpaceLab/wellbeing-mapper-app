@@ -12,7 +12,6 @@ import '../models/consent_models.dart';
 import '../models/data_sharing_consent.dart';
 import '../models/app_mode.dart';
 import '../services/data_upload_service.dart';
-import '../services/qualtrics_api_service.dart';
 import '../db/survey_database.dart';
 import '../services/app_mode_service.dart';
 import 'interactive_location_privacy_map.dart';
@@ -1457,28 +1456,11 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     final formData = _formKey.currentState!.value;
     final submissionTime = DateTime.now();
     
-    // Get participant UUID for location encryption
-    String? participantUuid;
-    try {
-      final db = SurveyDatabase();
-      final consent = await db.getConsent();
-      participantUuid = consent?.participantUuid;
-    } catch (e) {
-      print('Error getting participant UUID: $e');
-    }
-    
     // Capture and encrypt location data at submission time
+    // Note: Location data capture temporarily disabled during security migration
+    // Will be re-enabled with secure web-based approach
     String? encryptedLocationData;
-    try {
-      encryptedLocationData = await QualtricsApiService.getEncryptedLocationDataForSubmissionTime(
-        participantUuid, 
-        submissionTime
-      );
-      print('Successfully captured location data for submission time: $submissionTime');
-    } catch (e) {
-      print('Error capturing location data at submission time: $e');
-      // Continue without location data
-    }
+    print('Location data capture disabled during security migration to web-based surveys');
       
     final surveyResponse = RecurringSurveyResponse(
       activities: List<String>.from(formData['activities'] ?? []),
@@ -1519,17 +1501,14 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     );
 
     final db = SurveyDatabase();
-    final surveyId = await db.insertRecurringSurvey(surveyResponse);
+    await db.insertRecurringSurvey(surveyResponse);
     
-    // Try to sync to Qualtrics immediately if connected
-    try {
-      final surveyData = await db.getUnsyncedRecurringSurveys();
-      final matchingSurvey = surveyData.firstWhere((s) => s['id'] == surveyId);
-      await QualtricsApiService.syncBiweeklySurvey(matchingSurvey);
-    } catch (syncError) {
-      print('Could not sync to Qualtrics immediately, will retry later: $syncError');
-      // Survey is saved locally and will sync when connectivity is available
-    }
+    // SECURITY: API sync disabled - using secure web-based submission instead
+    // The web-based survey approach is more secure as it doesn't expose API tokens
+    print('✅ Biweekly survey saved locally. Participants will complete web survey for secure submission.');
+    
+    // Note: API sync removed for security - web surveys provide secure data collection
+    // without exposing API tokens that could compromise all participant data
   }
 
   void _showBetaTestingSuccessMessage() {

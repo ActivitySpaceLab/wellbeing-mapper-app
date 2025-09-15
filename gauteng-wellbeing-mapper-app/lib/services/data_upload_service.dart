@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/survey_models.dart';
 import '../models/wellbeing_survey_models.dart';
 import '../db/survey_database.dart';
-import 'qualtrics_api_service.dart';
+import 'encrypted_survey_service.dart';
 
 /// Service for encrypting and uploading research data to study servers
 class DataUploadService {
@@ -406,14 +406,14 @@ class LocationTrack {
     }
   }
 
-  /// Sync pending surveys to Qualtrics in the background
+  /// Sync pending surveys using encrypted service
   static Future<void> syncPendingSurveysToQualtrics() async {
     try {
-      print('🔄 Starting background sync to Qualtrics...');
-      await QualtricsApiService.syncPendingSurveys();
-      print('✅ Background sync to Qualtrics completed');
+      print('🔄 Starting encrypted background sync...');
+      await EncryptedSurveyService.syncPendingSurveys();
+      print('✅ Encrypted background sync completed');
     } catch (e) {
-      print('❌ Background sync to Qualtrics failed: $e');
+      print('❌ Encrypted background sync failed: $e');
     }
   }
 }

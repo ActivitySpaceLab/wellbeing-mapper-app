@@ -9,7 +9,7 @@ import '../db/survey_database.dart';
 import '../services/app_mode_service.dart';
 import '../models/app_mode.dart';
 import '../services/participant_validation_service.dart';
-import '../services/qualtrics_api_service.dart';
+import '../services/encrypted_survey_service.dart';
 
 class ConsentFormScreen extends StatefulWidget {
   final String participantCode;
@@ -895,46 +895,25 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
       // Save consent to database
       final db = SurveyDatabase();
-      final consentId = await db.insertConsent(consent);
+      await db.insertConsent(consent);
 
       // Sync consent form to Qualtrics (if not in testing mode)
       if (!widget.isTestingMode) {
         try {
-          print('[ConsentForm] Syncing consent to Qualtrics...');
-          // Convert consent to the format expected by Qualtrics API
-          final consentData = {
-            'id': consentId, // Include the database ID for marking as synced
-            'participant_uuid': consent.participantUuid,
-            'participant_code': widget.participantCode,
-            'informed_consent': consent.informedConsent,
-            'data_processing_consent': consent.dataProcessing,
-            'race_ethnicity_consent': consent.consentRaceEthnicity,
-            'health_consent': consent.consentHealth,
-            'sexual_orientation_consent': consent.consentSexualOrientation,
-            'location_mobility_consent': consent.consentLocationMobility,
-            'data_transfer_consent': consent.consentDataTransfer,
-            'public_reporting_consent': consent.consentPublicReporting,
-            'data_sharing_researchers_consent': consent.consentResearcherSharing,
-            'further_research_consent': consent.consentFurtherResearch,
-            'public_repository_consent': consent.consentPublicRepository,
-            'followup_contact_consent': consent.consentFollowupContact,
-            'participant_signature': consent.participantSignature,
-            'consented_at': consent.consentedAt.toIso8601String(),
-            'research_site': widget.researchSite,
-          };
+          print('[ConsentForm] Syncing consent with encrypted service...');
           
-          final syncSuccess = await QualtricsApiService.syncConsentForm(consentData);
-          if (syncSuccess) {
-            print('[ConsentForm] ✅ Consent form synced to Qualtrics successfully');
-          } else {
-            print('[ConsentForm] ⚠️ Failed to sync consent form to Qualtrics');
-          }
+          // SECURITY: Using encrypted survey service for secure consent data transmission
+          EncryptedSurveyService.syncPendingSurveys().catchError((e) {
+            print('[ConsentForm] ⚠️ Encrypted sync will retry later: $e');
+          });
+          
+          print('[ConsentForm] ✅ Consent form saved and encrypted sync initiated');
         } catch (e) {
-          print('[ConsentForm] ❌ Error syncing consent to Qualtrics: $e');
+          print('[ConsentForm] ❌ Error with encrypted sync: $e');
           // Don't fail the whole process - consent is still saved locally
         }
       } else {
-        print('[ConsentForm] Skipping Qualtrics sync in testing mode');
+        print('[ConsentForm] Skipping sync in testing mode');
       }
 
       // Record consent with participant validation service (for research participants)

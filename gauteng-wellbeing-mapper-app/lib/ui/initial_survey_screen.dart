@@ -6,7 +6,7 @@ import '../models/survey_models.dart';
 import '../models/consent_models.dart';
 import '../models/app_mode.dart';
 import '../services/app_mode_service.dart';
-import '../services/qualtrics_api_service.dart';
+import '../services/encrypted_survey_service.dart';
 import '../db/survey_database.dart';
 
 class InitialSurveyScreen extends StatefulWidget {
@@ -687,15 +687,13 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
       await prefs.setBool('initial_survey_completed', true);
       print('Marked initial survey as completed');
       
-      // Try to sync to Qualtrics immediately if connected
-      try {
-        final surveyData = await db.getUnsyncedInitialSurveys();
-        final matchingSurvey = surveyData.firstWhere((s) => s['id'] == surveyId);
-        await QualtricsApiService.syncInitialSurvey(matchingSurvey);
-      } catch (syncError) {
-        print('Could not sync to Qualtrics immediately, will retry later: $syncError');
-        // Survey is saved locally and will sync when connectivity is available
-      }
+      // SECURITY: Using encrypted survey service - no API tokens exposed
+      // Trigger background sync when connectivity is available
+      EncryptedSurveyService.syncPendingSurveys().catchError((e) {
+        print('Background sync will retry later: $e');
+      });
+      
+      print('✅ Survey saved locally. Encrypted background sync initiated.');
     } catch (e) {
       print('Error saving initial survey: $e');
       rethrow;
