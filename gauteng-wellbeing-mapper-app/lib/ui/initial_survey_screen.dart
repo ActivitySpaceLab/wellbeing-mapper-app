@@ -682,6 +682,11 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
       final surveyId = await db.insertInitialSurvey(response);
       print('Initial survey saved to local database with ID: $surveyId');
       
+      // Mark initial survey as completed to prevent re-prompting
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('initial_survey_completed', true);
+      print('Marked initial survey as completed');
+      
       // Try to sync to Qualtrics immediately if connected
       try {
         final surveyData = await db.getUnsyncedInitialSurveys();
@@ -708,7 +713,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).popUntil((route) => route.isFirst); // Go back to main screen
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Go to main app and clear stack
             },
             child: Text('OK'),
           ),
@@ -771,7 +776,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).popUntil((route) => route.isFirst); // Go back to main screen
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Go to main app and clear stack
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             child: Text('Got it!', style: TextStyle(color: Colors.white)),

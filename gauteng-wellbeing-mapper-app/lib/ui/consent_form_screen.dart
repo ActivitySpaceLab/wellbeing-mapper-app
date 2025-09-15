@@ -190,15 +190,6 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                       ),
                     ),
                     
-                    // PILOT heading
-                    Center(
-                      child: Text(
-                        'PILOT',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    
                     // Title
                     Center(
                       child: Text(
@@ -315,27 +306,27 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                     ),
                     SizedBox(height: 16),
                     
-                    // What participants will be asked to do in the pilot phase
+                    // What participants will be asked to do
                     RichText(
                       text: TextSpan(
                         style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
                         children: [
-                          TextSpan(text: 'What participants will be asked to do in the pilot phase: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: 'What participants will be asked to do: ', style: TextStyle(fontWeight: FontWeight.bold)),
                           TextSpan(text: 'This study involves a mobile phone application called Space Mapper, which keeps track of where participants spend time, and lets participants share this information, '),
                           TextSpan(text: 'if they choose to', style: TextStyle(fontStyle: FontStyle.italic)),
-                          TextSpan(text: ', with the researchers. It also involves a series of surveys. Participants can participate in the pilot by installing Space Mapper on their mobile phone and letting it track their locations for up to six weeks (11 August-19 September 2025). They will receive surveys (questions and digital diary prompts) every two weeks starting 11 August 2025, in which they will be asked a series of questions about themselves and about their mental wellbeing. When responding to the survey, they will have the opportunity to share the locations tracked by Space Mapper during the previous two weeks. Participants can choose which questions they wish to answer and whether they wish to share their locations. Among other things, the surveys will ask about participants\' race/ethnicity, health, sexual orientation, location and mobility, wellbeing, environmental challenges in the past two weeks, and supports that help them cope with challenges.'),
+                          TextSpan(text: ', with the researchers. It also involves a series of surveys. Participants can participate by installing Space Mapper on their mobile phone and letting it track their locations for up to six months. They will receive surveys (questions and digital diary prompts) every two weeks, in which they will be asked a series of questions about themselves and about their mental wellbeing. When responding to the survey, they will have the opportunity to share the locations tracked by Space Mapper during the previous two weeks. Participants can choose which questions they wish to answer and whether they wish to share their locations. Among other things, the surveys will ask about participants\' race/ethnicity, health, sexual orientation, location and mobility, wellbeing, environmental challenges in the past two weeks, and supports that help them cope with challenges.'),
                         ],
                       ),
                     ),
                     SizedBox(height: 16),
                     
-                    // What the pilot data will be used for
+                    // What the data will be used for
                     RichText(
                       text: TextSpan(
                         style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
                         children: [
-                          TextSpan(text: 'What the pilot data will be used for: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'The pilot data will be used to better understand how well the study\'s methodology works and what, if anything needs to be revised. In the main study, the data will be used to protect the wellbeing of people who experience environmental and climate change challenges (e.g., exposure to air pollution or extreme heat events). This understanding will inform various products (e.g., resilience toolkits or early warning systems) that can be used by mental health professionals, service providers and policy makers.'),
+                          TextSpan(text: 'What the data will be used for: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: 'The data will be used to better understand how to protect the wellbeing of people who experience environmental and climate change challenges (e.g., exposure to air pollution or extreme heat events). This understanding will inform various products (e.g., resilience toolkits or early warning systems) that can be used by mental health professionals, service providers and policy makers.'),
                         ],
                       ),
                     ),
