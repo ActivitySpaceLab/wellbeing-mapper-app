@@ -1542,35 +1542,37 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text('Survey Submitted!'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Thank you for completing the wellbeing survey. Your responses have been saved locally.'),
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange[200]!),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Thank you for completing the wellbeing survey. Your responses have been saved locally.'),
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🧪 Beta Testing Mode',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Your data is stored locally for testing purposes. No data was transmitted to research servers.',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '🧪 Beta Testing Mode',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Your data is stored locally for testing purposes. No data was transmitted to research servers.',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           ElevatedButton(

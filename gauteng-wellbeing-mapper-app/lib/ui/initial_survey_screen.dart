@@ -722,53 +722,50 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Text('🧪 '),
-            Text('Beta Testing Mode'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Your initial survey responses have been saved locally for testing purposes.',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange[200]!),
+        title: Text('🧪 Beta Testing Mode'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your initial survey responses have been saved locally for testing purposes.',
+                style: TextStyle(fontSize: 16),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Beta Testing Info',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'If this had been research mode, your data would have been submitted to researchers. Since this is beta testing, no data was transmitted.',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                ],
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Beta Testing Info',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'If this had been research mode, your data would have been submitted to researchers. Since this is beta testing, no data was transmitted.',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            Text(
-              '💙 Thank you for beta testing the Wellbeing Mapper!',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.blue[600],
-                fontSize: 16,
+              SizedBox(height: 16),
+              Text(
+                '💙 Thank you for beta testing the Wellbeing Mapper!',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: Colors.blue[600],
+                  fontSize: 16,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           ElevatedButton(

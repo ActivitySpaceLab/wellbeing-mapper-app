@@ -637,7 +637,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
               _buildCheckbox(_repositoryConsent, (value) => setState(() => _repositoryConsent = value!),
                 'to what I contribute being placed in a public repository in a deidentified or anonymised form once the project is complete'),
               _buildCheckbox(_followUpConsent, (value) => setState(() => _followUpConsent = value!),
-                'to being contacted about participation in possible follow-up studies', isRequired: false),
+                'to being contacted about participation in possible follow-up studies'),
             ]),
           ] else ...[
             _buildConsentSection('I UNDERSTAND that:', [
@@ -849,7 +849,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             child: _isSubmitting
                 ? CircularProgressIndicator(color: Colors.white)
-                : Text('Submit Consent & Continue', style: TextStyle(fontSize: 18, color: Colors.white)),
+                : Text('Submit', style: TextStyle(fontSize: 18, color: Colors.white)),
           ),
         ),
         SizedBox(height: 8),
