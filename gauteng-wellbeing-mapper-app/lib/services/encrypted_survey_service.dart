@@ -3,6 +3,8 @@ import 'package:fast_rsa/fast_rsa.dart';
 import 'package:http/http.dart' as http;
 import '../db/survey_database.dart';
 import '../main.dart';
+import '../services/app_mode_service.dart';
+import '../models/app_mode.dart';
 
 /// Service for encrypting complete survey responses and sending to proxy server
 class EncryptedSurveyService {
@@ -31,21 +33,54 @@ AKr5gbTqca/dY/+Or3Ha/sECAwEAAQ==
     try {
       print('🔐 Starting encrypted survey sync...');
       
+      // CRITICAL: Check app mode before any upload operations
+      final currentMode = await AppModeService.getCurrentMode();
+      
+      // If in app testing mode, simulate upload but don't actually send data
+      if (currentMode == AppMode.appTesting) {
+        print('[EncryptedSurveyService] App Testing Mode: Simulating sync without sending real data');
+        await Future.delayed(Duration(seconds: 1));
+        print('✅ Encrypted survey sync completed (simulated)');
+        return;
+      }
+      
+      // Only proceed with real upload if in research mode
+      if (!await AppModeService.sendsDataToResearch()) {
+        print('[EncryptedSurveyService] Data upload not available in current app mode');
+        return;
+      }
+      
       final db = SurveyDatabase();
       
-      // Sync initial surveys
-      final unsyncedInitial = await db.getUnsyncedInitialSurveys();
-      for (final survey in unsyncedInitial) {
-        await _syncInitialSurveyEncrypted(survey);
+      // CONSENT SAFEGUARD: Check if participant has given consent before syncing surveys
+      // (Consent forms are always synced since they ARE the consent)
+      final participantUuid = GlobalData.userUUID;
+      if (participantUuid.isNotEmpty) {
+        final consent = await db.getLatestDataSharingConsent(participantUuid);
+        
+        // Sync initial and biweekly surveys only if consent exists
+        if (consent != null) {
+          print('[EncryptedSurveyService] Consent found, proceeding with survey sync');
+          
+          // Sync initial surveys
+          final unsyncedInitial = await db.getUnsyncedInitialSurveys();
+          for (final survey in unsyncedInitial) {
+            await _syncInitialSurveyEncrypted(survey);
+          }
+          
+          // Sync biweekly surveys  
+          final unsyncedBiweekly = await db.getUnsyncedRecurringSurveys();
+          for (final survey in unsyncedBiweekly) {
+            await _syncBiweeklySurveyEncrypted(survey);
+          }
+        } else {
+          print('[EncryptedSurveyService] No consent found, skipping survey sync (consent required)');
+        }
+      } else {
+        print('[EncryptedSurveyService] No participant UUID found, skipping survey sync');
       }
       
-      // Sync biweekly surveys  
-      final unsyncedBiweekly = await db.getUnsyncedRecurringSurveys();
-      for (final survey in unsyncedBiweekly) {
-        await _syncBiweeklySurveyEncrypted(survey);
-      }
-      
-      // Sync consent forms
+      // Always sync consent forms (they ARE the consent, so no consent check needed)
       final unsyncedConsent = await db.getUnsyncedConsentForms();
       for (final consent in unsyncedConsent) {
         await _syncConsentFormEncrypted(consent);

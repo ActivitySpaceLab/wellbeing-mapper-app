@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import '../models/consent_models.dart';
@@ -10,6 +9,7 @@ import '../services/app_mode_service.dart';
 import '../models/app_mode.dart';
 import '../services/participant_validation_service.dart';
 import '../services/encrypted_survey_service.dart';
+import '../main.dart'; // For GlobalData
 
 class ConsentFormScreen extends StatefulWidget {
   final String participantCode;
@@ -858,8 +858,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     });
 
     try {
-      // Generate UUID for participant
-      final uuid = Uuid().v4();
+      // Use the existing app UUID for consistency across all surveys
+      final uuid = GlobalData.userUUID;
       
       // Create consent response
       final consent = ConsentResponse(
