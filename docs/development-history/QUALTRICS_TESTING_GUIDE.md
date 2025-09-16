@@ -1,143 +1,135 @@
-# Qualtrics Survey Testing Guide - Issue Fixes
+# Qualtrics Survey Testing Guide
 
-## Issues Fixed
+## Quick Test Setup
 
-### 1. ✅ Initial Survey Navigation Fixed
-**Problem**: Initial survey was using hardcoded version instead of Qualtrics
-**Root Cause**: `home_view.dart` had direct navigation to `InitialSurveyScreen()` in popup dialogs
-**Solution**: Updated both survey offering dialogs to use `SurveyNavigationService.navigateToInitialSurvey(context)`
+### 1. Bypass Participant Code Validation
+Use any of these test codes to get past the validation screen:
+- **`TESTER`** (recommended for testing)
+- **`TEST123`**
+- **`DEV001`**
 
-**Files Modified**:
-- `/lib/ui/home_view.dart`: Fixed navigation in `_showInitialSurveyOffering()` and `_showInitialSurveyReminder()`
+*Note: These codes are hardcoded for testing purposes and will be removed in production.*
 
-### 2. ✅ Field Population and Visibility Fixed  
-**Problem**: UUID was showing in survey instead of participant code, and fields weren't properly hidden
-**Root Cause**: 
-- Using `GlobalData.userUUID` instead of participant code
-- JavaScript hiding logic was insufficient for dynamic content
-**Solution**: 
-- Use participant code (like "TESTER") from `ParticipantValidationService`
-- Added separate UUID field for anti-spoofing
-- Enhanced hiding logic with multiple detection methods
+### 2. Navigate to Surveys
+1. Complete app setup with test participant code
+2. Go to side menu → "Survey History"
+3. Test both survey types:
+   - **Initial Survey**: Tap "Initial Survey" → "Not completed - tap to complete"
+   - **Biweekly Survey**: Tap "New Survey" button
 
-**Enhanced JavaScript Features**:
-- **Participant Code**: Uses actual participant code (e.g., "TESTER") in `participant_id` field
-- **UUID Field**: Separate `participant_uuid` field for uniqueness verification
-- **Robust Hiding**: Multiple CSS properties (`display: none`, `visibility: hidden`)
-- **Container Detection**: Finds and hides `.QuestionOuter`, `.QuestionBody`, etc.
-- **Value-based Detection**: Finds fields by content, not just selectors
-- **Multi-timing**: Runs at 2 seconds AND 5 seconds to catch late-loading fields
+### 3. What to Look For
 
-### 3. ✅ Form Submission Error Fixed
-**Problem**: Qualtrics validation errors about unselected answer choices
-**Root Cause**: Hidden required fields weren't properly marked as "answered"
-**Solution**: Comprehensive validation state management
+#### ✅ Success Indicators:
+- **Green toast notification**: "Survey fields populated successfully"
+- **Survey loads properly** in the webview
+- **Location data is encrypted** before being inserted (for biweekly surveys)
+- **Survey completes and returns to app** when you finish
 
-**Validation Features**:
-- Triggers multiple validation events (`blur`, `focusout`, `change`, `input`)
-- Adds `Answered` class and removes `ValidationError` classes
-- Sets `data-answered="true"` attributes
-- Handles all possible container classes
-- Processes both participant ID and UUID fields
-- Includes fallback for any missed hidden fields
+#### ⚠️ Warning Indicators:
+- **Orange toast notification**: "Field population issue - check survey setup"
+- **Survey loads but participant ID/location not pre-filled**
 
-## Testing Instructions
+#### ❌ Error Indicators:
+- **Survey doesn't load at all**
+- **App crashes when opening survey**
+- **Survey loads but never returns to app after completion**
 
-### Test 1: Initial Survey Navigation
-1. **Fresh Install**: Install app on device with TESTER code
-2. **Trigger Dialog**: Should see "Complete Initial Survey" popup 
-3. **Click "Yes, complete now"**: Should open Qualtrics survey (not hardcoded)
-4. **Verify URL**: Survey URL should contain `pretoria.eu.qualtrics.com`
+### 4. Testing Scenarios
 
-### Test 2: Field Visibility and Population
-1. **Open Initial Survey**: Via any navigation method
-2. **Check Console**: Should see "Participant Code: TESTER" and "Participant UUID: [uuid]"
-3. **Check Fields**: No participant_id or UUID fields should be visible
-4. **Check Survey**: All regular survey questions should be visible and functional
+#### Scenario A: Initial Survey Test
+1. Use participant code: `TESTER`
+2. Navigate to Survey History
+3. Tap Initial Survey
+4. **Expected**: Survey loads, green toast appears, participant ID field is pre-populated
+5. Complete survey and verify it returns to app
 
-### Test 3: Form Submission
-1. **Complete Survey**: Fill out all visible survey questions
-2. **Submit**: Click Qualtrics submit button
-3. **Verify Success**: Should submit without validation errors
-4. **Check Toast**: Should see success message in mobile app
+#### Scenario B: Biweekly Survey Test (with Encrypted Location Data)
+1. From Survey History, tap "New Survey"
+2. **Expected**: Survey loads, green toast appears, participant ID populated, location data encrypted and populated
+3. Complete survey and verify it returns to app
+4. **Privacy Note**: Location data is automatically encrypted using RSA+AES hybrid encryption before being inserted
 
-### Expected Console Output
-```javascript
-Starting Qualtrics field population...
-Participant Code: TESTER
-Participant UUID: [uuid-string]
-Set participant_id via embedded data: TESTER
-Set participant_uuid via embedded data: [uuid-string]
-Hiding participant ID, UUID, and location fields...
-Hidden participant ID question container: [element]
-Hidden participant UUID question container: [element]
-Field hiding completed
-Marking hidden fields as answered...
-Marked participant ID field as answered: [element]
-Marked participant UUID field as answered: [element]
-Hidden fields marked as answered
-Qualtrics hidden fields population completed
+### 6. Debug Information
+
+#### Location Data Protection
+- **Automatic Encryption**: All location data is encrypted before being sent to Qualtrics
+- **Hybrid Encryption**: Uses AES-256-GCM + RSA-PKCS1 for maximum security
+- **Test Key**: Currently using a test public key for encryption
+- **No Plaintext**: Raw location data never appears in survey forms
+
+#### Mobile Testing (No Developer Tools)
+- **Toast notifications** provide immediate feedback
+- **App logs** can be viewed if running in debug mode
+- **Survey completion** should automatically return to app
+
+#### Desktop Testing (Optional)
+If you run `flutter run -d chrome` for web testing:
+1. Open browser developer tools (F12)
+2. Check Console tab for detailed logs
+3. Look for messages like:
+   - "Starting Qualtrics field population..."
+   - "Set participant_id via embedded data: [UUID]"
+   - "Set location data in field X"
+
+### 7. Generating Real Encryption Keys
+
+#### For Production Use:
+```bash
+# Generate RSA key pair
+openssl genrsa -out private_key.pem 2048
+openssl rsa -in private_key.pem -pubout -out public_key.pem
+
+# The public_key.pem content goes into the app
+# The private_key.pem stays secure on your research servers
 ```
 
-## Debug Features Added
+#### Current Test Key:
+- Using placeholder test key for development
+- Replace with real public key before production
+- Update both `location_encryption_service.dart` and research site configs
 
-### Console Logging
-- Detailed participant code vs UUID differentiation
-- Separate logging for each field type (ID, UUID, locations)
-- Success/error feedback for each step
-- Toast messages to mobile app for debugging
+### 8. Troubleshooting
 
-### Field Detection Methods
+#### Survey Doesn't Load
+- Check internet connection
+- Verify Qualtrics URLs are accessible
+- Try toggling between hardcoded surveys: Set `useQualtricsSurveys = false` in `SurveyNavigationService`
 
-#### Participant ID Field (`participant_id`)
-- Contains participant code like "TESTER" 
-- `input[name*="participant_id"]`
-- `input[id*="participant_id" i]` (case insensitive)
-- Text inputs with "participant" but not "uuid"
-- Pattern matching excluding UUID patterns
+#### Fields Not Populated
+- Orange toast indicates partial success - survey loads but field injection had issues
+- This is expected initially as we fine-tune the field detection
+- Survey will still work, just without pre-filled data
 
-#### Participant UUID Field (`participant_uuid`)  
-- Contains actual UUID for anti-spoofing
-- `input[name*="participant_uuid"]`
-- `input[id*="uuid" i]`
-- Text inputs containing "uuid"
-- Value-based detection for UUID patterns
+#### Survey Doesn't Return to App
+- Check if you're actually completing the survey (reaching thank you page)
+- Some surveys might have required fields that prevent completion
+- You may need to manually go back to the app
 
-#### Location Field (`locations`)
-- `input[name*="locations"]`
-- `textarea[name*="locations" i]`
-- Similar pattern matching as other fields
+### 7. Switching Between Survey Types
 
-### Enhanced Security Features
-- **Anti-spoofing**: Separate UUID field prevents participants from using same code
-- **Value Detection**: Finds fields by actual content, not just names
-- **Comprehensive Hiding**: Uses both `display: none` and `visibility: hidden`
-- **Container Traversal**: Intelligent parent container detection and hiding
+#### Test with Qualtrics (Current Setting)
+```dart
+// In lib/services/survey_navigation_service.dart
+static const bool useQualtricsSurveys = true;
+```
 
-## Field Population Logic
+#### Fallback to Hardcoded Surveys
+```dart
+// In lib/services/survey_navigation_service.dart
+static const bool useQualtricsSurveys = false;
+```
 
-### Data Sources
-1. **Participant Code**: From `ParticipantValidationService.getValidatedParticipantCode()`
-   - Examples: "TESTER", "P001", "DEV001"
-   - Used in `participant_id` field
-   
-2. **UUID**: From `GlobalData.userUUID`
-   - Unique identifier for each app installation
-   - Used in `participant_uuid` field
-   - Prevents multiple participants using same code
+### 8. Production Preparation
 
-### Validation Handling
-1. **Field Detection**: Multiple selector methods with fallbacks
-2. **Value Setting**: Triggers change events for proper registration
-3. **Hiding**: Robust CSS-based hiding with container detection
-4. **Validation**: Marks fields as answered to prevent form errors
+When testing is complete:
+1. **Remove test participant codes** from `participant_validation_service.dart`
+2. **Set feature flag** to desired state (`true` for Qualtrics, `false` for hardcoded)
+3. **Update field detection** if needed based on test results
+4. **Remove toast notifications** if desired for cleaner user experience
 
-## Next Steps
-1. Install updated APK on test device
-2. Test each scenario above with TESTER participant code
-3. Check browser console for detailed JavaScript logs
-4. Verify no UUID appears in visible survey fields
-5. Confirm survey submission works without validation errors
-6. Validate that both participant code and UUID are properly captured
+---
 
-The fixes address all reported issues with comprehensive error handling and extensive logging for debugging.
+*For technical issues, check the implementation in:*
+- *`lib/services/qualtrics_survey_service.dart` - Field injection logic*
+- *`lib/services/survey_navigation_service.dart` - Feature flag*
+- *`lib/ui/web_view.dart` - Webview and feedback handling*

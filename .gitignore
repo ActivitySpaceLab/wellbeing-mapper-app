@@ -150,3 +150,8 @@ gauteng-wellbeing-mapper-app/android/app/gauteng-wellbeing-mapper-app.keystore
 gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app.keystore
 gauteng-wellbeing-mapper-app/.fvm/flutter_sdk
 gauteng-wellbeing-mapper-app/.fvm/fvm_config.json
+
+
+# R
+*.RData
+*.Rhistory
