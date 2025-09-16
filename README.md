@@ -92,38 +92,32 @@ If this project is useful for you, please consider starring this repository and 
 
 ### Mobile Interface (iPhone)
 <div align="center">
-  <img src="iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.39.22.png" width="200" alt="Welcome Screen">
-  <img src="iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.39.36.png" width="200" alt="Mode Selection">
-  <img src="iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.39.41.png" width="200" alt="Main Dashboard">
-  <img src="iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.40.06.png" width="200" alt="Location Map">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/mobile_simulators/iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.39.22.png" width="200" alt="Welcome Screen">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/mobile_simulators/iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.39.36.png" width="200" alt="Mode Selection">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/mobile_simulators/iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.39.41.png" width="200" alt="Main Dashboard">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/mobile_simulators/iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.40.06.png" width="200" alt="Location Map">
 </div>
 
 <div align="center">
-  <img src="iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.40.10.png" width="200" alt="Wellbeing Survey">
-  <img src="iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.40.15.png" width="200" alt="Survey Questions">
-  <img src="iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.40.22.png" width="200" alt="Settings Menu">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/mobile_simulators/iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.40.10.png" width="200" alt="Wellbeing Survey">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/mobile_simulators/iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.40.15.png" width="200" alt="Survey Questions">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/mobile_simulators/iPhone_16/Simulator Screenshot - iPhone 16 Plus - 2025-08-05 at 13.40.22.png" width="200" alt="Settings Menu">
 </div>
 
 ### Tablet Interface (7-inch Landscape)
 <div align="center">
-  <img src="tablet_screenshots/7inch_landscape_welcome.png" width="400" alt="Tablet Welcome Screen">
-  <img src="tablet_screenshots/7inch_landscape_map.png" width="400" alt="Tablet Map View">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/tablet_manual/android_tablets/7inch_landscape_welcome.png" width="400" alt="Tablet Welcome Screen">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/tablet_manual/android_tablets/7inch_landscape_map.png" width="400" alt="Tablet Map View">
 </div>
 
 <div align="center">
-  <img src="tablet_screenshots/7inch_landscape_menu.png" width="400" alt="Tablet Menu">
-  <img src="tablet_screenshots/7inch_landscape_guide.png" width="400" alt="Tablet Guide">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/tablet_manual/android_tablets/7inch_landscape_menu.png" width="400" alt="Tablet Menu">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/tablet_manual/android_tablets/7inch_landscape_guide.png" width="400" alt="Tablet Guide">
 </div>
 
 ### Tablet Interface (10-inch Landscape)
 <div align="center">
-  <img src="tablet_screenshots/10inch_landscape_map.png" width="500" alt="10-inch Tablet Map">
-  <img src="tablet_screenshots/10inch_landscape_menu.png" width="500" alt="10-inch Tablet Menu">
-</div>
-
-<div align="center">
-  <img src="tablet_screenshots/10inch_landscape_guide.png" width="500" alt="10-inch Tablet Guide">
-  <img src="tablet_screenshots/10inch_landscape_switchmodedialog.png" width="500" alt="Mode Switch Dialog">
+  <img src="gauteng-wellbeing-mapper-app/screenshots/tablet_manual/android_tablets/10inch_landscape_map.png" width="500" alt="10-inch Tablet Map">
 </div>
 
 ## Features
