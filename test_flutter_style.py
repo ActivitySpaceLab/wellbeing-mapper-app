@@ -80,9 +80,10 @@ def test_flutter_style_hybrid():
             'timestamp': '2023-08-15T10:30:00Z'
         }
         
-        # Test decryption
+        # Test decryption with production passphrase
         print("\nTesting decryption with raw bytes approach:")
-        decrypted = decrypt_hybrid_format(hybrid_package, 'decryption_tools/private_key.pem', 'betakey')
+        passphrase = input("Enter private key passphrase: ")
+        decrypted = decrypt_hybrid_format(hybrid_package, 'decryption_tools/private_key.pem', passphrase)
         
         if decrypted and decrypted == sample_survey:
             print("✅ Raw bytes approach works perfectly!")

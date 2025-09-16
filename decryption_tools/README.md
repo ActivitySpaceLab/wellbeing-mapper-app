@@ -33,7 +33,7 @@ The script will:
 
 ## Key Information
 - RSA Key Size: 4096 bits (512 bytes)
-- Passphrase: `betakey` (for testing)
+- Passphrase: `[your private key passphrase]` (for production keys)
 - Padding: PKCS1v15
 - AES Algorithm: XOR-based encryption (matching Flutter implementation)
 

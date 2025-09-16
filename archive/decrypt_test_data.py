@@ -76,7 +76,7 @@ def decrypt_location_data(encrypted_str, private_key_path, password):
 
 if __name__ == "__main__":
     private_key_path = "private_key.pem"
-    password = "betakey"
+    password = input("Enter private key passphrase: ")
     
     print("Decrypting location data...")
     print("=" * 50)

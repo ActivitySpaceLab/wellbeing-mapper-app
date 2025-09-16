@@ -18,7 +18,8 @@ test_hybrid_data = {
 
 if __name__ == "__main__":
     private_key_path = "private_key.pem"
-    passphrase = "betakey"
+    # Use production passphrase in production
+    passphrase = input("Enter private key passphrase: ")
     
     print("Testing hybrid AES/RSA decryption...")
     print("=" * 50)

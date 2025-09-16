@@ -10,7 +10,7 @@ def decrypt_location_data():
     with open('private_key.pem', 'rb') as key_file:
         private_key = serialization.load_pem_private_key(
             key_file.read(),
-            password=b'betakey'
+            password=input("Enter private key passphrase: ").encode()
         )
     
     # Read the CSV file

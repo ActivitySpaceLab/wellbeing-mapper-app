@@ -71,7 +71,7 @@ test_*.py                        # Validation scripts
 ```bash
 cd decryption_tools
 python3 decrypt_survey_data.py flutter_test_data.csv
-# Enter passphrase: betakey
+# Enter passphrase: [enter your private key passphrase]
 ```
 
 ### Output

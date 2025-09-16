@@ -95,11 +95,12 @@ def test_final_flutter_hybrid():
         print("Testing Decryption")
         print("=" * 50)
         
-        # Test decryption
+        # Test decryption with production passphrase
+        passphrase = input("Enter private key passphrase: ")
         decrypted_data = decrypt_hybrid_format(
             encrypted_package, 
             'decryption_tools/private_key.pem', 
-            'betakey'
+            passphrase
         )
         
         if decrypted_data:
