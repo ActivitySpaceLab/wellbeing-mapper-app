@@ -27,32 +27,34 @@ class OnboardingHelper {
             Text('Welcome!'),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Let\'s quickly show you around:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            SizedBox(height: 12),
-            _buildTourItem(Icons.toggle_on, 'Yellow switch = location tracking ON'),
-            _buildTourItem(Icons.gps_fixed, 'GPS button = get current location'),
-            _buildTourItem(Icons.add_circle, 'Blue "Survey" button = take wellbeing survey'),
-            _buildTourItem(Icons.menu, 'Menu = access all app features'),
-            SizedBox(height: 12),
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: SouthAfricanTheme.softYellow,
-                borderRadius: BorderRadius.circular(6),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Let\'s quickly show you around:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              child: Text(
-                'Tip: Open the menu and tap "Help & Guide" for detailed instructions!',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              SizedBox(height: 12),
+              _buildTourItem(Icons.toggle_on, 'Yellow switch = location tracking ON'),
+              _buildTourItem(Icons.gps_fixed, 'GPS button = get current location'),
+              _buildTourItem(Icons.add_circle, 'Blue "Survey" button = take wellbeing survey'),
+              _buildTourItem(Icons.menu, 'Menu = access all app features'),
+              SizedBox(height: 12),
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: SouthAfricanTheme.softYellow,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Tip: Open the menu and tap "Help & Guide" for detailed instructions!',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(

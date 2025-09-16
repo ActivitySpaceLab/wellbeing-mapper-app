@@ -14,7 +14,7 @@ This directory contains automated screenshot generation tools for creating Googl
 
 ### `run_tablet_screenshots.sh`
 - **Purpose:** Simple script for connected devices
-- **Usage:** `./run_tablet_screenshots.sh`
+- **Usage:** `./screenshots/documentation/scripts/run_tablet_screenshots.sh`
 - **Features:**
   - Works with your Samsung Galaxy Tab A (SM A536B)
   - Interactive device selection
@@ -23,7 +23,7 @@ This directory contains automated screenshot generation tools for creating Googl
 
 ### `generate_tablet_screenshots.sh`
 - **Purpose:** Advanced script with emulator support
-- **Usage:** `./generate_tablet_screenshots.sh`
+- **Usage:** `./screenshots/documentation/scripts/generate_tablet_screenshots.sh`
 - **Features:**
   - Creates Android Virtual Devices (AVDs) for different tablet sizes
   - Automatic emulator management
@@ -39,7 +39,7 @@ This directory contains automated screenshot generation tools for creating Googl
 #### Option 1: Web-Based Screenshots (Recommended)
 ```bash
 # Generate web version and capture screenshots using browser DevTools
-../generate_web_tablet_screenshots.sh
+../screenshots/documentation/scripts/generate_web_tablet_screenshots.sh
 ```
 - ✅ **Works immediately** on Apple Silicon
 - ✅ **No emulator needed**
@@ -65,7 +65,7 @@ This directory contains automated screenshot generation tools for creating Googl
 
 2. **Run the simple script:**
    ```bash
-   ./run_tablet_screenshots.sh
+   ./screenshots/documentation/scripts/run_tablet_screenshots.sh
    ```
 
 3. **Select your device** when prompted (device ID: `RZCW90B03FV`)
@@ -78,7 +78,7 @@ This directory contains automated screenshot generation tools for creating Googl
 
 2. **Run the advanced script:**
    ```bash
-   ./generate_tablet_screenshots.sh
+   ./screenshots/documentation/scripts/generate_tablet_screenshots.sh
    ```
 
 3. **Script will create and manage emulators** for:
@@ -154,7 +154,7 @@ adb kill-server && adb start-server
 ```bash
 # Android emulators don't work well on Apple Silicon for tablets
 # Use web-based approach instead:
-../generate_web_tablet_screenshots.sh
+../screenshots/documentation/scripts/generate_web_tablet_screenshots.sh
 
 # Or try cloud testing services (see ../CLOUD_TESTING_OPTIONS.md):
 # - Firebase Test Lab (free tier)

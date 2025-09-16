@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import '../models/consent_models.dart';
@@ -9,7 +8,8 @@ import '../db/survey_database.dart';
 import '../services/app_mode_service.dart';
 import '../models/app_mode.dart';
 import '../services/participant_validation_service.dart';
-import '../services/qualtrics_api_service.dart';
+import '../services/encrypted_survey_service.dart';
+import '../main.dart'; // For GlobalData
 
 class ConsentFormScreen extends StatefulWidget {
   final String participantCode;
@@ -190,15 +190,6 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                       ),
                     ),
                     
-                    // PILOT heading
-                    Center(
-                      child: Text(
-                        'PILOT',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    
                     // Title
                     Center(
                       child: Text(
@@ -315,27 +306,27 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                     ),
                     SizedBox(height: 16),
                     
-                    // What participants will be asked to do in the pilot phase
+                    // What participants will be asked to do
                     RichText(
                       text: TextSpan(
                         style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
                         children: [
-                          TextSpan(text: 'What participants will be asked to do in the pilot phase: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: 'What participants will be asked to do: ', style: TextStyle(fontWeight: FontWeight.bold)),
                           TextSpan(text: 'This study involves a mobile phone application called Space Mapper, which keeps track of where participants spend time, and lets participants share this information, '),
                           TextSpan(text: 'if they choose to', style: TextStyle(fontStyle: FontStyle.italic)),
-                          TextSpan(text: ', with the researchers. It also involves a series of surveys. Participants can participate in the pilot by installing Space Mapper on their mobile phone and letting it track their locations for up to six weeks (11 August-19 September 2025). They will receive surveys (questions and digital diary prompts) every two weeks starting 11 August 2025, in which they will be asked a series of questions about themselves and about their mental wellbeing. When responding to the survey, they will have the opportunity to share the locations tracked by Space Mapper during the previous two weeks. Participants can choose which questions they wish to answer and whether they wish to share their locations. Among other things, the surveys will ask about participants\' race/ethnicity, health, sexual orientation, location and mobility, wellbeing, environmental challenges in the past two weeks, and supports that help them cope with challenges.'),
+                          TextSpan(text: ', with the researchers. It also involves a series of surveys. Participants can participate by installing Space Mapper on their mobile phone and letting it track their locations for up to six months. They will receive surveys (questions and digital diary prompts) every two weeks, in which they will be asked a series of questions about themselves and about their mental wellbeing. When responding to the survey, they will have the opportunity to share the locations tracked by Space Mapper during the previous two weeks. Participants can choose which questions they wish to answer and whether they wish to share their locations. Among other things, the surveys will ask about participants\' race/ethnicity, health, sexual orientation, location and mobility, wellbeing, environmental challenges in the past two weeks, and supports that help them cope with challenges.'),
                         ],
                       ),
                     ),
                     SizedBox(height: 16),
                     
-                    // What the pilot data will be used for
+                    // What the data will be used for
                     RichText(
                       text: TextSpan(
                         style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
                         children: [
-                          TextSpan(text: 'What the pilot data will be used for: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'The pilot data will be used to better understand how well the study\'s methodology works and what, if anything needs to be revised. In the main study, the data will be used to protect the wellbeing of people who experience environmental and climate change challenges (e.g., exposure to air pollution or extreme heat events). This understanding will inform various products (e.g., resilience toolkits or early warning systems) that can be used by mental health professionals, service providers and policy makers.'),
+                          TextSpan(text: 'What the data will be used for: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: 'The data will be used to better understand how to protect the wellbeing of people who experience environmental and climate change challenges (e.g., exposure to air pollution or extreme heat events). This understanding will inform various products (e.g., resilience toolkits or early warning systems) that can be used by mental health professionals, service providers and policy makers.'),
                         ],
                       ),
                     ),
@@ -637,7 +628,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
               _buildCheckbox(_repositoryConsent, (value) => setState(() => _repositoryConsent = value!),
                 'to what I contribute being placed in a public repository in a deidentified or anonymised form once the project is complete'),
               _buildCheckbox(_followUpConsent, (value) => setState(() => _followUpConsent = value!),
-                'to being contacted about participation in possible follow-up studies', isRequired: false),
+                'to being contacted about participation in possible follow-up studies'),
             ]),
           ] else ...[
             _buildConsentSection('I UNDERSTAND that:', [
@@ -849,7 +840,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             child: _isSubmitting
                 ? CircularProgressIndicator(color: Colors.white)
-                : Text('Submit Consent & Continue', style: TextStyle(fontSize: 18, color: Colors.white)),
+                : Text('Submit', style: TextStyle(fontSize: 18, color: Colors.white)),
           ),
         ),
         SizedBox(height: 8),
@@ -867,8 +858,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     });
 
     try {
-      // Generate UUID for participant
-      final uuid = Uuid().v4();
+      // Use the existing app UUID for consistency across all surveys
+      final uuid = GlobalData.userUUID;
       
       // Create consent response
       final consent = ConsentResponse(
@@ -904,46 +895,25 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
       // Save consent to database
       final db = SurveyDatabase();
-      final consentId = await db.insertConsent(consent);
+      await db.insertConsent(consent);
 
       // Sync consent form to Qualtrics (if not in testing mode)
       if (!widget.isTestingMode) {
         try {
-          print('[ConsentForm] Syncing consent to Qualtrics...');
-          // Convert consent to the format expected by Qualtrics API
-          final consentData = {
-            'id': consentId, // Include the database ID for marking as synced
-            'participant_uuid': consent.participantUuid,
-            'participant_code': widget.participantCode,
-            'informed_consent': consent.informedConsent,
-            'data_processing_consent': consent.dataProcessing,
-            'race_ethnicity_consent': consent.consentRaceEthnicity,
-            'health_consent': consent.consentHealth,
-            'sexual_orientation_consent': consent.consentSexualOrientation,
-            'location_mobility_consent': consent.consentLocationMobility,
-            'data_transfer_consent': consent.consentDataTransfer,
-            'public_reporting_consent': consent.consentPublicReporting,
-            'data_sharing_researchers_consent': consent.consentResearcherSharing,
-            'further_research_consent': consent.consentFurtherResearch,
-            'public_repository_consent': consent.consentPublicRepository,
-            'followup_contact_consent': consent.consentFollowupContact,
-            'participant_signature': consent.participantSignature,
-            'consented_at': consent.consentedAt.toIso8601String(),
-            'research_site': widget.researchSite,
-          };
+          print('[ConsentForm] Syncing consent with encrypted service...');
           
-          final syncSuccess = await QualtricsApiService.syncConsentForm(consentData);
-          if (syncSuccess) {
-            print('[ConsentForm] ✅ Consent form synced to Qualtrics successfully');
-          } else {
-            print('[ConsentForm] ⚠️ Failed to sync consent form to Qualtrics');
-          }
+          // SECURITY: Using encrypted survey service for secure consent data transmission
+          EncryptedSurveyService.syncPendingSurveys().catchError((e) {
+            print('[ConsentForm] ⚠️ Encrypted sync will retry later: $e');
+          });
+          
+          print('[ConsentForm] ✅ Consent form saved and encrypted sync initiated');
         } catch (e) {
-          print('[ConsentForm] ❌ Error syncing consent to Qualtrics: $e');
+          print('[ConsentForm] ❌ Error with encrypted sync: $e');
           // Don't fail the whole process - consent is still saved locally
         }
       } else {
-        print('[ConsentForm] Skipping Qualtrics sync in testing mode');
+        print('[ConsentForm] Skipping sync in testing mode');
       }
 
       // Record consent with participant validation service (for research participants)

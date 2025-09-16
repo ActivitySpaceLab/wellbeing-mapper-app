@@ -1,0 +1,23 @@
+list_name,name,label
+physical_activity,daily,Daily
+physical_activity,most_days,Most days (5-6 times per week)
+physical_activity,some_days,Some days (3-4 times per week)
+physical_activity,few_days,Few days (1-2 times per week)
+physical_activity,never,Never
+wellbeing_rating,excellent,Excellent
+wellbeing_rating,very_good,Very Good
+wellbeing_rating,good,Good
+wellbeing_rating,fair,Fair
+wellbeing_rating,poor,Poor
+agreement,strongly_agree,Strongly Agree
+agreement,agree,Agree
+agreement,neutral,Neither Agree nor Disagree
+agreement,disagree,Disagree
+agreement,strongly_disagree,Strongly Disagree
+location_sharing,survey_location,"Current survey location (where you took this survey)"
+location_sharing,gps_traces,"GPS traces from the past two weeks"
+location_sharing,map_pins,"Location pins you've placed on maps"
+location_sharing,none,"I prefer not to share any location data"
+data_upload,upload_now,"Upload my data now"
+data_upload,upload_later,"Save locally and upload later"
+data_upload,no_upload,"Keep data local only (for beta testing)"

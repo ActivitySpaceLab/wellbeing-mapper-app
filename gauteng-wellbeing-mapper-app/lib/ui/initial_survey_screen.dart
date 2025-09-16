@@ -6,7 +6,7 @@ import '../models/survey_models.dart';
 import '../models/consent_models.dart';
 import '../models/app_mode.dart';
 import '../services/app_mode_service.dart';
-import '../services/qualtrics_api_service.dart';
+import '../services/encrypted_survey_service.dart';
 import '../db/survey_database.dart';
 
 class InitialSurveyScreen extends StatefulWidget {
@@ -682,15 +682,18 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
       final surveyId = await db.insertInitialSurvey(response);
       print('Initial survey saved to local database with ID: $surveyId');
       
-      // Try to sync to Qualtrics immediately if connected
-      try {
-        final surveyData = await db.getUnsyncedInitialSurveys();
-        final matchingSurvey = surveyData.firstWhere((s) => s['id'] == surveyId);
-        await QualtricsApiService.syncInitialSurvey(matchingSurvey);
-      } catch (syncError) {
-        print('Could not sync to Qualtrics immediately, will retry later: $syncError');
-        // Survey is saved locally and will sync when connectivity is available
-      }
+      // Mark initial survey as completed to prevent re-prompting
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('initial_survey_completed', true);
+      print('Marked initial survey as completed');
+      
+      // SECURITY: Using encrypted survey service - no API tokens exposed
+      // Trigger background sync when connectivity is available
+      EncryptedSurveyService.syncPendingSurveys().catchError((e) {
+        print('Background sync will retry later: $e');
+      });
+      
+      print('✅ Survey saved locally. Encrypted background sync initiated.');
     } catch (e) {
       print('Error saving initial survey: $e');
       rethrow;
@@ -708,7 +711,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).popUntil((route) => route.isFirst); // Go back to main screen
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Go to main app and clear stack
             },
             child: Text('OK'),
           ),
@@ -722,59 +725,56 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Text('🧪 '),
-            Text('Beta Testing Mode'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Your initial survey responses have been saved locally for testing purposes.',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange[200]!),
+        title: Text('🧪 Beta Testing Mode'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your initial survey responses have been saved locally for testing purposes.',
+                style: TextStyle(fontSize: 16),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Beta Testing Info',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'If this had been research mode, your data would have been submitted to researchers. Since this is beta testing, no data was transmitted.',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                ],
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Beta Testing Info',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'If this had been research mode, your data would have been submitted to researchers. Since this is beta testing, no data was transmitted.',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            Text(
-              '💙 Thank you for beta testing the Wellbeing Mapper!',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.blue[600],
-                fontSize: 16,
+              SizedBox(height: 16),
+              Text(
+                '💙 Thank you for beta testing the Wellbeing Mapper!',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: Colors.blue[600],
+                  fontSize: 16,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).popUntil((route) => route.isFirst); // Go back to main screen
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Go to main app and clear stack
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             child: Text('Got it!', style: TextStyle(color: Colors.white)),

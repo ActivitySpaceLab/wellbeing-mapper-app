@@ -1,0 +1,1002 @@
+{
+  "SurveyEntry": {
+    "SurveyID": "SV_20358bdab44b4ea7",
+    "SurveyName": "Initial Survey - Wellbeing Mapping Study",
+    "SurveyDescription": "An initial survey to collect participant demographics and background information for the Wellbeing Mapping Study.",
+    "SurveyOwnerID": "UR_532b70bfff264259",
+    "SurveyBrandID": "UR_06d98aa876fd42d4",
+    "DivisionID": "DV_f96855ac",
+    "SurveyLanguage": "EN",
+    "SurveyActiveResponseSet": "RS_c4843bb023a743ed",
+    "SurveyStatus": "Inactive",
+    "SurveyStartDate": "0000-00-00 00:00:00",
+    "SurveyExpirationDate": "0000-00-00 00:00:00",
+    "SurveyCreationDate": "2025-08-04 09:57:29",
+    "CreatorID": "UR_b4ad3123e692450f",
+    "LastModified": "2025-08-04 09:57:29",
+    "LastAccessed": "0000-00-00 00:00:00",
+    "LastActivated": "0000-00-00 00:00:00",
+    "SurveyCleanupDate": "0000-00-00 00:00:00",
+    "SurveyExpiration": "None",
+    "SurveyStartTime": "0000-00-00 00:00:00",
+    "SurveyEndTime": "0000-00-00 00:00:00"
+  },
+  "SurveyElements": [
+    {
+      "Type": "Block",
+      "Description": "Default Question Block",
+      "ID": "BL_80fc3e83",
+      "BlockElements": [
+        {
+          "Type": "Question",
+          "QuestionID": "QID1"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID2"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID3"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID4"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID5"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID6"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID7"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID8"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID9"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID10"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID11"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID12"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID13"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID14"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID15"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID16"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID17"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID18"
+        },
+        {
+          "Type": "Question",
+          "QuestionID": "QID19"
+        }
+      ],
+      "Options": {
+        "BlockLocking": "false",
+        "RandomizeQuestions": "false",
+        "PresentationMode": "On"
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID1",
+        "QuestionType": "DB",
+        "Selector": "TB",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Welcome to the Wellbeing Mapping Study!",
+        "QuestionText": "Welcome to the Wellbeing Mapping Study!",
+        "DefaultChoices": false,
+        "DataExportTag": "intro_note",
+        "Language": [],
+        "NextChoiceId": 1,
+        "NextAnswerId": 1,
+        "QuestionJS": ""
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID2",
+        "QuestionType": "TE",
+        "Selector": "SL",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "How old are you?",
+        "DataExportTag": "age",
+        "QuestionText": "How old are you?<br><em>Enter your age in years</em>",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "ValidNumber",
+            "SubType": "ValidNumber"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 1,
+        "NextAnswerId": 1,
+        "QuestionJS": ""
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID3",
+        "QuestionType": "TE",
+        "Selector": "SL",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "In which suburb or community in Gauteng do you live?",
+        "DataExportTag": "suburb",
+        "QuestionText": "In which suburb or community in Gauteng do you live?<br><em>This question only appears for Gauteng research site</em>",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 1,
+        "NextAnswerId": 1,
+        "QuestionJS": ""
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID4",
+        "QuestionType": "MC",
+        "Selector": "MAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Ethnicity (Select all that apply)",
+        "DataExportTag": "ethnicity",
+        "QuestionText": "Ethnicity (Select all that apply)<br><em>Multiple selections allowed</em>",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 7,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "Black"
+          },
+          "2": {
+            "Display": "Coloured  "
+          },
+          "3": {
+            "Display": "Indian"
+          },
+          "4": {
+            "Display": "White"
+          },
+          "5": {
+            "Display": "Other"
+          },
+          "6": {
+            "Display": "Prefer not to say"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID5",
+        "QuestionType": "MC",
+        "Selector": "MAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Ethnicity (Select all that apply)",
+        "DataExportTag": "ethnicity",
+        "QuestionText": "Ethnicity (Select all that apply)<br><em>Multiple selections allowed</em>",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 10,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "South Asian"
+          },
+          "2": {
+            "Display": "East or Southeast Asian"
+          },
+          "3": {
+            "Display": "White"
+          },
+          "4": {
+            "Display": "Latina/o"
+          },
+          "5": {
+            "Display": "Maghrebi or Arab"
+          },
+          "6": {
+            "Display": "Black"
+          },
+          "7": {
+            "Display": "Romani or Gypsy"
+          },
+          "8": {
+            "Display": "Other"
+          },
+          "9": {
+            "Display": "Prefer not to say"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID6",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Gender Identity",
+        "DataExportTag": "gender",
+        "QuestionText": "Gender Identity",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 7,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "Male"
+          },
+          "2": {
+            "Display": "Female"
+          },
+          "3": {
+            "Display": "Transmale"
+          },
+          "4": {
+            "Display": "Transfemale"
+          },
+          "5": {
+            "Display": "Non-binary"
+          },
+          "6": {
+            "Display": "Prefer not to say"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID7",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Sexual Orientation",
+        "DataExportTag": "sexuality",
+        "QuestionText": "Sexual Orientation",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 8,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "Heterosexual/straight"
+          },
+          "2": {
+            "Display": "Lesbian"
+          },
+          "3": {
+            "Display": "Gay"
+          },
+          "4": {
+            "Display": "Bisexual"
+          },
+          "5": {
+            "Display": "Queer"
+          },
+          "6": {
+            "Display": "Other"
+          },
+          "7": {
+            "Display": "Prefer not to say"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID8",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Place of Birth",
+        "DataExportTag": "birth_place",
+        "QuestionText": "Place of Birth",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 5,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "South Africa"
+          },
+          "2": {
+            "Display": "Other African country"
+          },
+          "3": {
+            "Display": "Other country"
+          },
+          "4": {
+            "Display": "Prefer not to say"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID9",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Place of Birth",
+        "DataExportTag": "birth_place",
+        "QuestionText": "Place of Birth",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 4,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "Spain"
+          },
+          "2": {
+            "Display": "Other country"
+          },
+          "3": {
+            "Display": "Prefer not to say"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID10",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Do you currently live in Barcelona?",
+        "DataExportTag": "lives_in_barcelona",
+        "QuestionText": "Do you currently live in Barcelona?",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 4,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "Yes"
+          },
+          "2": {
+            "Display": "No"
+          },
+          "3": {
+            "Display": "Don't know / Prefer not to say"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID11",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "What best describes the type of building that you live in?",
+        "DataExportTag": "building_type",
+        "QuestionText": "What best describes the type of building that you live in?",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 8,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "A brick house"
+          },
+          "2": {
+            "Display": "A townhouse in a complex of townhouses"
+          },
+          "3": {
+            "Display": "An RDP house"
+          },
+          "4": {
+            "Display": "A flat or apartment in an apartment building"
+          },
+          "5": {
+            "Display": "A backyard room"
+          },
+          "6": {
+            "Display": "Informal dwelling"
+          },
+          "7": {
+            "Display": "Other"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID12",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "What best describes the type of building that you live in?",
+        "DataExportTag": "building_type",
+        "QuestionText": "What best describes the type of building that you live in?",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 8,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "It is a detached single-family home"
+          },
+          "2": {
+            "Display": "It is a semi-detached or terraced single-family home"
+          },
+          "3": {
+            "Display": "It is a two housing-unit building"
+          },
+          "4": {
+            "Display": "The housing unit is in a building with 3 or more units but less than 10"
+          },
+          "5": {
+            "Display": "The housing unit is in a building with 10 or more housing units"
+          },
+          "6": {
+            "Display": "The housing unit is a building that is used for other uses (even though it includes one or more housing units, for example, housing for porters, guards or security staff of the building)"
+          },
+          "7": {
+            "Display": "Other"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID13",
+        "QuestionType": "MC",
+        "Selector": "MAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Does the household that you live in have any of the following? (mark all that apply)",
+        "DataExportTag": "household_items",
+        "QuestionText": "Does the household that you live in have any of the following? (mark all that apply)",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 10,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "Radio"
+          },
+          "2": {
+            "Display": "Television"
+          },
+          "3": {
+            "Display": "Refrigerator"
+          },
+          "4": {
+            "Display": "Microwave"
+          },
+          "5": {
+            "Display": "Internet access (e.g., fibre)"
+          },
+          "6": {
+            "Display": "Computer"
+          },
+          "7": {
+            "Display": "Cellular smartphone"
+          },
+          "8": {
+            "Display": "Car"
+          },
+          "9": {
+            "Display": "Electric cooling devices (e.g. fan or air-conditioning)"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID14",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "What is your highest level of completed education?",
+        "DataExportTag": "education",
+        "QuestionText": "What is your highest level of completed education?",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 8,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "Less than high school"
+          },
+          "2": {
+            "Display": "High school"
+          },
+          "3": {
+            "Display": "TVET college"
+          },
+          "4": {
+            "Display": "Bachelor's degree"
+          },
+          "5": {
+            "Display": "Professional degree"
+          },
+          "6": {
+            "Display": "Post-graduate degree (e.g., honours, masters or doctorate)"
+          },
+          "7": {
+            "Display": "Prefer not to say"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID15",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "What is your highest level of completed education?",
+        "DataExportTag": "education",
+        "QuestionText": "What is your highest level of completed education?",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 6,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "Less than high school"
+          },
+          "2": {
+            "Display": "High school"
+          },
+          "3": {
+            "Display": "Bachelor's degree"
+          },
+          "4": {
+            "Display": "Graduate or professional degree"
+          },
+          "5": {
+            "Display": "Prefer not to say"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID16",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "How would you describe your general health?",
+        "DataExportTag": "general_health",
+        "QuestionText": "How would you describe your general health?",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 6,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "Excellent"
+          },
+          "2": {
+            "Display": "Very good"
+          },
+          "3": {
+            "Display": "Good"
+          },
+          "4": {
+            "Display": "Fair"
+          },
+          "5": {
+            "Display": "Poor"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID17",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Are you involved in climate activism?",
+        "DataExportTag": "climate_activism",
+        "QuestionText": "Are you involved in climate activism?",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 6,
+        "NextAnswerId": 1,
+        "QuestionJS": "",
+        "Choices": {
+          "1": {
+            "Display": "All the time"
+          },
+          "2": {
+            "Display": "Often"
+          },
+          "3": {
+            "Display": "Sometimes"
+          },
+          "4": {
+            "Display": "Occasionally"
+          },
+          "5": {
+            "Display": "Never"
+          }
+        },
+        "ChoiceOrder": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID18",
+        "QuestionType": "TE",
+        "Selector": "SL",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Research Site",
+        "DataExportTag": "research_site",
+        "QuestionText": "Research Site",
+        "DefaultChoices": false,
+        "Validation": {
+          "Settings": {
+            "ForceResponse": "OFF",
+            "ForceResponseType": "ON",
+            "Type": "None"
+          }
+        },
+        "Language": [],
+        "NextChoiceId": 1,
+        "NextAnswerId": 1,
+        "QuestionJS": ""
+      }
+    },
+    {
+      "Type": "Question",
+      "Payload": {
+        "QuestionID": "QID19",
+        "QuestionType": "DB",
+        "Selector": "TB",
+        "Configuration": {
+          "QuestionDescriptionOption": "UseText"
+        },
+        "QuestionDescription": "Thank you for completing the initial survey!",
+        "QuestionText": "Thank you for completing the initial survey!",
+        "DefaultChoices": false,
+        "DataExportTag": "thank_you_note",
+        "Language": [],
+        "NextChoiceId": 1,
+        "NextAnswerId": 1,
+        "QuestionJS": ""
+      }
+    },
+    {
+      "Type": "Flow",
+      "ID": "FL_4b877f5c",
+      "Flow": [
+        {
+          "Type": "Block",
+          "ID": "BL_80fc3e83"
+        }
+      ],
+      "Properties": {
+        "Count": 19,
+        "RemovedFieldsets": []
+      }
+    },
+    {
+      "Type": "EmbeddedData",
+      "FlowID": "FL_f846c36c",
+      "EmbeddedData": []
+    }
+  ]
+}

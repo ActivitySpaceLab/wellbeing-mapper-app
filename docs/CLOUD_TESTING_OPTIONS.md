@@ -89,7 +89,7 @@ Given your needs (tablet screenshots for Play Store), here's what I recommend:
 
 ### **1. Start with Web-Based Approach (Free)**
 ```bash
-./generate_web_tablet_screenshots.sh
+./gauteng-wellbeing-mapper-app/screenshots/documentation/scripts/generate_web_tablet_screenshots.sh
 ```
 - **Immediate results**
 - **No cost**
@@ -130,7 +130,7 @@ This gives you:
 
 ```bash
 # Generate web-based tablet screenshots (immediate)
-./generate_web_tablet_screenshots.sh
+./gauteng-wellbeing-mapper-app/screenshots/documentation/scripts/generate_web_tablet_screenshots.sh
 
 # Then follow instructions to capture screenshots in Chrome DevTools
 ```

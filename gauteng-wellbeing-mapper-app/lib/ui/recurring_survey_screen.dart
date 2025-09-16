@@ -12,11 +12,12 @@ import '../models/consent_models.dart';
 import '../models/data_sharing_consent.dart';
 import '../models/app_mode.dart';
 import '../services/data_upload_service.dart';
-import '../services/qualtrics_api_service.dart';
+import '../services/encrypted_survey_service.dart';
 import '../db/survey_database.dart';
 import '../services/app_mode_service.dart';
 import 'interactive_location_privacy_map.dart';
 import '../theme/south_african_theme.dart';
+import '../main.dart'; // For GlobalData
 
 class RecurringSurveyScreen extends StatefulWidget {
   @override
@@ -1457,28 +1458,11 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     final formData = _formKey.currentState!.value;
     final submissionTime = DateTime.now();
     
-    // Get participant UUID for location encryption
-    String? participantUuid;
-    try {
-      final db = SurveyDatabase();
-      final consent = await db.getConsent();
-      participantUuid = consent?.participantUuid;
-    } catch (e) {
-      print('Error getting participant UUID: $e');
-    }
-    
     // Capture and encrypt location data at submission time
+    // Note: Location data capture temporarily disabled during security migration
+    // Will be re-enabled with secure web-based approach
     String? encryptedLocationData;
-    try {
-      encryptedLocationData = await QualtricsApiService.getEncryptedLocationDataForSubmissionTime(
-        participantUuid, 
-        submissionTime
-      );
-      print('Successfully captured location data for submission time: $submissionTime');
-    } catch (e) {
-      print('Error capturing location data at submission time: $e');
-      // Continue without location data
-    }
+    print('Location data capture disabled during security migration to web-based surveys');
       
     final surveyResponse = RecurringSurveyResponse(
       activities: List<String>.from(formData['activities'] ?? []),
@@ -1519,17 +1503,14 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     );
 
     final db = SurveyDatabase();
-    final surveyId = await db.insertRecurringSurvey(surveyResponse);
+    await db.insertRecurringSurvey(surveyResponse);
     
-    // Try to sync to Qualtrics immediately if connected
-    try {
-      final surveyData = await db.getUnsyncedRecurringSurveys();
-      final matchingSurvey = surveyData.firstWhere((s) => s['id'] == surveyId);
-      await QualtricsApiService.syncBiweeklySurvey(matchingSurvey);
-    } catch (syncError) {
-      print('Could not sync to Qualtrics immediately, will retry later: $syncError');
-      // Survey is saved locally and will sync when connectivity is available
-    }
+    // SECURITY: API sync disabled - using secure web-based submission instead
+    // The web-based survey approach is more secure as it doesn't expose API tokens
+    print('✅ Biweekly survey saved locally. Participants will complete web survey for secure submission.');
+    
+    // Note: API sync removed for security - web surveys provide secure data collection
+    // without exposing API tokens that could compromise all participant data
   }
 
   void _showBetaTestingSuccessMessage() {
@@ -1542,35 +1523,37 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text('Survey Submitted!'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Thank you for completing the wellbeing survey. Your responses have been saved locally.'),
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange[200]!),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Thank you for completing the wellbeing survey. Your responses have been saved locally.'),
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🧪 Beta Testing Mode',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Your data is stored locally for testing purposes. No data was transmitted to research servers.',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '🧪 Beta Testing Mode',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Your data is stored locally for testing purposes. No data was transmitted to research servers.',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           ElevatedButton(
@@ -1618,7 +1601,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Your data is ready to contribute to scientific research. Note: Currently no server is set up to receive data, so uploading will be available in a future update.',
+                    'Your data will be securely uploaded to research servers. This helps contribute to scientific research while protecting your privacy.',
                     style: TextStyle(fontSize: 13),
                   ),
                 ],
@@ -1630,7 +1613,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).popUntil((route) => route.isFirst); // Go back to main screen
+              _uploadDataToResearchServer(); // Upload data after closing dialog
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             child: Text('OK', style: TextStyle(color: Colors.white)),
@@ -1654,6 +1637,76 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     
     // Navigate back to main screen
     Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  Future<void> _uploadDataToResearchServer() async {
+    try {
+      final participantUuid = _getParticipantUuid();
+      
+      if (participantUuid == null || participantUuid.isEmpty) {
+        // Show error and navigate back
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Missing participant information - data saved locally only'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        return;
+      }
+
+      // Show uploading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Uploading to research server...'),
+            ],
+          ),
+        ),
+      );
+
+      try {
+        // Use the same encrypted survey service as consent and initial surveys
+        await EncryptedSurveyService.syncPendingSurveys();
+        
+        Navigator.of(context).pop(); // Close uploading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Data uploaded successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        
+      } catch (uploadError) {
+        Navigator.of(context).pop(); // Close uploading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upload failed: $uploadError - data saved locally'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Close any open dialogs
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Upload error: $e - data saved locally'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+  }
+
+  String? _getParticipantUuid() {
+    return GlobalData.userUUID.isEmpty ? null : GlobalData.userUUID;
   }
 
   /*

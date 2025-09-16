@@ -7,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import '../main.dart' show navigatorKey;
+import 'app_mode_service.dart';
 
 /// Service for managing recurring survey notifications
 /// Implements a 2-week recurring notification system that prompts users to respond to surveys
@@ -512,7 +513,14 @@ class NotificationService {
   // === TESTING INTERVAL CONFIGURATION ===
   
   /// Set custom testing interval in minutes (for development/testing)
+  /// Only available in beta builds
   static Future<void> setTestingInterval(int minutes) async {
+    // Prevent testing intervals in production builds
+    if (AppModeService.isProductionBuild) {
+      print('[NotificationService] Testing intervals are not available in production builds');
+      return;
+    }
+    
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_testingIntervalKey, minutes);
     print('[NotificationService] Testing interval set to $minutes minutes');
@@ -612,13 +620,26 @@ class NotificationService {
   }
 
   /// Get current testing interval in minutes (null if using production interval)
+  /// Returns null in production builds to force production intervals
   static Future<int?> getTestingInterval() async {
+    // Always return null for production builds - force production intervals
+    if (AppModeService.isProductionBuild) {
+      return null;
+    }
+    
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_testingIntervalKey);
   }
 
   /// Clear testing interval (revert to production 14-day interval)
+  /// Only available in beta builds
   static Future<void> clearTestingInterval() async {
+    // Only allow clearing in beta builds
+    if (AppModeService.isProductionBuild) {
+      print('[NotificationService] Testing interval clearing is not available in production builds');
+      return;
+    }
+    
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(_testingIntervalKey);
     print('[NotificationService] Reverted to production interval (14 days)');
@@ -703,6 +724,12 @@ class NotificationService {
   
   /// Test device notification immediately (for research team testing)
   static Future<void> testDeviceNotification() async {
+    // Only allow testing notifications in beta builds
+    if (AppModeService.isProductionBuild) {
+      print('[NotificationService] Test device notifications are not available in production builds');
+      return;
+    }
+    
     print('[NotificationService] Starting test device notification...');
     
     // Enhanced iOS-specific diagnostics
@@ -815,13 +842,26 @@ class NotificationService {
   }
 
   /// Test in-app dialog notification immediately (for research team testing)
+  /// Only available in beta builds
   static Future<void> testInAppNotification(BuildContext context) async {
+    // Only allow testing notifications in beta builds
+    if (AppModeService.isProductionBuild) {
+      print('[NotificationService] Test in-app notifications are not available in production builds');
+      return;
+    }
+    
     await showSurveyPromptDialog(context);
     print('[NotificationService] Test in-app notification shown');
   }
 
   /// Test immediate iOS notification (for debugging tap handler)
   static Future<void> testImmediateIOSNotification() async {
+    // Only allow testing notifications in beta builds
+    if (AppModeService.isProductionBuild) {
+      print('[NotificationService] Test immediate iOS notifications are not available in production builds');
+      return;
+    }
+    
     print('[NotificationService] Starting immediate iOS notification test...');
     
     if (!Platform.isIOS) {
@@ -909,7 +949,14 @@ class NotificationService {
   }
 
   /// iOS-specific simple notification test
+  /// Only available in beta builds
   static Future<void> testSimpleIOSNotification() async {
+    // Only allow testing notifications in beta builds
+    if (AppModeService.isProductionBuild) {
+      print('[NotificationService] Test iOS notifications are not available in production builds');
+      return;
+    }
+    
     if (!Platform.isIOS) {
       throw Exception('This test is only for iOS');
     }

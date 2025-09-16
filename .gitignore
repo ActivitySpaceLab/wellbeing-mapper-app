@@ -1,6 +1,30 @@
+untracked
+
 # Keys
 android/key.properties
 *.pem
+
+# SECURITY - Never commit sensitive credentials
+.env
+*.env
+.env.*
+!.env.example
+!.env.template
+
+# API Keys and Tokens
+**/api_keys.dart
+**/tokens.dart
+**/credentials.dart
+
+# Qualtrics specific - SECURITY: Prevent API token commits
+qualtrics_config.dart
+qualtrics_tokens.dart
+secure_config.dart
+**/create_encrypted_survey_configured.dart
+**/qualtrics_api_service*.dart
+**/qualtrics_survey_creator*.dart
+**/test_qualtrics*.dart
+**/debug_qualtrics*.dart
 
 example_data
 original_survey
@@ -126,3 +150,8 @@ gauteng-wellbeing-mapper-app/android/app/gauteng-wellbeing-mapper-app.keystore
 gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app.keystore
 gauteng-wellbeing-mapper-app/.fvm/flutter_sdk
 gauteng-wellbeing-mapper-app/.fvm/fvm_config.json
+
+
+# R
+*.RData
+*.Rhistory

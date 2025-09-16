@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import '../services/notification_service.dart';
+import '../services/app_mode_service.dart';
 
 /// Screen for managing notification settings and viewing notification statistics
 class NotificationSettingsView extends StatefulWidget {
@@ -214,35 +215,64 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
               ],
             ),
             SizedBox(height: 16),
-            // Testing Buttons
-            Text(
-              'Testing Tools',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: Icon(Icons.phone_android),
-                label: Text('Test Device Notification'),
-                onPressed: () => _testDeviceNotification(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
+            
+            // Testing Tools - Only show in beta builds
+            if (AppModeService.isBetaBuild) ...[
+              Text(
+                'Testing Tools',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-            ),
-            // iOS-specific simple test
-            if (Platform.isIOS) ...[
               SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: Icon(Icons.phone_iphone),
-                  label: Text('Test Simple iOS Notification'),
-                  onPressed: () => _testSimpleIOSNotification(),
+                  icon: Icon(Icons.phone_android),
+                  label: Text('Test Device Notification'),
+                  onPressed: () => _testDeviceNotification(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+              // iOS-specific simple test
+              if (Platform.isIOS) ...[
+                SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.phone_iphone),
+                    label: Text('Test Simple iOS Notification'),
+                    onPressed: () => _testSimpleIOSNotification(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.bolt),
+                    label: Text('Test Immediate iOS Notification'),
+                    onPressed: () => _testImmediateIOSNotification(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+              SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.chat_bubble),
+                  label: Text('Test In-App Notification'),
+                  onPressed: () => _testInAppNotification(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
                   ),
                 ),
@@ -251,43 +281,88 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: Icon(Icons.bolt),
-                  label: Text('Test Immediate iOS Notification'),
-                  onPressed: () => _testImmediateIOSNotification(),
+                  icon: Icon(Icons.security),
+                  label: Text('Check Notification Permissions'),
+                  onPressed: () => _checkPermissions(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
+                    backgroundColor: Colors.purple,
                     foregroundColor: Colors.white,
                   ),
                 ),
               ),
+              SizedBox(height: 16),
             ],
-            SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: Icon(Icons.chat_bubble),
-                label: Text('Test In-App Notification'),
-                onPressed: () => _testInAppNotification(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+            
+            // Testing Interval Configuration - Only show in beta builds
+            if (AppModeService.isBetaBuild) ...[
+              Text(
+                'Testing Configuration',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              if (_notificationStats['isTestingMode'] == true) ...[
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.warning, color: Colors.orange, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'TESTING MODE ACTIVE',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Notifications set to ${_notificationStats['testingIntervalMinutes']} minute interval',
+                        style: TextStyle(color: Colors.orange.shade700),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 8),
+              ],
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.schedule),
+                  label: Text(_notificationStats['isTestingMode'] == true 
+                      ? 'Change Testing Interval' 
+                      : 'Set Testing Interval'),
+                  onPressed: () => _showTestingIntervalDialog(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _notificationStats['isTestingMode'] == true 
+                        ? Colors.orange : Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: Icon(Icons.security),
-                label: Text('Check Notification Permissions'),
-                onPressed: () => _checkPermissions(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  foregroundColor: Colors.white,
+              if (_notificationStats['isTestingMode'] == true) ...[
+                SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.restore),
+                    label: Text('Revert to Production (14 days)'),
+                    onPressed: () => _clearTestingInterval(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(height: 16),
+              ],
+              SizedBox(height: 16),
+            ],
             
             // Management Buttons
             Text(
