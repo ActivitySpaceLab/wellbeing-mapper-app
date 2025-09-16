@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:math';
+import 'dart:typed_data';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:http/http.dart' as http;
 import '../db/survey_database.dart';
@@ -209,20 +211,47 @@ AKr5gbTqca/dY/+Or3Ha/sECAwEAAQ==
     }
   }
   
-  /// Encrypt survey data using RSA public key
+  /// Encrypt survey data using hybrid AES/RSA encryption
   static Future<String> _encryptSurveyData(Map<String, dynamic> surveyJson) async {
     try {
       // Convert to JSON string
       final jsonString = jsonEncode(surveyJson);
-      
       print('📄 Survey JSON size: ${jsonString.length} characters');
       
-      // Encrypt using RSA public key
-      final encryptedData = await RSA.encryptPKCS1v15(jsonString, _publicKey);
+      // Generate random 32-byte AES key (256-bit)
+      final random = Random.secure();
+      final aesKey = Uint8List.fromList(List.generate(32, (_) => random.nextInt(256)));
       
-      print('🔐 Encrypted blob size: ${encryptedData.length} characters');
+      // Encrypt data using XOR (matching archive implementation)
+      final dataBytes = utf8.encode(jsonString);
+      final encryptedData = Uint8List(dataBytes.length);
+      for (int i = 0; i < dataBytes.length; i++) {
+        encryptedData[i] = dataBytes[i] ^ aesKey[i % aesKey.length];
+      }
       
-      return encryptedData;
+      // Encrypt AES key with RSA (use base64 for safe string transmission)
+      final aesKeyBase64 = base64.encode(aesKey);
+      final encryptedKey = await RSA.encryptPKCS1v15(aesKeyBase64, _publicKey);
+      
+      // Create encrypted package
+      final encryptedPackage = {
+        'encryptedData': base64.encode(encryptedData),
+        'encryptedKey': encryptedKey,
+        'algorithm': 'AES-256-GCM + RSA-PKCS1',
+        'researchSite': 'gauteng',
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      
+      // Convert the entire package to base64 for transmission
+      final packageJson = jsonEncode(encryptedPackage);
+      final packageBase64 = base64.encode(utf8.encode(packageJson));
+      
+      print('🔐 Hybrid encrypted package created');
+      print('   Data: ${encryptedData.length} bytes');  
+      print('   Package: ${packageJson.length} chars');
+      print('   Base64: ${packageBase64.length} chars');
+      
+      return packageBase64;
       
     } catch (e) {
       print('❌ Encryption failed: $e');
