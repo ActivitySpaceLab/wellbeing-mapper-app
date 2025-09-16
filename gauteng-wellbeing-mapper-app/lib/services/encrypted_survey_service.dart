@@ -1,10 +1,14 @@
 import 'dart:convert';
 import 'package:fast_rsa/fast_rsa.dart';
+import 'package:http/http.dart' as http;
 import '../db/survey_database.dart';
 import '../main.dart';
 
 /// Service for encrypting complete survey responses and sending to proxy server
 class EncryptedSurveyService {
+  
+  // AWS Lambda Function URL for encrypted survey proxy (Cape Town region)
+  static const String _proxyServerUrl = 'https://6p7hir7licc5yisxhkner4wt2i0yhtzo.lambda-url.af-south-1.on.aws/submit';
   
   // Use the same public key as location encryption for consistency
   static const String _publicKey = '''-----BEGIN PUBLIC KEY-----
@@ -191,39 +195,148 @@ AKr5gbTqca/dY/+Or3Ha/sECAwEAAQ==
     }
   }
   
-  /// Send encrypted blob to proxy server
+  /// Send encrypted blob to proxy server with enhanced error handling
   static Future<bool> _sendToProxy(String surveyType, String encryptedBlob) async {
+    const int maxRetries = 3;
+    const Duration initialDelay = Duration(seconds: 2);
+    
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        print('🌐 Sending encrypted $surveyType survey to proxy (attempt $attempt/$maxRetries)...');
+        
+        final response = await http.post(
+          Uri.parse(_proxyServerUrl),
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'GautengWellbeingMapper/1.0',
+          },
+          body: jsonEncode({
+            'encrypted_data': encryptedBlob,
+            'survey_type': surveyType,
+            'timestamp': DateTime.now().toIso8601String(),
+          }),
+        ).timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw Exception('Request timeout after 30 seconds');
+          },
+        );
+        
+        // Check HTTP status code
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          // Parse response to verify Qualtrics delivery
+          try {
+            final responseData = jsonDecode(response.body);
+            
+            // Verify the proxy successfully forwarded to Qualtrics
+            if (responseData['success'] == true) {
+              print('✅ Encrypted data confirmed delivered to Qualtrics (attempt $attempt)');
+              return true;
+            } else {
+              print('❌ Proxy responded OK but Qualtrics delivery failed: ${responseData['message'] ?? 'Unknown error'}');
+              // This counts as a failure - retry
+            }
+          } catch (jsonError) {
+            print('❌ Invalid JSON response from proxy: ${response.body.substring(0, 200)}...');
+            // Malformed response - retry
+          }
+        } else {
+          print('❌ Proxy server HTTP error: ${response.statusCode}');
+          print('Response body: ${response.body.substring(0, 200)}...');
+          
+          // Don't retry for client errors (4xx) - these won't get better
+          if (response.statusCode >= 400 && response.statusCode < 500) {
+            print('🚫 Client error - not retrying');
+            return false;
+          }
+          // Server errors (5xx) - retry after delay
+        }
+        
+      } catch (e) {
+        print('❌ Network error sending to proxy (attempt $attempt): $e');
+        
+        // Check for specific error types that shouldn't be retried
+        if (e.toString().contains('certificate') || 
+            e.toString().contains('handshake') ||
+            e.toString().contains('format')) {
+          print('🚫 Permanent error detected - not retrying');
+          return false;
+        }
+      }
+      
+      // If we reach here, the attempt failed - wait before retry
+      if (attempt < maxRetries) {
+        final delay = Duration(seconds: initialDelay.inSeconds * attempt);
+        print('⏳ Waiting ${delay.inSeconds} seconds before retry...');
+        await Future.delayed(delay);
+      }
+    }
+    
+    // All attempts failed
+    print('💀 All $maxRetries attempts failed - marking as failed for later retry');
+    return false;
+  }
+  
+  /// Enhanced sync method with better error tracking
+  static Future<void> syncPendingSurveysEnhanced() async {
     try {
-      print('🌐 Sending encrypted $surveyType survey to proxy...');
+      print('🔐 Starting enhanced encrypted survey sync...');
       
-      // TODO: Replace with actual HTTP call to your proxy server
-      // For now, just simulate success
+      final db = SurveyDatabase();
       
-      /* 
-      final response = await http.post(
-        Uri.parse(_proxyServerUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Survey-Type': surveyType,
-        },
-        body: jsonEncode({
-          'encrypted_data': encryptedBlob,
-          'survey_type': surveyType,
-          'timestamp': DateTime.now().toIso8601String(),
-        }),
-      );
+      // Get unsynced data
+      final unsyncedInitial = await db.getUnsyncedInitialSurveys();
+      final unsyncedBiweekly = await db.getUnsyncedRecurringSurveys();
+      final unsyncedConsent = await db.getUnsyncedConsentForms();
       
-      return response.statusCode >= 200 && response.statusCode < 300;
-      */
+      final totalToSync = unsyncedInitial.length + unsyncedBiweekly.length + unsyncedConsent.length;
+      int successCount = 0;
+      int failureCount = 0;
       
-      // Simulate successful transmission
-      await Future.delayed(Duration(milliseconds: 500));
-      print('✅ Encrypted data sent to proxy (simulated)');
-      return true;
+      print('📊 Found $totalToSync surveys to sync (Initial: ${unsyncedInitial.length}, Biweekly: ${unsyncedBiweekly.length}, Consent: ${unsyncedConsent.length})');
+      
+      if (totalToSync == 0) {
+        print('✅ No surveys to sync');
+        return;
+      }
+      
+      // Sync initial surveys
+      for (final survey in unsyncedInitial) {
+        if (await _syncInitialSurveyEncrypted(survey)) {
+          successCount++;
+        } else {
+          failureCount++;
+        }
+      }
+      
+      // Sync biweekly surveys
+      for (final survey in unsyncedBiweekly) {
+        if (await _syncBiweeklySurveyEncrypted(survey)) {
+          successCount++;
+        } else {
+          failureCount++;
+        }
+      }
+      
+      // Sync consent forms
+      for (final consent in unsyncedConsent) {
+        if (await _syncConsentFormEncrypted(consent)) {
+          successCount++;
+        } else {
+          failureCount++;
+        }
+      }
+      
+      print('📊 Sync completed: $successCount successful, $failureCount failed out of $totalToSync total');
+      
+      if (failureCount > 0) {
+        print('⚠️ $failureCount surveys failed to sync and will be retried later');
+      } else {
+        print('✅ All surveys synced successfully');
+      }
       
     } catch (e) {
-      print('❌ Error sending to proxy: $e');
-      return false;
+      print('❌ Critical error in enhanced survey sync: $e');
     }
   }
 }
