@@ -9,6 +9,12 @@ yarn-error.log*
 .env.local
 .env.production
 
+# Sensitive data files
+participant_codes.json
+*.pem
+private_key.pem
+public_key.pem
+
 # Dependencies
 node_modules/
 

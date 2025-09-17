@@ -2,19 +2,29 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
 
 /// Service for validating participant codes against a secure server-side list
 /// Uses SHA-256 hashing for security - codes are never transmitted in plain text
 class ParticipantValidationService {
-  // Server endpoints (will be used when server is ready)
-  // static const String _baseUrl = 'https://api.gauteng-wellbeing-research.org';
-  // static const String _validateEndpoint = '/api/v1/participants/validate';
-  // static const String _consentEndpoint = '/api/v1/participants/consent';
+  // Production server endpoints
+  static const String _baseUrl = 'https://14uzsopowf.execute-api.af-south-1.amazonaws.com/prod';
+  static const String _validateEndpoint = '/api/v1/participants/validate';
+  static const String _healthEndpoint = '/health';
+  
+  // Local development server (fallback)
+  static const String _localBaseUrl = 'http://localhost:3000';
   
   // Local storage keys
   static const String _validatedParticipantKey = 'validated_participant_code';
   static const String _validationTimestampKey = 'validation_timestamp';
   static const String _consentRecordedKey = 'consent_recorded';
+  static const String _codeTypeKey = 'participant_code_type';
+  static const String _lastApiValidationKey = 'last_api_validation';
+  
+  // Validation source tracking
+  static const String _apiValidationSource = 'api';
+  static const String _localValidationSource = 'local_fallback';
 
   /// Check if the current user has already been validated
   static Future<bool> isParticipantValidated() async {
@@ -44,103 +54,84 @@ class ParticipantValidationService {
       // Clean and normalize the code
       final cleanCode = participantCode.trim().toUpperCase();
       
-      // For development/testing - allow specific test codes
-      if (cleanCode == 'TESTER' || cleanCode == 'TEST123' || cleanCode == 'DEV001') {
-        await _storeValidatedParticipant(cleanCode);
-        print('[ParticipantValidation] Test code accepted: $cleanCode');
-        return ValidationResult(isValid: true);
-      }
-      
       // Hash the entered code for validation
       final hashedCode = _hashParticipantCode(cleanCode);
       
-      // Pilot participant code hashes for Gauteng study
-      // These are SHA-256 hashes of: P4H1P, P4H2P, P4H3P, P4H4P, P4H5P, P4H6P, P4H7P, P4H8P, P4H9P, P4H10P
-      final Set<String> validPilotCodeHashes = {
-        '4f1b70f8e0ba866e3674212316b7f56f10a10a079c4529388f9e279d0089a5c8', // P4H1P
-        'a46ec4139c68af42d976289028fcaa90c6686d441abd2fb4e65e35823dbabd3a', // P4H2P
-        'cfb931b358f07251e2668420bb3f3a9c61bd9d7c1361e015877cbbeb0e56d4cd', // P4H3P
-        '3ea2efd140c478a97fc149a9f1bb6b1925698dc091b9f79a61861fbec85122d4', // P4H4P
-        '1fa5d96e720d3122aad7aa0dc537cc7c213704633ed947e7d22cc30cb2258781', // P4H5P
-        'bd4029314d62009a717d0d7b56ee27e534605d2b17809e0a4b88d415385576d4', // P4H6P
-        '7f526eb989ccc02af13bb4248dc6ec01aa17bd0d66ace79050cd51e60ae28912', // P4H7P
-        '182c2f81f6270bea6be3857d68385993075a4e6f565e014cda67ffe199c3f96f', // P4H8P
-        'f0f936f8f6345bbf178ac5820e55dcb2f0f2d84e21b4b69b8d632d24047b73a4', // P4H9P
-        '496c8ee77cc087f299d6d54da74269ffbaf2945f16295d7bf918518bf527cbea', // P4H10P
-      };
-      
-      if (validPilotCodeHashes.contains(hashedCode)) {
-        await _storeValidatedParticipant(cleanCode);
-        print('[ParticipantValidation] Pilot participant code accepted: ${cleanCode.substring(0, min(3, cleanCode.length))}***');
-        return ValidationResult(isValid: true);
-      }
-      
-      // Invalid code
-      print('[ParticipantValidation] Invalid code attempted: ${cleanCode.substring(0, min(3, cleanCode.length))}***');
-      return ValidationResult(
-        isValid: false,
-        error: 'Invalid participant code. Please check your code and contact the research team if you continue to have issues.',
-      );
+      // Try server validation first
+      try {
+        final response = await http.post(
+          Uri.parse('$_baseUrl$_validateEndpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode({
+            'hashed_code': hashedCode,
+            'timestamp': DateTime.now().toIso8601String(),
+          }),
+        ).timeout(Duration(seconds: 10));
 
-      // TODO: When server is ready, uncomment this and remove the above return
-      /*
-      // For development/testing - allow specific test codes
-      if (cleanCode == 'TEST123' || cleanCode == 'DEV001') {
-        await _storeValidatedParticipant(cleanCode);
-        return ValidationResult(isValid: true);
-      }
-      
-      return ValidationResult(
-        isValid: false,
-        error: 'Invalid participant code. Please check your code and try again.',
-      );
-      */
-
-      // Server validation (commented out until server is ready)
-      /*
-      final response = await http.post(
-        Uri.parse('$_baseUrl$_validateEndpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'hashed_code': hashedCode,
-          'timestamp': DateTime.now().toIso8601String(),
-        }),
-      ).timeout(Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['valid'] == true) {
-          // Store the validation locally
-          await _storeValidatedParticipant(cleanCode);
-          return ValidationResult(isValid: true);
-        } else {
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data['valid'] == true) {
+            // Store the validation locally with additional metadata
+            await _storeValidatedParticipant(cleanCode);
+            await _storeValidationSource(_apiValidationSource);
+            await _storeParticipantCodeType(data['code_type'] ?? 'unknown');
+            
+            print('[ParticipantValidation] Server validation successful: ${cleanCode.substring(0, min(3, cleanCode.length))}*** (${data['code_type']})');
+            return ValidationResult(isValid: true);
+          } else {
+            print('[ParticipantValidation] Server rejected code: ${cleanCode.substring(0, min(3, cleanCode.length))}***');
+            return ValidationResult(
+              isValid: false,
+              error: 'Invalid participant code. Please check your code and contact the research team if you continue to have issues.',
+            );
+          }
+        } else if (response.statusCode == 404) {
+          print('[ParticipantValidation] Code not found on server: ${cleanCode.substring(0, min(3, cleanCode.length))}***');
           return ValidationResult(
             isValid: false,
-            error: 'Invalid participant code. Please check your code and try again.',
+            error: 'Participant code not found. Please check your code and try again.',
           );
+        } else {
+          print('[ParticipantValidation] Server validation failed with status ${response.statusCode}');
+          // Fall back to local validation
+          return await _validateWithLocalFallback(cleanCode, hashedCode);
         }
-      } else if (response.statusCode == 404) {
-        return ValidationResult(
-          isValid: false,
-          error: 'Participant code not found. Please check your code and try again.',
-        );
-      } else {
-        return ValidationResult(
-          isValid: false,
-          error: 'Unable to validate code. Please check your internet connection and try again.',
-        );
+      } catch (networkError) {
+        print('[ParticipantValidation] Network error during server validation: $networkError');
+        // Fall back to local validation
+        return await _validateWithLocalFallback(cleanCode, hashedCode);
       }
-      */
     } catch (e) {
       print('[ParticipantValidation] Error validating code: $e');
       return ValidationResult(
         isValid: false,
-        error: 'Network error. Please check your internet connection and try again.',
+        error: 'Validation error. Please try again.',
       );
     }
+  }
+
+  /// Fallback validation using local hardcoded hashes
+  static Future<ValidationResult> _validateWithLocalFallback(String cleanCode, String hashedCode) async {
+    print('[ParticipantValidation] Using local fallback validation - server unavailable');
+    
+    // For development/testing - allow specific test codes only
+    if (cleanCode == 'TESTER' || cleanCode == 'TEST123' || cleanCode == 'DEV001') {
+      await _storeValidatedParticipant(cleanCode);
+      await _storeValidationSource(_localValidationSource);
+      await _storeParticipantCodeType('test');
+      print('[ParticipantValidation] Test code accepted: $cleanCode');
+      return ValidationResult(isValid: true);
+    }
+    
+    // No hardcoded participant codes - server required for validation
+    print('[ParticipantValidation] Local fallback: Server required for participant validation');
+    return ValidationResult(
+      isValid: false,
+      error: 'Unable to validate participant code. Please check your internet connection and try again.',
+    );
   }
 
   /// Record consent for a validated participant
@@ -231,7 +222,21 @@ class ParticipantValidationService {
     await prefs.remove(_validatedParticipantKey);
     await prefs.remove(_validationTimestampKey);
     await prefs.remove(_consentRecordedKey);
+    await prefs.remove(_codeTypeKey);
+    await prefs.remove(_lastApiValidationKey);
     await prefs.remove('consent_timestamp');
+  }
+
+  /// Store the validation source (API or local fallback)
+  static Future<void> _storeValidationSource(String source) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastApiValidationKey, source);
+  }
+
+  /// Store the participant code type (pilot, study, test)
+  static Future<void> _storeParticipantCodeType(String codeType) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_codeTypeKey, codeType);
   }
 
   /// Get validation timestamp

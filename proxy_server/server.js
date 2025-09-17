@@ -17,6 +17,9 @@ const helmet = require('helmet');
 const compression = require('compression');
 const https = require('https');
 const querystring = require('querystring');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +37,22 @@ if (!QUALTRICS_API_TOKEN) {
 
 // Valid survey types for validation
 const VALID_SURVEY_TYPES = ['initial', 'biweekly', 'consent'];
+
+// Load participant codes database
+let participantCodes = null;
+try {
+  const codesPath = path.join(__dirname, 'participant_codes.json');
+  participantCodes = JSON.parse(fs.readFileSync(codesPath, 'utf8'));
+  console.log(`✅ Loaded ${participantCodes.meta.totalCodes} participant codes`);
+} catch (error) {
+  console.error('❌ Failed to load participant codes:', error.message);
+  console.log('ℹ️  Participant validation will fall back to hardcoded test codes only');
+}
+
+// Hash function for participant codes (matches app implementation)
+function hashParticipantCode(code) {
+  return crypto.createHash('sha256').update(code.trim().toUpperCase()).digest('hex');
+}
 
 // Security middleware
 app.use(helmet());
@@ -60,7 +79,104 @@ app.get('/health', (req, res) => {
     status: 'healthy', 
     timestamp: new Date().toISOString(),
     message: 'Encrypted Survey Proxy Server',
-    version: '1.0.0'
+    version: '1.0.0',
+    participant_codes_loaded: participantCodes !== null,
+    total_codes: participantCodes ? participantCodes.meta.totalCodes : 0
+  });
+});
+
+// Participant code validation endpoint
+app.post('/api/v1/participants/validate', async (req, res) => {
+  try {
+    console.log('🔍 Participant code validation request received');
+    
+    const { hashed_code, timestamp } = req.body;
+    
+    // Validate required fields
+    if (!hashed_code) {
+      return res.status(400).json({ 
+        valid: false,
+        error: 'Missing required field: hashed_code' 
+      });
+    }
+    
+    // Validate hash format (SHA-256 should be 64 hex characters)
+    if (!/^[a-f0-9]{64}$/i.test(hashed_code)) {
+      return res.status(400).json({
+        valid: false,
+        error: 'Invalid hash format'
+      });
+    }
+    
+    console.log(`🔐 Validating hashed code: ${hashed_code.substring(0, 8)}...`);
+    
+    let isValid = false;
+    let codeType = 'unknown';
+    
+    if (participantCodes) {
+      // Check all code categories
+      const allCodes = [
+        ...participantCodes.pilot_codes,
+        ...participantCodes.study_codes,
+        ...participantCodes.test_codes
+      ];
+      
+      // Hash each code and compare
+      for (const code of allCodes) {
+        const computedHash = hashParticipantCode(code);
+        if (computedHash === hashed_code.toLowerCase()) {
+          isValid = true;
+          
+          // Determine code type
+          if (participantCodes.pilot_codes.includes(code)) {
+            codeType = 'pilot';
+          } else if (participantCodes.study_codes.includes(code)) {
+            codeType = 'study';
+          } else if (participantCodes.test_codes.includes(code)) {
+            codeType = 'test';
+          }
+          
+          console.log(`✅ Valid ${codeType} participant code accepted`);
+          break;
+        }
+      }
+    }
+    
+    if (!isValid) {
+      console.log(`❌ Invalid participant code attempted: ${hashed_code.substring(0, 8)}...`);
+    }
+    
+    // Response
+    res.json({
+      valid: isValid,
+      code_type: isValid ? codeType : null,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Participant validation error:', error);
+    res.status(500).json({
+      valid: false,
+      error: 'Internal server error during validation'
+    });
+  }
+});
+
+// Get participant codes statistics (admin endpoint)
+app.get('/api/v1/participants/stats', (req, res) => {
+  if (!participantCodes) {
+    return res.status(503).json({
+      error: 'Participant codes database not loaded'
+    });
+  }
+  
+  res.json({
+    total_codes: participantCodes.meta.totalCodes,
+    pilot_codes: participantCodes.pilot_codes.length,
+    study_codes: participantCodes.study_codes.length,
+    test_codes: participantCodes.test_codes.length,
+    database_version: participantCodes.meta.version,
+    created: participantCodes.meta.created
   });
 });
 
@@ -219,7 +335,7 @@ app.use((error, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not found',
-    message: 'Available endpoints: GET /health, POST /submit'
+    message: 'Available endpoints: GET /health, POST /submit, POST /api/v1/participants/validate, GET /api/v1/participants/stats'
   });
 });
 
@@ -228,6 +344,8 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 Encrypted Survey Proxy Server running on port ${PORT}`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
   console.log(`📥 Submit endpoint: http://localhost:${PORT}/submit`);
+  console.log(`🔍 Participant validation: http://localhost:${PORT}/api/v1/participants/validate`);
+  console.log(`📊 Participant stats: http://localhost:${PORT}/api/v1/participants/stats`);
   console.log('🔐 Server only handles encrypted data - no plaintext survey data processed');
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

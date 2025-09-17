@@ -60,6 +60,7 @@ mkdir -p dist
 # Copy source files
 cp server.js dist/
 cp package.json dist/
+cp participant_codes.json dist/
 
 # Install production dependencies
 echo -e "${BLUE}📥 Installing production dependencies...${NC}"
