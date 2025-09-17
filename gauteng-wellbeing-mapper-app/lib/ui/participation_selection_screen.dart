@@ -8,6 +8,7 @@ import '../models/app_mode.dart';
 import '../services/app_mode_service.dart';
 import '../services/location_service.dart';
 import '../services/ios_location_fix_service.dart';
+import '../services/pilot_migration_service.dart';
 import '../theme/south_african_theme.dart';
 import '../services/participant_validation_service.dart';
 
@@ -22,11 +23,14 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
   String _selectedMode = 'private'; // Default to private mode
   bool _isLoading = false;
   List<AppMode> _availableModes = [];
+  bool _isPilotUser = false;
+  Map<String, dynamic>? _preservedData;
 
   @override
   void initState() {
     super.initState();
     _loadAvailableModes();
+    _checkPilotStatus();
   }
 
   void _loadAvailableModes() {
@@ -36,6 +40,20 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
     // Ensure selected mode is available in current build
     if (!_availableModes.any((mode) => mode.toString().split('.').last == _selectedMode)) {
       _selectedMode = _availableModes.first.toString().split('.').last;
+    }
+  }
+
+  Future<void> _checkPilotStatus() async {
+    try {
+      final isPilot = await PilotMigrationService.isPilotUser();
+      final preservedData = await PilotMigrationService.getPreservedDataSummary();
+      
+      setState(() {
+        _isPilotUser = isPilot;
+        _preservedData = preservedData;
+      });
+    } catch (e) {
+      print('[ParticipationSelection] Error checking pilot status: $e');
     }
   }
 
@@ -61,6 +79,7 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildWelcomeSection(),
+            if (_isPilotUser) _buildPilotUserInfo(),
             SizedBox(height: 32),
             _buildChoiceSection(),
             // Note: Participant code section removed for beta testing phase
@@ -118,6 +137,103 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPilotUserInfo() {
+    return Card(
+      elevation: 4,
+      color: Colors.blue.shade50,
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.blue.shade700, size: 24),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Welcome Back, Pilot User!',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Text(
+              'We\'ve updated the app for the full research study. Your personal data has been preserved:',
+              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+            ),
+            if (_preservedData != null) ...[
+              SizedBox(height: 8),
+              _buildPreservedDataSummary(),
+            ],
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                border: Border.all(color: Colors.amber.shade200),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'To continue participating in research:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    '• Use your NEW participant code\n'
+                    '• Review and sign the updated consent form\n'
+                    '• Retake the initial survey',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreservedDataSummary() {
+    if (_preservedData == null) return SizedBox.shrink();
+    
+    return Container(
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        border: Border.all(color: Colors.green.shade200),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_preservedData!['locationRecords'] != null && _preservedData!['locationRecords'] > 0)
+            Text(
+              '📍 ${_preservedData!['locationRecords']} location records preserved',
+              style: TextStyle(fontSize: 12, color: Colors.green.shade700),
+            ),
+          if (_preservedData!['happinessSurveys'] != null && _preservedData!['happinessSurveys'] > 0)
+            Text(
+              '😊 ${_preservedData!['happinessSurveys']} happiness surveys preserved',
+              style: TextStyle(fontSize: 12, color: Colors.green.shade700),
+            ),
+          Text(
+            '✅ All your personal data remains available for private use',
+            style: TextStyle(fontSize: 11, color: Colors.green.shade600, fontStyle: FontStyle.italic),
+          ),
+        ],
       ),
     );
   }

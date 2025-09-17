@@ -1,6 +1,7 @@
 import 'package:wellbeing_mapper/models/route_generator.dart';
 import 'package:wellbeing_mapper/util/env.dart';
 import 'package:wellbeing_mapper/services/notification_service.dart';
+import 'package:wellbeing_mapper/services/pilot_migration_service.dart';
 import 'package:wellbeing_mapper/ui/home_view.dart';
 import 'package:wellbeing_mapper/theme/south_african_theme.dart';
 import 'package:flutter/material.dart';
@@ -209,6 +210,32 @@ void main() {
 
     print('[main.dart] userUUID: $userUUID');
     print('[main.dart] sampleId: $sampleId');
+
+    // Check for pilot user migration
+    try {
+      print('[main.dart] Checking migration status...');
+      final migrationStatus = await PilotMigrationService.checkMigrationStatus();
+      
+      switch (migrationStatus) {
+        case MigrationStatus.pilotUpgrade:
+          print('[main.dart] Pilot user detected - executing migration...');
+          await PilotMigrationService.executePilotMigration();
+          print('[main.dart] ✅ Pilot migration completed');
+          break;
+        case MigrationStatus.freshInstall:
+          print('[main.dart] Fresh install detected');
+          break;
+        case MigrationStatus.productionUpgrade:
+          print('[main.dart] Production upgrade detected');
+          break;
+        case MigrationStatus.completed:
+          print('[main.dart] Migration already completed');
+          break;
+      }
+    } catch (error) {
+      print('[main.dart] Error during migration check (non-fatal): $error');
+      // Continue app startup even if migration fails
+    }
 
     // Initialize notification service
     try {

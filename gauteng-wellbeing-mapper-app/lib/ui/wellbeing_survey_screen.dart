@@ -241,55 +241,70 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
             ),
             SizedBox(height: 24),
             
-            // Slider
-            Column(
-              children: [
-                Slider(
-                  value: _happinessScore ?? 5.0,
-                  min: question.minValue,
-                  max: question.maxValue,
-                  divisions: 10, // 0, 1, 2, ..., 10
-                  label: _happinessScore?.toStringAsFixed(1) ?? '5.0',
-                  onChanged: (value) {
-                    setState(() {
-                      _happinessScore = value;
-                    });
-                  },
-                  activeColor: SouthAfricanTheme.primaryBlue,
-                  inactiveColor: Colors.grey[300],
+            // Slider with improved UX
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: _happinessScore == null ? Colors.red[300]! : Colors.grey[300]!,
+                  width: 1,
                 ),
-                
-                // Labels below slider
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
+                borderRadius: BorderRadius.circular(8),
+                color: _happinessScore == null ? Colors.red[50] : Colors.blue[50],
+              ),
+              child: Column(
+                children: [
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Flexible(
-                        child: Text(
-                          question.minLabel,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.start,
+                      Text(
+                        question.minLabel,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                      Text(
+                        _happinessScore == null 
+                          ? 'Not selected' 
+                          : _happinessScore!.toStringAsFixed(1),
+                        style: TextStyle(
+                          fontSize: 16, 
+                          fontWeight: FontWeight.bold,
+                          color: _happinessScore == null ? Colors.red[600] : SouthAfricanTheme.primaryBlue,
                         ),
                       ),
-                      Flexible(
-                        child: Text(
-                          question.maxLabel,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.end,
-                        ),
+                      Text(
+                        question.maxLabel,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
-                ),
-              ],
+                  SizedBox(height: 12),
+                  Slider(
+                    value: _happinessScore ?? 5.0,
+                    min: question.minValue,
+                    max: question.maxValue,
+                    divisions: 10, // 0, 1, 2, ..., 10
+                    label: _happinessScore?.toStringAsFixed(1) ?? 'Not selected',
+                    onChanged: (value) {
+                      setState(() {
+                        _happinessScore = value;
+                      });
+                    },
+                    activeColor: _happinessScore == null ? Colors.red[300] : SouthAfricanTheme.primaryBlue,
+                    inactiveColor: Colors.grey[300],
+                  ),
+                  if (_happinessScore == null)
+                    Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Please move the slider to rate your happiness',
+                        style: TextStyle(fontSize: 12, color: Colors.red[600], fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                ],
+              ),
             ),
+            
+
             
             SizedBox(height: 16),
             

@@ -28,6 +28,9 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
   bool _isSubmitting = false;
   // List<File> _selectedImages = [];
+  
+  // Track slider values for better UX - starts with no selection
+  final Map<String, double?> _sliderValues = {};
   // List<String> _voiceNoteUrls = [];
   // List<File> _voiceNoteFiles = [];
   // final ImagePicker _picker = ImagePicker();
@@ -450,24 +453,92 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           ),
           SizedBox(height: 4),
           Text(
-            'Current position is just a placeholder - move the slider if you want to provide a rating',
-            style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic),
+            'Move the slider to provide your rating (starts at default position)',
+            style: TextStyle(fontSize: 11, color: Colors.blue[600], fontWeight: FontWeight.w500),
           ),
           SizedBox(height: 8),
-          FormBuilderSlider(
-            name: name,
-            min: min.toDouble(),
-            max: max.toDouble(),
-            initialValue: ((min + max) / 2).toDouble(), // Start at middle, but user knows it's just placeholder
-            divisions: max - min,
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              helperText: '$min = ${min == 0 ? 'Never' : 'Not at all'}, $max = ${max == 5 ? 'All the time' : 'Completely'}',
-            ),
-          ),
+          _buildCustomSlider(name, min, max),
           Divider(),
         ],
       ),
+    );
+  }
+
+  Widget _buildCustomSlider(String name, int min, int max) {
+    // Use a map to track slider states
+    if (!_sliderValues.containsKey(name)) {
+      _sliderValues[name] = null; // Start with no selection
+    }
+
+    return FormBuilderField<double>(
+      name: name,
+      builder: (FormFieldState<double?> field) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: _sliderValues[name] == null ? Colors.red[300]! : Colors.grey[300]!,
+                  width: 1,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                color: _sliderValues[name] == null ? Colors.red[50] : Colors.grey[50],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('$min', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                      Text(
+                        _sliderValues[name] == null 
+                          ? 'Not selected' 
+                          : '${_sliderValues[name]!.round()}',
+                        style: TextStyle(
+                          fontSize: 14, 
+                          fontWeight: FontWeight.bold,
+                          color: _sliderValues[name] == null ? Colors.red[600] : Colors.blue[600],
+                        ),
+                      ),
+                      Text('$max', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    '$min = ${min == 0 ? 'Never' : 'Not at all'}, $max = ${max == 5 ? 'All the time' : 'Completely'}',
+                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                  ),
+                  SizedBox(height: 8),
+                  Slider(
+                    value: _sliderValues[name] ?? ((min + max) / 2).toDouble(),
+                    min: min.toDouble(),
+                    max: max.toDouble(),
+                    divisions: max - min,
+                    onChanged: (value) {
+                      setState(() {
+                        _sliderValues[name] = value;
+                      });
+                      field.didChange(value);
+                    },
+                    activeColor: _sliderValues[name] == null ? Colors.red[300] : Colors.blue,
+                    inactiveColor: Colors.grey[300],
+                  ),
+                ],
+              ),
+            ),
+            if (_sliderValues[name] == null)
+              Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(
+                  'Please move the slider to select a rating',
+                  style: TextStyle(fontSize: 11, color: Colors.red[600]),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
