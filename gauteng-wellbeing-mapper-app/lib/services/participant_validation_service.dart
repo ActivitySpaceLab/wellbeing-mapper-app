@@ -118,7 +118,7 @@ class ParticipantValidationService {
     print('[ParticipantValidation] Using local fallback validation - server unavailable');
     
     // For development/testing - allow specific test codes only
-    if (cleanCode == 'TESTER' || cleanCode == 'TEST123' || cleanCode == 'DEV001') {
+    if (cleanCode == 'TESTER' || cleanCode == 'TEST123' || cleanCode == 'DEV001' || cleanCode == 'PRODTEST') {
       await _storeValidatedParticipant(cleanCode);
       await _storeValidationSource(_localValidationSource);
       await _storeParticipantCodeType('test');

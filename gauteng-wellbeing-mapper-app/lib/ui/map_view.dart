@@ -32,6 +32,10 @@ class MapViewState extends State<MapView>
   LatLng _center = new LatLng(51.5, -0.09);
   late MapController _mapController;
   late MapOptions _mapOptions;
+  
+  // Track current location for re-center functionality
+  LatLng? _currentLocation;
+  bool _autoCenter = true; // Start with auto-center enabled
 
   @override
   void initState() {
@@ -65,12 +69,31 @@ class MapViewState extends State<MapView>
       return;
     }
     
-    // Use filtered location data to improve performance
-    List filteredLocations = await StorageSettingsService.getFilteredLocationDataForMap();
-    print('[map_view] Displaying ${filteredLocations.length} filtered location points');
-    
-    for (var thisLocation in filteredLocations) {
-      _onLocation(bg.Location(thisLocation));
+    try {
+      // Use filtered location data to improve performance
+      List filteredLocations = await StorageSettingsService.getFilteredLocationDataForMap();
+      print('[map_view] ✅ Found ${filteredLocations.length} filtered location points to display');
+      
+      if (filteredLocations.isEmpty) {
+        print('[map_view] ⚠️ No location data found - user may not have tracking enabled or no movement yet');
+        return;
+      }
+      
+      int displayedCount = 0;
+      for (var thisLocation in filteredLocations) {
+        _onLocation(bg.Location(thisLocation));
+        displayedCount++;
+      }
+      
+      print('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
+      
+      // Force a map refresh to ensure polylines and markers are visible
+      setState(() {
+        // Trigger rebuild to ensure map elements are displayed
+      });
+      
+    } catch (error) {
+      print('[map_view] ❌ Error loading stored locations: $error');
     }
   }
 
@@ -116,22 +139,32 @@ class MapViewState extends State<MapView>
 
   void _onLocation(bg.Location location) {
     LatLng ll = new LatLng(location.coords.latitude, location.coords.longitude);
-    // Move map to current location
-    _mapController.move(ll, _mapOptions.initialZoom);
-    print('hee 2');
+    
+    // Store current location for re-center functionality
+    _currentLocation = ll;
+    
+    // Only auto-center if enabled (user hasn't disabled it)
+    if (_autoCenter) {
+      _mapController.move(ll, _mapOptions.initialZoom);
+    }
+    
+    print('[MapView] Location update: ${ll.latitude.toStringAsFixed(6)}, ${ll.longitude.toStringAsFixed(6)} (sample: ${location.sample})');
     _updateCurrentPositionMarker(ll);
 
     if (location.sample == true) {
+      print('[MapView] Skipping sample location');
       return;
     }
 
     // Add a point to the tracking polyline.
     _polyline.add(ll);
+    print('[MapView] Added point to polyline (total points: ${_polyline.length})');
+    
     // Add a marker for the recorded location.
     //_locations.add(_buildLocationMarker(location));
     _locations.add(CircleMarker(point: ll, color: Colors.black, radius: 5.0));
-
     _locations.add(CircleMarker(point: ll, color: Colors.blue, radius: 4.0));
+    print('[MapView] Added location markers (total markers: ${_locations.length})');
   }
 
   /// Update Big Blue current position dot.
@@ -167,9 +200,9 @@ class MapViewState extends State<MapView>
   CircleMarker _buildStopCircleMarker(bg.Location location) {
     return new CircleMarker(
         point: LatLng(location.coords.latitude, location.coords.longitude),
-        color: Color.fromRGBO(200, 0, 0, 0.3),
+        color: Color.fromRGBO(255, 100, 100, 0.6), // Lighter red, more visible
         useRadiusInMeter: false,
-        radius: 20);
+        radius: 8); // Much smaller radius - less intrusive
   }
 
   //void _onPositionChanged(MapPosition pos, bool hasGesture) {
@@ -180,55 +213,144 @@ class MapViewState extends State<MapView>
     if (event is MapEventMove) {
       _mapOptions.crs
           .scale(event.camera.zoom); // Use camera.zoom instead of zoom
+          
+      // If user manually moves the map, disable auto-centering
+      if (event.source == MapEventSource.onDrag || event.source == MapEventSource.flingAnimationController) {
+        setState(() {
+          _autoCenter = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return FlutterMap(
-      mapController: _mapController,
-      options: _mapOptions,
+    return Stack(
       children: [
-        if (!TestService.isTestMode)
-          TileLayer(
-            urlTemplate: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-            subdomains: const ['a', 'b', 'c', 'd'],
-            userAgentPackageName: 'com.github.activityspacelab.wellbeingmapper.gauteng',
-            maxZoom: 20,
-            retinaMode: RetinaMode.isHighDensity(context),
-          ),
-        if (TestService.isTestMode)
-          Container(
-            color: Colors.grey[200],
-            child: Center(
-              child: Text(
-                'Test Mode - Map Disabled',
-                style: TextStyle(color: Colors.grey[600]),
+        // Main map
+        FlutterMap(
+          mapController: _mapController,
+          options: _mapOptions,
+          children: [
+            if (!TestService.isTestMode)
+              TileLayer(
+                urlTemplate: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+                subdomains: const ['a', 'b', 'c', 'd'],
+                userAgentPackageName: 'com.github.activityspacelab.wellbeingmapper.gauteng',
+                maxZoom: 20,
+                retinaMode: RetinaMode.isHighDensity(context),
               ),
-            ),
-          ),
-        if (_polyline.isNotEmpty)
-          PolylineLayer(
-            polylines: [
-              new Polyline(
-                points: _polyline,
-                strokeWidth: 10.0,
-                color: Color.fromRGBO(0, 179, 253, 0.8),
+            if (TestService.isTestMode)
+              Container(
+                color: Colors.grey[200],
+                child: Center(
+                  child: Text(
+                    'Test Mode - Map Disabled',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ),
+              ),
+            if (_polyline.isNotEmpty)
+              PolylineLayer(
+                polylines: [
+                  new Polyline(
+                    points: _polyline,
+                    strokeWidth: 10.0,
+                    color: Color.fromRGBO(0, 179, 253, 0.8),
+                  ),
+                ],
+              ),
+            // Remove confusing big red stationary radius circles
+            // if (_stationaryMarker.isNotEmpty)
+            //   CircleLayer(circles: _stationaryMarker),
+            // Polyline joining last stationary location to motionchange:true location.
+            if (_motionChangePolylines.isNotEmpty)
+              PolylineLayer(polylines: _motionChangePolylines),
+            // Recorded locations.
+            if (_locations.isNotEmpty) CircleLayer(circles: _locations),
+            // Simplified stop locations (smaller, less confusing)
+            if (_stopLocations.isNotEmpty) CircleLayer(circles: _stopLocations),
+            if (_currentPosition.isNotEmpty) CircleLayer(circles: _currentPosition),
+          ],
+        ),
+        
+        // Map control buttons
+        Positioned(
+          right: 16,
+          bottom: 100, // Position above typical FAB location
+          child: Column(
+            children: [
+              // Map refresh button (for loading issues)
+              FloatingActionButton(
+                mini: true,
+                heroTag: "refresh_map",
+                onPressed: () {
+                  setState(() {
+                    // Force map refresh by clearing and reloading
+                    _polyline.clear();
+                    _locations.clear();
+                    _stopLocations.clear();
+                    _motionChangePolylines.clear();
+                  });
+                  _displayStoredLocations();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Map refreshed'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                },
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                child: Icon(Icons.refresh),
+              ),
+              SizedBox(height: 8),
+              // Auto-center toggle
+              FloatingActionButton(
+                mini: true,
+                heroTag: "auto_center_toggle",
+                onPressed: () {
+                  setState(() {
+                    _autoCenter = !_autoCenter;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(_autoCenter 
+                        ? 'Auto-center enabled - map will follow your location' 
+                        : 'Auto-center disabled - explore freely!'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                backgroundColor: _autoCenter ? Colors.blue : Colors.grey[600],
+                foregroundColor: Colors.white,
+                child: Icon(_autoCenter ? Icons.gps_fixed : Icons.gps_not_fixed),
+              ),
+              SizedBox(height: 8),
+              // Manual re-center button
+              FloatingActionButton(
+                mini: true,
+                heroTag: "recenter",
+                onPressed: _currentLocation != null ? () {
+                  _mapController.move(_currentLocation!, _mapOptions.initialZoom);
+                  setState(() {
+                    _autoCenter = true; // Re-enable auto-center when manually centering
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Centered on current location'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                } : null,
+                backgroundColor: _currentLocation != null ? Colors.green : Colors.grey[400],
+                foregroundColor: Colors.white,
+                child: Icon(Icons.my_location),
               ),
             ],
           ),
-        // Big red stationary radius while in stationary state.
-        if (_stationaryMarker.isNotEmpty)
-          CircleLayer(circles: _stationaryMarker),
-        // Polyline joining last stationary location to motionchange:true location.
-        if (_motionChangePolylines.isNotEmpty)
-          PolylineLayer(polylines: _motionChangePolylines),
-        // Recorded locations.
-        if (_locations.isNotEmpty) CircleLayer(circles: _locations),
-        // Small, red circles showing where motionchange:false events fired.
-        if (_stopLocations.isNotEmpty) CircleLayer(circles: _stopLocations),
-        if (_currentPosition.isNotEmpty) CircleLayer(circles: _currentPosition),
+        ),
       ],
     );
   }

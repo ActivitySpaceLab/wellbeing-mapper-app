@@ -26,28 +26,43 @@ class PilotMigrationService {
   static Future<MigrationStatus> checkMigrationStatus() async {
     final prefs = await SharedPreferences.getInstance();
     
+    print('[PilotMigration] Checking migration status...');
+    
     // Check if migration was already completed
     final migrationCompleted = prefs.getBool(_migrationCompletedKey) ?? false;
+    print('[PilotMigration] Migration completed flag: $migrationCompleted');
+    
     if (migrationCompleted) {
+      print('[PilotMigration] Migration already completed - treating as production user');
       return MigrationStatus.completed;
     }
     
     // Check if this is a fresh install (no previous version recorded)
     final previousVersion = prefs.getString(_appVersionKey);
+    print('[PilotMigration] Previous version: $previousVersion');
+    print('[PilotMigration] Current version: $currentProductionVersion');
+    
     if (previousVersion == null) {
       // Fresh install - record current version and proceed normally
+      print('[PilotMigration] Fresh install detected');
       await _recordCurrentVersion();
       return MigrationStatus.freshInstall;
     }
     
     // Check if user is upgrading from pilot version
-    if (_isPilotVersion(previousVersion)) {
+    final isPilot = _isPilotVersion(previousVersion);
+    print('[PilotMigration] Is pilot version ($previousVersion): $isPilot');
+    
+    if (isPilot) {
       // This is a pilot user upgrading to production
+      print('[PilotMigration] Pilot user upgrade detected');
       await _markAsPilotUser();
       return MigrationStatus.pilotUpgrade;
     }
     
     // User is upgrading from a previous production version
+    print('[PilotMigration] Production upgrade detected - no migration needed');
+    await prefs.setBool(_migrationCompletedKey, true); // Mark migration as completed so it doesn't run again
     await _recordCurrentVersion();
     return MigrationStatus.productionUpgrade;
   }
@@ -103,12 +118,24 @@ class PilotMigrationService {
     await prefs.remove(_pilotUserFlagKey);
     await prefs.remove(_preservedDataKey);
     await prefs.remove(_migrationCompletedKey);
+    print('[PilotMigration] ✅ Cleared all migration flags - user will be treated as fresh install');
+  }
+  
+  /// Mark current installation as production (for testing with new test codes)
+  static Future<void> markAsProductionUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_migrationCompletedKey, true);
+    await _recordCurrentVersion();
+    await prefs.remove(_pilotUserFlagKey);
+    await prefs.remove(_preservedDataKey);
+    print('[PilotMigration] ✅ Marked as production user - future updates will not trigger migration');
   }
   
   // Private helper methods
   
   static bool _isPilotVersion(String version) {
-    // Simple version comparison - any version <= 1.0.6 is considered pilot
+    // Simple version comparison - any version < 1.0.7 is considered pilot
+    // Production versions start from 1.0.7, so anything below is pilot
     final versionParts = version.split('+')[0].split('.');
     final currentParts = pilotVersionThreshold.split('.');
     
@@ -116,10 +143,11 @@ class PilotMigrationService {
       final versionNum = int.tryParse(versionParts.length > i ? versionParts[i] : '0') ?? 0;
       final thresholdNum = int.tryParse(currentParts.length > i ? currentParts[i] : '0') ?? 0;
       
-      if (versionNum < thresholdNum) return true;
-      if (versionNum > thresholdNum) return false;
+      if (versionNum < thresholdNum) return true; // Definitely pilot
+      if (versionNum > thresholdNum) return false; // Definitely production
     }
-    return true; // Equal versions are considered pilot
+    // Equal versions (1.0.6 == 1.0.6) are considered pilot - only 1.0.7+ are production
+    return true;
   }
   
   static Future<void> _recordCurrentVersion() async {

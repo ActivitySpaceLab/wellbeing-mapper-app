@@ -410,8 +410,8 @@ class HomeViewState extends State<HomeView>
             // Convenience option to automatically configure the SDK to post to Transistor Demo server.
             // Logging & Debug
             reset: false,
-            debug: true, // Enable debug to see more detailed logs
-            logLevel: bg.Config.LOG_LEVEL_VERBOSE,
+            debug: false, // Disable debug sounds in production
+            logLevel: bg.Config.LOG_LEVEL_OFF,
             // Geolocation options
             desiredAccuracy: bg.Config.DESIRED_ACCURACY_NAVIGATION,
             distanceFilter: 10.0,
