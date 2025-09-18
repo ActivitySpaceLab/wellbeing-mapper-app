@@ -7,8 +7,8 @@ import 'package:http/http.dart' as http;
 /// Service for validating participant codes against a secure server-side list
 /// Uses SHA-256 hashing for security - codes are never transmitted in plain text
 class ParticipantValidationService {
-  // Production server endpoints
-  static const String _baseUrl = 'https://14uzsopowf.execute-api.af-south-1.amazonaws.com/prod';
+  // Production server endpoints (Lambda Function URL - more reliable than API Gateway)
+  static const String _baseUrl = 'https://6p7hir7licc5yisxhkner4wt2i0yhtzo.lambda-url.af-south-1.on.aws';
   static const String _validateEndpoint = '/api/v1/participants/validate';
   static const String _healthEndpoint = '/health';
   

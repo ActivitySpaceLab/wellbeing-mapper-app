@@ -200,7 +200,10 @@ class StorageSettingsService {
     if (kIsWeb) return [];
     
     final displayDays = await getMapDisplayDays();
+    final retentionDays = await getLocationRetentionDays();
     final maxMarkers = await getMaxMapMarkers();
+    
+    print('[StorageSettingsService] Map filtering - Display days: $displayDays, Retention days: $retentionDays, Max markers: $maxMarkers');
     
     try {
       final allLocations = await bg.BackgroundGeolocation.locations;

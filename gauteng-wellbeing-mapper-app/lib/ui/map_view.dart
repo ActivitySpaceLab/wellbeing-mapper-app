@@ -280,32 +280,8 @@ class MapViewState extends State<MapView>
           right: 16,
           bottom: 100, // Position above typical FAB location
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Map refresh button (for loading issues)
-              FloatingActionButton(
-                mini: true,
-                heroTag: "refresh_map",
-                onPressed: () {
-                  setState(() {
-                    // Force map refresh by clearing and reloading
-                    _polyline.clear();
-                    _locations.clear();
-                    _stopLocations.clear();
-                    _motionChangePolylines.clear();
-                  });
-                  _displayStoredLocations();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Map refreshed'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                },
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                child: Icon(Icons.refresh),
-              ),
-              SizedBox(height: 8),
               // Auto-center toggle
               FloatingActionButton(
                 mini: true,

@@ -405,6 +405,10 @@ class HomeViewState extends State<HomeView>
     bg.BackgroundGeolocation.onEnabledChange(_onEnabledChange);
     bg.BackgroundGeolocation.onNotificationAction(_onNotificationAction);
 
+    // Get user's configured retention period
+    final retentionDays = await StorageSettingsService.getLocationRetentionDays();
+    final maxDaysToPersist = retentionDays == StorageSettingsService.UNLIMITED_VALUE ? 999999 : retentionDays;
+
     // 2.  Configure the plugin
     bg.BackgroundGeolocation.ready(bg.Config(
             // Convenience option to automatically configure the SDK to post to Transistor Demo server.
@@ -419,7 +423,7 @@ class HomeViewState extends State<HomeView>
             // HTTP & Persistence
             autoSync: false,
             persistMode: bg.Config.PERSIST_MODE_ALL,
-            maxDaysToPersist: 30,
+            maxDaysToPersist: maxDaysToPersist,
             maxRecordsToPersist: -1,
             // Application options
             stopOnTerminate: false,
