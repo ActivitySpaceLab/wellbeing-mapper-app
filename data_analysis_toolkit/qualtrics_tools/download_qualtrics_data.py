@@ -57,67 +57,45 @@ class QualtricsDataDownloader:
             'Accept': 'application/json'
         })
         
-        # Survey IDs from the app configuration
-        self.surveys = {
-            'initial': {
-                'id': 'SV_8pudN8qTI6iQKY6',
-                'name': 'Initial Demographics Survey',
-                'filename': 'initial_survey_responses.csv'
-            },
-            'biweekly': {
-                'id': 'SV_aXmfOtAIRmIVdfU', 
-                'name': 'Biweekly Wellbeing Survey',
-                'filename': 'biweekly_survey_responses.csv'
-            },
-            'consent': {
-                'id': 'SV_eWjaIVtwRLEMNGS',
-                'name': 'Consent Form Survey', 
-                'filename': 'consent_form_responses.csv'
-            }
-        }
+        # Single survey configuration - all survey types are stored in one Qualtrics survey
+        # and differentiated by the 'survey_type' column in the data
+        self.survey_id = 'SV_81uhgIyzv52qgdM'
+        self.survey_name = 'Gauteng Wellbeing Mapper Survey'
+        self.output_filename = 'wellbeing_mapper_responses.csv'
     
-    def download_survey_responses(self, survey_key: str, output_dir: str = './data', 
+    def download_survey_responses(self, output_dir: str = './data', 
                                 start_date: Optional[datetime] = None, 
                                 end_date: Optional[datetime] = None) -> bool:
-        """Download responses for a specific survey"""
+        """Download responses from the unified Gauteng Wellbeing Mapper survey"""
         
-        if survey_key not in self.surveys:
-            print(f"❌ Unknown survey key: {survey_key}")
-            print(f"Available surveys: {list(self.surveys.keys())}")
-            return False
-            
-        survey = self.surveys[survey_key]
-        survey_id = survey['id']
-        survey_name = survey['name']
-        
-        print(f"\n📊 Downloading {survey_name} data...")
-        print(f"Survey ID: {survey_id}")
+        print(f"\n📊 Downloading {self.survey_name} data...")
+        print(f"Survey ID: {self.survey_id}")
         
         try:
             # Step 1: Create export request
-            export_id = self._create_export_request(survey_id, start_date, end_date)
+            export_id = self._create_export_request(self.survey_id, start_date, end_date)
             if not export_id:
                 return False
                 
             # Step 2: Wait for export to complete
-            download_url = self._wait_for_export_completion(survey_id, export_id)
+            download_url = self._wait_for_export_completion(self.survey_id, export_id)
             if not download_url:
                 return False
                 
             # Step 3: Download the file
-            output_path = os.path.join(output_dir, survey['filename'])
-            success = self._download_export_file(download_url, output_path)
+            output_path = os.path.join(output_dir, self.output_filename)
+            success = self._download_export_file(self.survey_id, download_url, output_path)
             
             if success:
-                print(f"✅ {survey_name} data downloaded to: {output_path}")
-                # Show basic stats
+                print(f"✅ {self.survey_name} data downloaded to: {output_path}")
+                # Show basic stats including survey type breakdown
                 self._show_data_stats(output_path)
                 return True
             else:
                 return False
                 
         except Exception as e:
-            print(f"❌ Error downloading {survey_name}: {e}")
+            print(f"❌ Error downloading {self.survey_name}: {e}")
             return False
     
     def _create_export_request(self, survey_id: str, start_date: Optional[datetime], 
@@ -202,7 +180,7 @@ class QualtricsDataDownloader:
         print(f"⏰ Export timeout after {max_wait_time} seconds")
         return None
     
-    def _download_export_file(self, file_id: str, output_path: str) -> bool:
+    def _download_export_file(self, survey_id: str, file_id: str, output_path: str) -> bool:
         """Download the exported file"""
         
         # Create output directory if it doesn't exist
@@ -210,7 +188,7 @@ class QualtricsDataDownloader:
         
         try:
             response = self.session.get(
-                f"{self.base_url}/surveys/export-responses/{file_id}/file",
+                f"{self.base_url}/surveys/{survey_id}/export-responses/{file_id}/file",
                 stream=True
             )
             
@@ -267,8 +245,15 @@ class QualtricsDataDownloader:
             print(f"   Total responses: {len(df)}")
             print(f"   Columns: {len(df.columns)}")
             
-            # Show date range if RecordedDate column exists
-            date_columns = [col for col in df.columns if 'recorded' in col.lower() or 'date' in col.lower()]
+            # Show survey type breakdown if survey_type column exists
+            if 'survey_type' in df.columns:
+                survey_type_counts = df['survey_type'].value_counts()
+                print(f"   Survey types breakdown:")
+                for survey_type, count in survey_type_counts.items():
+                    print(f"     {survey_type}: {count} responses")
+            
+            # Show date range if timestamp column exists
+            date_columns = [col for col in df.columns if 'recorded' in col.lower() or 'date' in col.lower() or 'timestamp' in col.lower()]
             if date_columns:
                 date_col = date_columns[0]
                 df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
@@ -279,44 +264,34 @@ class QualtricsDataDownloader:
         except Exception as e:
             print(f"❌ Error reading downloaded file for stats: {e}")
     
-    def download_all_surveys(self, output_dir: str = './data', 
-                           start_date: Optional[datetime] = None,
-                           end_date: Optional[datetime] = None) -> Dict[str, bool]:
-        """Download all survey data"""
+    def download_all_data(self, output_dir: str = './data', 
+                         start_date: Optional[datetime] = None,
+                         end_date: Optional[datetime] = None) -> bool:
+        """Download all survey data from the unified survey"""
         
-        print(f"\n🚀 Starting bulk download of all survey data...")
+        print(f"\n🚀 Starting download of all survey data...")
         print(f"Output directory: {output_dir}")
         if start_date:
             print(f"Start date: {start_date}")
         if end_date:
             print(f"End date: {end_date}")
         
-        results = {}
+        success = self.download_survey_responses(output_dir, start_date, end_date)
         
-        for survey_key in self.surveys:
-            success = self.download_survey_responses(
-                survey_key, output_dir, start_date, end_date
-            )
-            results[survey_key] = success
+        if success:
+            print(f"\n✅ All survey data downloaded successfully!")
+        else:
+            print(f"\n❌ Download failed!")
             
-            # Add delay between downloads to be nice to API
-            if survey_key != list(self.surveys.keys())[-1]:  # Not the last one
-                print("⏳ Waiting 10 seconds before next download...")
-                time.sleep(10)
-        
-        print(f"\n📊 Download Summary:")
-        for survey_key, success in results.items():
-            survey_name = self.surveys[survey_key]['name']
-            status = "✅ Success" if success else "❌ Failed"
-            print(f"   {survey_name}: {status}")
-        
-        return results
+        return success
     
-    def list_surveys(self) -> None:
-        """List available surveys"""
-        print("\n📋 Available Surveys:")
-        for key, survey in self.surveys.items():
-            print(f"   {key}: {survey['name']} (ID: {survey['id']})")
+    def show_survey_info(self) -> None:
+        """Show information about the unified survey"""
+        print("\n📋 Survey Information:")
+        print(f"   Survey: {self.survey_name}")
+        print(f"   Survey ID: {self.survey_id}")
+        print(f"   Data types: All survey types (initial, biweekly, consent)")
+        print(f"   Differentiated by: 'survey_type' column in responses")
 
 
 def main():
@@ -326,8 +301,6 @@ def main():
         epilog="""
 Examples:
   %(prog)s --all                    Download all survey data
-  %(prog)s --survey initial         Download initial survey data only
-  %(prog)s --survey biweekly        Download biweekly survey data only
   %(prog)s --days 30                Download data from last 30 days
   %(prog)s --start 2024-01-01       Download data from specific start date
   %(prog)s --end 2024-12-31         Download data up to specific end date
@@ -350,13 +323,10 @@ Environment Variables:
     
     # Survey selection
     parser.add_argument('--all', action='store_true',
-                       help='Download all survey data')
+                       help='Download all survey data (default action)')
     
-    parser.add_argument('--survey', choices=['initial', 'biweekly', 'consent'],
-                       help='Download specific survey data')
-    
-    parser.add_argument('--list', action='store_true',
-                       help='List available surveys and exit')
+    parser.add_argument('--info', action='store_true',
+                       help='Show survey information and exit')
     
     # Date filtering
     parser.add_argument('--days', type=int,
@@ -388,15 +358,9 @@ Environment Variables:
     # Create downloader
     downloader = QualtricsDataDownloader(args.api_token, args.base_url)
     
-    # Handle list command
-    if args.list:
-        downloader.list_surveys()
-        return
-    
-    # Validate arguments
-    if not args.all and not args.survey:
-        print("❌ Error: Must specify either --all or --survey")
-        parser.print_help()
+    # Handle info command
+    if args.info:
+        downloader.show_survey_info()
         return
     
     # Parse date arguments
@@ -421,18 +385,12 @@ Environment Variables:
             print(f"❌ Invalid end date format: {args.end} (use YYYY-MM-DD)")
             return
     
-    # Execute download
-    if args.all:
-        results = downloader.download_all_surveys(args.output, start_date, end_date)
-        success_count = sum(1 for success in results.values() if success)
-        total_count = len(results)
-        print(f"\n🎉 Bulk download completed: {success_count}/{total_count} surveys successful")
+    # Execute download (default to --all if no specific action)
+    success = downloader.download_all_data(args.output, start_date, end_date)
+    if success:
+        print(f"\n🎉 Download completed successfully!")
     else:
-        success = downloader.download_survey_responses(args.survey, args.output, start_date, end_date)
-        if success:
-            print(f"\n🎉 Download completed successfully!")
-        else:
-            print(f"\n❌ Download failed!")
+        print(f"\n❌ Download failed!")
 
 
 if __name__ == '__main__':

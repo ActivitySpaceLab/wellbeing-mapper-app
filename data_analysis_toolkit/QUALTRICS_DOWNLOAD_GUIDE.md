@@ -26,19 +26,24 @@ pip install -r requirements-qualtrics.txt
 export QUALTRICS_API_TOKEN='your_token_here'
 ```
 
-## Available Surveys
+## Available Survey Data
 
-The script is configured to download data from three surveys:
+The script downloads data from the unified Gauteng Wellbeing Mapper survey:
 
-- **initial**: Initial Demographics Survey (SV_8pudN8qTI6iQKY6)
-- **biweekly**: Biweekly Wellbeing Survey (SV_aXmfOtAIRmIVdfU)  
-- **consent**: Consent Form Survey (SV_eWjaIVtwRLEMNGS)
+- **Survey ID**: SV_81uhgIyzv52qgdM
+- **Survey Name**: Gauteng Wellbeing Mapper Survey
+- **Data Types**: Contains three types of survey responses:
+  - **Initial**: Initial Demographics Survey responses
+  - **Biweekly**: Biweekly Wellbeing Survey responses
+  - **Consent**: Consent Form responses
+
+All survey types are stored in the same Qualtrics survey and differentiated by the `survey_type` column in the response data.
 
 ## Usage Examples
 
-### List Available Surveys
+### List Survey Information
 ```bash
-python3 download_qualtrics_data.py --list
+python3 download_qualtrics_data.py --info
 ```
 
 ### Download All Survey Data
@@ -46,49 +51,43 @@ python3 download_qualtrics_data.py --list
 python3 download_qualtrics_data.py --all
 ```
 
-### Download Specific Survey
+Note: The `--all` flag is the default behavior, so you can also simply run:
 ```bash
-# Download initial survey data only
-python3 download_qualtrics_data.py --survey initial
-
-# Download biweekly survey data only
-python3 download_qualtrics_data.py --survey biweekly
-
-# Download consent form data only
-python3 download_qualtrics_data.py --survey consent
+python3 download_qualtrics_data.py
 ```
 
 ### Download Data from Specific Time Periods
 ```bash
 # Download data from last 30 days
-python3 download_qualtrics_data.py --all --days 30
+python3 download_qualtrics_data.py --days 30
 
 # Download data from specific date range
-python3 download_qualtrics_data.py --all --start 2024-01-01 --end 2024-12-31
+python3 download_qualtrics_data.py --start 2024-01-01 --end 2024-12-31
 
-# Download recent biweekly data
-python3 download_qualtrics_data.py --survey biweekly --days 7
+# Download recent data (last 7 days)
+python3 download_qualtrics_data.py --days 7
 ```
 
 ### Custom Output Directory
 ```bash
 # Save to custom directory
-python3 download_qualtrics_data.py --all --output ./my_survey_data/
+python3 download_qualtrics_data.py --output ./my_survey_data/
 
 # Save with date range to organized folder
-python3 download_qualtrics_data.py --all --days 30 --output ./data/monthly/
+python3 download_qualtrics_data.py --days 30 --output ./data/monthly/
 ```
 
 ## Output Files
 
-Downloaded data is saved as CSV files:
+Downloaded data is saved as a single CSV file:
 
-- `initial_survey_responses.csv` - Demographics survey responses
-- `biweekly_survey_responses.csv` - Wellbeing survey responses  
-- `consent_form_responses.csv` - Consent form responses
+- `wellbeing_mapper_responses.csv` - All survey responses (initial, biweekly, consent)
 
-Each file includes:
+The file includes:
 - All response data with readable column labels
+- Survey type differentiation via `survey_type` column
+- Encrypted data in `encrypted_data` column (for responses with location data)
+- Timestamp information in `timestamp` column
 - Metadata (response ID, recorded date, etc.)
 - Participant identifiers for data linking
 
@@ -97,6 +96,11 @@ Each file includes:
 ### CSV Format
 - **Header row**: Question labels and metadata fields
 - **Data rows**: One row per survey response
+- **Survey Type**: Identified by `survey_type` column values:
+  - `QID2_TEXT_initial` - Initial demographics survey
+  - `QID2_TEXT_biweekly` - Biweekly wellbeing survey  
+  - `QID2_TEXT_consent` - Consent form responses
+- **Encrypted Data**: Location data stored in `encrypted_data` column (base64 encoded)
 - **Missing values**: Coded as -999 for unanswered questions
 - **Date format**: ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
 

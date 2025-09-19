@@ -1,7 +1,23 @@
 #!/usr/bin/env python3
 """
-Automated Decryption Pipeline for Qualtrics Survey Data
-======================================================
+Automated Decryption Pipeline for Qualt        # Survey type configurations
+        self.survey_type_configs = {
+            'initial': {
+                'encrypted_data_column': 'encrypted_data',
+                'location_column': None,  # Initial survey doesn't have location data
+                'output_prefix': 'initial_decrypted'
+            },
+            'biweekly': {
+                'encrypted_data_column': 'encrypted_data',
+                'location_column': 'encrypted_data',  # Location data is in encrypted_data for biweekly
+                'output_prefix': 'biweekly_decrypted'
+            },
+            'consent': {
+                'encrypted_data_column': 'encrypted_data',
+                'location_column': None,  # Consent form doesn't have location data
+                'output_prefix': 'consent_decrypted'
+            }
+        }=====================================================
 
 This script automatically processes downloaded Qualtrics data and decrypts all survey responses.
 It integrates with the download_qualtrics_data.py script to create a complete data processing pipeline.
@@ -63,24 +79,28 @@ class AutomatedDecryptionPipeline:
             'errors': []
         }
         
-        # Survey configurations
-        self.survey_configs = {
-            'initial_survey_responses.csv': {
-                'type': 'initial',
+        # Survey configurations based on survey_type column values
+        # All data comes from a single CSV file but contains different survey types
+        self.survey_type_configs = {
+            'initial': {  # Initial demographics survey
+                'encrypted_data_column': 'encrypted_data',
                 'location_column': None,  # Initial survey doesn't have location data
                 'output_prefix': 'initial_decrypted'
             },
-            'biweekly_survey_responses.csv': {
-                'type': 'biweekly',
-                'location_column': 'Q18',  # Location data column
+            'biweekly': {  # Biweekly wellbeing survey
+                'encrypted_data_column': 'encrypted_data',
+                'location_column': 'encrypted_data',  # Location data in encrypted_data column
                 'output_prefix': 'biweekly_decrypted'
             },
-            'consent_form_responses.csv': {
-                'type': 'consent',
+            'consent': {  # Consent form
+                'encrypted_data_column': 'encrypted_data',
                 'location_column': None,  # Consent form doesn't have location data
                 'output_prefix': 'consent_decrypted'
             }
         }
+        
+        # Default file configuration for unified survey data
+        self.default_csv_file = 'wellbeing_mapper_responses.csv'
     
     def load_private_key(self, password: Optional[str] = None) -> bool:
         """Load RSA private key for decryption"""
@@ -114,7 +134,7 @@ class AutomatedDecryptionPipeline:
             
             # Try OAEP padding first (newer, more secure)
             try:
-                aes_key = self.private_key.decrypt(
+                decrypted_data = self.private_key.decrypt(
                     encrypted_key,
                     padding.OAEP(
                         mgf=padding.MGF1(algorithm=hashes.SHA256()),
@@ -122,13 +142,21 @@ class AutomatedDecryptionPipeline:
                         label=None
                     )
                 )
+                # The decrypted data is a base64-encoded AES key string
+                # We need to decode it to get the actual 32-byte key
+                aes_key_base64 = decrypted_data.decode('utf-8')
+                aes_key = base64.b64decode(aes_key_base64)
                 return aes_key
             except Exception:
                 # Fallback to PKCS1v15 padding (older format)
-                aes_key = self.private_key.decrypt(
+                decrypted_data = self.private_key.decrypt(
                     encrypted_key,
                     padding.PKCS1v15()
                 )
+                # The decrypted data is a base64-encoded AES key string
+                # We need to decode it to get the actual 32-byte key
+                aes_key_base64 = decrypted_data.decode('utf-8')
+                aes_key = base64.b64decode(aes_key_base64)
                 return aes_key
                 
         except Exception as e:
@@ -136,11 +164,44 @@ class AutomatedDecryptionPipeline:
             return None
     
     def decrypt_location_data(self, encrypted_data_b64: str, aes_key: bytes) -> Optional[Dict]:
-        """Decrypt location data using AES key"""
+        """Decrypt location data using AES key - Flutter app actually uses XOR encryption"""
         try:
             encrypted_data = base64.b64decode(encrypted_data_b64)
             
-            # Method 1: Try AES-CBC with IV (newer format)
+            # Method 1: XOR decryption (current Flutter app format)
+            # Despite the "AES-256-GCM" label, the Flutter app actually uses XOR
+            try:
+                decrypted_data = []
+                for i in range(len(encrypted_data)):
+                    decrypted_data.append(encrypted_data[i] ^ aes_key[i % len(aes_key)])
+                
+                decrypted_json = bytes(decrypted_data).decode('utf-8')
+                return json.loads(decrypted_json)
+            except Exception as e:
+                print(f"⚠️ XOR decryption failed: {e}")
+            
+            # Method 2: Try AES-GCM (for future implementations)
+            try:
+                # AES-GCM format: nonce(12) + ciphertext + auth_tag(16)
+                if len(encrypted_data) >= 28:  # minimum: 12 (nonce) + 16 (tag)
+                    nonce = encrypted_data[:12]  # 12-byte nonce for GCM
+                    auth_tag = encrypted_data[-16:]  # 16-byte authentication tag
+                    ciphertext = encrypted_data[12:-16]  # everything in between
+                    
+                    cipher = Cipher(
+                        algorithms.AES(aes_key),
+                        modes.GCM(nonce, auth_tag),
+                        backend=default_backend()
+                    )
+                    decryptor = cipher.decryptor()
+                    decrypted_json = decryptor.update(ciphertext) + decryptor.finalize()
+                    
+                    return json.loads(decrypted_json.decode('utf-8'))
+                    
+            except Exception as e:
+                print(f"⚠️ AES-GCM decryption failed: {e}")
+            
+            # Method 3: Try AES-CBC with IV (legacy format)
             if len(encrypted_data) > 16:
                 try:
                     iv = encrypted_data[:16]
@@ -161,46 +222,97 @@ class AutomatedDecryptionPipeline:
                     decrypted_json = unpadded_data.decode('utf-8')
                     return json.loads(decrypted_json)
                     
-                except Exception:
-                    pass  # Fall through to try XOR method
-            
-            # Method 2: XOR decryption (older format)
-            decrypted_data = []
-            for i in range(len(encrypted_data)):
-                decrypted_data.append(encrypted_data[i] ^ aes_key[i % len(aes_key)])
-            
-            decrypted_json = bytes(decrypted_data).decode('utf-8')
-            return json.loads(decrypted_json)
+                except Exception as e:
+                    print(f"⚠️ AES-CBC decryption failed: {e}")
             
         except Exception as e:
             print(f"❌ Error decrypting location data: {e}")
             return None
     
     def process_csv_file(self, csv_path: str, output_dir: str = './decrypted_data') -> bool:
-        """Process a single CSV file and decrypt all encrypted data"""
+        """Process a single CSV file and decrypt all encrypted data based on survey_type"""
         
         if not os.path.exists(csv_path):
             print(f"❌ CSV file not found: {csv_path}")
             return False
         
         filename = os.path.basename(csv_path)
-        survey_config = None
+        print(f"\n🔍 Processing unified survey file: {filename}")
         
-        # Find matching survey configuration
-        for pattern, config in self.survey_configs.items():
-            if pattern in filename or filename.endswith(pattern):
-                survey_config = config
-                break
-        
-        if not survey_config:
-            print(f"⚠️ Unknown survey file type: {filename}")
-            survey_config = {
-                'type': 'unknown',
-                'location_column': None,
-                'output_prefix': 'unknown_decrypted'
-            }
-        
-        print(f"\n📊 Processing {survey_config['type']} survey: {filename}")
+        try:
+            # Read the CSV file
+            import pandas as pd
+            df = pd.read_csv(csv_path)
+            
+            # Skip Qualtrics header rows if present
+            # Standard Qualtrics export has 3 header rows: column names, question labels, ImportId definitions
+            if len(df) >= 3 and df.iloc[0].astype(str).str.contains('ImportId').any():
+                print(f"📋 Detected Qualtrics header format, skipping first 2 rows")
+                df = df.iloc[2:]  # Skip first 2 rows (headers)
+                df.reset_index(drop=True, inplace=True)
+            
+            # Additional cleanup: remove any remaining header-like rows
+            # Filter out rows that don't have actual ResponseId values
+            initial_len = len(df)
+            df = df[df['ResponseId'].notna() & (df['ResponseId'] != '') & 
+                   ~df['ResponseId'].str.contains('ImportId|Response ID', na=False)]
+            df.reset_index(drop=True, inplace=True)
+            
+            if len(df) < initial_len:
+                print(f"📋 Cleaned data: {initial_len - len(df)} header/invalid rows removed")
+            
+            print(f"📊 Processing {len(df)} valid survey responses")
+            
+            # Check if survey_type column exists
+            if 'survey_type' not in df.columns:
+                print(f"❌ No 'survey_type' column found in data. Available columns: {list(df.columns)}")
+                return False
+            
+            # Group data by survey type
+            survey_type_groups = df.groupby('survey_type')
+            print(f"📊 Found {len(survey_type_groups)} survey types:")
+            
+            total_decrypted = 0
+            total_location_points = 0
+            
+            for survey_type, group_df in survey_type_groups:
+                print(f"\n📋 Processing survey type: {survey_type} ({len(group_df)} responses)")
+                
+                # Find matching configuration  
+                survey_config = self.survey_type_configs.get(survey_type)
+                if not survey_config:
+                    print(f"⚠️ Unknown survey type: {survey_type}, using default configuration")
+                    survey_config = {
+                        'encrypted_data_column': 'encrypted_data',
+                        'location_column': 'encrypted_data' if survey_type == 'biweekly' else None,
+                        'output_prefix': f'{survey_type}_decrypted'
+                    }
+                
+                # Process this survey type
+                decrypted_count, location_count = self._process_survey_group(
+                    group_df, survey_config, output_dir
+                )
+                
+                total_decrypted += decrypted_count
+                total_location_points += location_count
+            
+            # Update results
+            self.results['processed_files'].append(filename)
+            self.results['decrypted_responses'] += total_decrypted
+            self.results['location_points'] += total_location_points
+            
+            print(f"\n✅ Successfully processed {filename}")
+            print(f"   Total decrypted responses: {total_decrypted}")
+            print(f"   Total location points: {total_location_points}")
+            
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error processing {filename}: {e}")
+            self.results['errors'].append(f"Processing error in {filename}: {e}")
+            return False
+    def _process_survey_group(self, group_df, survey_config: Dict, output_dir: str) -> Tuple[int, int]:
+        """Process a group of responses for a specific survey type"""
         
         # Create output directory
         os.makedirs(output_dir, exist_ok=True)
@@ -213,86 +325,151 @@ class AutomatedDecryptionPipeline:
         location_data_points = []
         
         try:
-            with open(csv_path, 'r', encoding='utf-8') as file:
-                # Handle Qualtrics CSV format (skip header rows)
-                reader = csv.reader(file)
-                all_rows = list(reader)
+            # Process each response in the group
+            for idx, (_, row) in enumerate(group_df.iterrows()):
+                response_data = row.to_dict()
+                response_id = response_data.get('ResponseId', f'row_{idx}')
                 
-                # Find the actual header row (usually row 3, after metadata)
-                header_row_idx = 0
-                for i, row in enumerate(all_rows[:5]):
-                    if any('ResponseId' in str(cell) for cell in row):
-                        header_row_idx = i
-                        break
+                # Create decrypted response record (copy original response)
+                decrypted_response = response_data.copy()
                 
-                headers = all_rows[header_row_idx]
-                data_rows = all_rows[header_row_idx + 1:]
-                
-                print(f"📋 Found {len(data_rows)} responses to process")
-                
-                # Process each response
-                for row_idx, row in enumerate(data_rows):
-                    if len(row) < len(headers):
-                        continue  # Skip incomplete rows
+                # Process encrypted data if present
+                encrypted_data_column = survey_config.get('encrypted_data_column', 'encrypted_data')
+                if encrypted_data_column in response_data and response_data[encrypted_data_column]:
+                    encrypted_data = response_data[encrypted_data_column]
                     
-                    response_data = dict(zip(headers, row))
-                    response_id = response_data.get('ResponseId', f'row_{row_idx}')
-                    
-                    # Create decrypted response record
-                    decrypted_response = response_data.copy()
-                    
-                    # Process location data if present
-                    if survey_config['location_column']:
-                        location_column = survey_config['location_column']
-                        encrypted_location = response_data.get(location_column, '')
+                    # Skip non-encrypted data (like mock data strings)
+                    if (isinstance(encrypted_data, str) and 
+                        (encrypted_data.startswith('{"encryptedData"') or 
+                         encrypted_data.startswith('eyJ'))):  # Base64 encoded JSON
                         
-                        if encrypted_location and encrypted_location.startswith('{"encryptedData"'):
-                            locations = self._decrypt_response_location(
-                                encrypted_location, response_id
-                            )
-                            
-                            if locations:
-                                location_data_points.extend(locations)
-                                # Replace encrypted data with summary
-                                decrypted_response[location_column] = f"DECRYPTED: {len(locations)} location points"
-                                print(f"✅ Decrypted {len(locations)} location points for {response_id}")
+                        print(f"🔍 Processing encrypted data for {response_id}")
+                        
+                        # Try to decrypt the data
+                        try:
+                            # Handle different encryption formats
+                            if encrypted_data.startswith('{"encryptedData"'):
+                                # Standard JSON format
+                                encrypted_package = json.loads(encrypted_data)
+                            elif encrypted_data.startswith('eyJ'):
+                                # Base64 encoded JSON format
+                                import base64
+                                decoded_json = base64.b64decode(encrypted_data).decode('utf-8')
+                                encrypted_package = json.loads(decoded_json)
                             else:
-                                decrypted_response[location_column] = "DECRYPTION_FAILED"
-                                print(f"❌ Failed to decrypt location data for {response_id}")
-                    
-                    decrypted_responses.append(decrypted_response)
+                                continue
+                            
+                            # Extract encryption components
+                            encrypted_data_b64 = encrypted_package.get('encryptedData')
+                            encrypted_key_b64 = encrypted_package.get('encryptedKey')
+                            
+                            if encrypted_data_b64 and encrypted_key_b64:
+                                # Decrypt AES key
+                                aes_key = self.decrypt_aes_key(encrypted_key_b64)
+                                if aes_key:
+                                    # Decrypt the actual data
+                                    decrypted_data = self.decrypt_location_data(encrypted_data_b64, aes_key)
+                                    if decrypted_data:
+                                        print(f"✅ Successfully decrypted data for {response_id}")
+                                        
+                                        # Replace encrypted data with decrypted content summary
+                                        decrypted_response[encrypted_data_column] = f"DECRYPTED: {len(str(decrypted_data))} chars"
+                                        
+                                        # Extract location data if present and if this survey type should have it
+                                        if (survey_config.get('location_column') == encrypted_data_column and 
+                                            'locationData' in decrypted_data):
+                                            
+                                            locations = self._extract_location_points(decrypted_data, response_id)
+                                            if locations:
+                                                location_data_points.extend(locations)
+                                                print(f"📍 Extracted {len(locations)} location points for {response_id}")
+                                        
+                                        # Store additional decrypted fields
+                                        for key, value in decrypted_data.items():
+                                            if key != 'locationData':  # Don't duplicate location data
+                                                decrypted_response[f'decrypted_{key}'] = value
+                                    else:
+                                        decrypted_response[encrypted_data_column] = "DECRYPTION_FAILED"
+                                        print(f"❌ Failed to decrypt data content for {response_id}")
+                                else:
+                                    decrypted_response[encrypted_data_column] = "KEY_DECRYPTION_FAILED"
+                                    print(f"❌ Failed to decrypt AES key for {response_id}")
+                            
+                        except Exception as e:
+                            print(f"❌ Error processing encrypted data for {response_id}: {e}")
+                            decrypted_response[encrypted_data_column] = f"PROCESSING_ERROR: {str(e)[:100]}"
+                    else:
+                        # Non-encrypted data (like mock data) - just mark it
+                        if isinstance(encrypted_data, str) and len(encrypted_data) > 0:
+                            decrypted_response[encrypted_data_column] = f"NON_ENCRYPTED: {encrypted_data[:50]}..."
                 
-                # Save decrypted responses
-                if decrypted_responses:
-                    self._save_csv(output_responses, decrypted_responses, headers)
-                    print(f"📁 Saved {len(decrypted_responses)} decrypted responses to: {output_responses}")
-                
-                # Save location data
-                if location_data_points:
-                    location_headers = ['response_id', 'timestamp', 'latitude', 'longitude', 
-                                     'accuracy', 'altitude', 'speed', 'heading']
-                    self._save_csv(output_locations, location_data_points, location_headers)
-                    print(f"📍 Saved {len(location_data_points)} location points to: {output_locations}")
-                
-                # Update results
-                self.results['processed_files'].append(filename)
-                self.results['decrypted_responses'] += len(decrypted_responses)
-                self.results['location_points'] += len(location_data_points)
-                
-                return True
-                
+                decrypted_responses.append(decrypted_response)
+            
+            # Save decrypted responses
+            if decrypted_responses:
+                import pandas as pd
+                output_df = pd.DataFrame(decrypted_responses)
+                output_df.to_csv(output_responses, index=False)
+                print(f"📁 Saved {len(decrypted_responses)} decrypted responses to: {output_responses}")
+            
+            # Save location data if any was extracted
+            if location_data_points:
+                import pandas as pd
+                location_df = pd.DataFrame(location_data_points)
+                location_df.to_csv(output_locations, index=False)
+                print(f"📍 Saved {len(location_data_points)} location points to: {output_locations}")
+            
+            return len(decrypted_responses), len(location_data_points)
+            
         except Exception as e:
-            print(f"❌ Error processing {filename}: {e}")
-            self.results['errors'].append(f"Processing error in {filename}: {e}")
-            return False
+            print(f"❌ Error processing survey group {survey_config.get('output_prefix', 'unknown')}: {e}")
+            self.results['errors'].append(f"Processing error in {survey_config.get('output_prefix', 'unknown')}: {e}")
+            return 0, 0
+    
+    def _extract_location_points(self, decrypted_data: Dict, response_id: str) -> List[Dict]:
+        """Extract location points from decrypted data"""
+        locations = []
+        try:
+            if 'locationData' in decrypted_data and isinstance(decrypted_data['locationData'], list):
+                for i, loc in enumerate(decrypted_data['locationData']):
+                    if isinstance(loc, dict):
+                        locations.append({
+                            'response_id': response_id,
+                            'point_sequence': i + 1,
+                            'timestamp': loc.get('timestamp', ''),
+                            'latitude': loc.get('latitude', ''),
+                            'longitude': loc.get('longitude', ''),
+                            'accuracy': loc.get('accuracy', ''),
+                            'altitude': loc.get('altitude', ''),
+                            'speed': loc.get('speed', ''),
+                            'heading': loc.get('heading', ''),
+                            'provider': loc.get('provider', ''),
+                            'battery_level': loc.get('batteryLevel', ''),
+                            'is_mock': loc.get('isMock', '')
+                        })
+        except Exception as e:
+            print(f"❌ Error extracting location points for {response_id}: {e}")
+        
+        return locations
     
     def _decrypt_response_location(self, encrypted_location: str, response_id: str) -> List[Dict]:
         """Decrypt location data for a single response"""
         try:
-            # Parse encrypted package
-            encrypted_package = json.loads(encrypted_location)
-            encrypted_data_b64 = encrypted_package['encryptedData']
-            encrypted_key_b64 = encrypted_package['encryptedKey']
+            # Handle different encryption formats
+            if encrypted_location.startswith('{"encryptedData"'):
+                # Standard JSON format
+                encrypted_package = json.loads(encrypted_location)
+                encrypted_data_b64 = encrypted_package['encryptedData']
+                encrypted_key_b64 = encrypted_package['encryptedKey']
+            elif encrypted_location.startswith('eyJ'):
+                # Base64 encoded JSON format (like in the example)
+                decoded_json = base64.b64decode(encrypted_location).decode('utf-8')
+                encrypted_package = json.loads(decoded_json)
+                encrypted_data_b64 = encrypted_package['encryptedData']
+                encrypted_key_b64 = encrypted_package['encryptedKey']
+            else:
+                print(f"⚠️ Unknown encryption format for {response_id}: {encrypted_location[:50]}...")
+                return []
             
             # Decrypt AES key
             aes_key = self.decrypt_aes_key(encrypted_key_b64)
