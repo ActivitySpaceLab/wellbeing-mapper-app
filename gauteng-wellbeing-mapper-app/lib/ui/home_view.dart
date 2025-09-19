@@ -419,7 +419,11 @@ class HomeViewState extends State<HomeView>
             // Geolocation options
             desiredAccuracy: bg.Config.DESIRED_ACCURACY_NAVIGATION,
             distanceFilter: 10.0,
-            stopTimeout: 1,
+            stopTimeout: 5, // Wait 5 minutes before considering device stationary (was 1)
+            // Motion Detection Settings (critical for production mode)
+            stationaryRadius: 25, // meters - detect stationary within 25m radius
+            minimumActivityRecognitionConfidence: 80, // 80% confidence for motion detection
+            activityType: bg.Config.ACTIVITY_TYPE_OTHER, // General activity detection
             // HTTP & Persistence
             autoSync: false,
             persistMode: bg.Config.PERSIST_MODE_ALL,
