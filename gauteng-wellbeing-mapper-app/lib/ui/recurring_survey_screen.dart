@@ -1529,11 +1529,46 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     final formData = _formKey.currentState!.value;
     final submissionTime = DateTime.now();
     
-    // Capture and encrypt location data at submission time
-    // Note: Location data capture temporarily disabled during security migration
-    // Will be re-enabled with secure web-based approach
-    String? encryptedLocationData;
-    print('Location data capture disabled during security migration to web-based surveys');
+    // Collect location data for inclusion in survey JSON
+    Map<String, dynamic>? locationDataMap;
+    
+    try {
+      // Collect location data based on user's sharing preference
+      if (_locationSharingOption != LocationSharingOption.surveyOnly && !kIsWeb) {
+        print('[RecurringSurvey] Collecting location data for survey...');
+        
+        // Get filtered location tracks based on user's erasure preferences
+        List<LocationTrack> locationsToShare = [];
+        
+        for (int i = 0; i < _recentLocationTracks.length; i++) {
+          if (!_erasedLocationIndices.contains(i)) {
+            locationsToShare.add(_recentLocationTracks[i]);
+          }
+        }
+        
+        if (locationsToShare.isNotEmpty) {
+          // Include location data directly in survey JSON (no separate encryption)
+          locationDataMap = {
+            'locations': locationsToShare.map((loc) => loc.toJson()).toList(),
+            'sharing_option': _locationSharingOption.toString(),
+            'total_locations_available': _totalLocationCount,
+            'user_erased_count': _erasedLocationIndices.length,
+            'locations_shared_count': locationsToShare.length,
+            'collection_period_days': 14,
+            'submitted_at': submissionTime.toIso8601String(),
+          };
+          
+          print('[RecurringSurvey] Prepared ${locationsToShare.length} location points for survey');
+        } else {
+          print('[RecurringSurvey] No location data to share (user removed all locations)');
+        }
+      } else {
+        print('[RecurringSurvey] Location sharing disabled by user or web platform');
+      }
+    } catch (e) {
+      print('[RecurringSurvey] Error collecting location data: $e');
+      locationDataMap = null;
+    }
       
     final surveyResponse = RecurringSurveyResponse(
       activities: List<String>.from(formData['activities'] ?? []),
@@ -1570,7 +1605,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       // imageUrls: _selectedImages.isNotEmpty ? _selectedImages.map((f) => f.path).toList() : null,
       researchSite: _researchSite,
       submittedAt: submissionTime,
-      encryptedLocationData: encryptedLocationData, // Store encrypted location data captured at submission time
+      encryptedLocationData: locationDataMap != null ? jsonEncode(locationDataMap) : null, // Store as JSON for unified encryption
     );
 
     final db = SurveyDatabase();

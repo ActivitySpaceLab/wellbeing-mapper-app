@@ -139,10 +139,24 @@ AKr5gbTqca/dY/+Or3Ha/sECAwEAAQ==
     try {
       print('🔐 Encrypting and syncing biweekly survey...');
       
-      // Include location data if available
-      String? locationData;
-      if (surveyData['location_data'] != null) {
-        locationData = surveyData['location_data'].toString();
+      // Include location data if available - now as part of unified survey JSON
+      Map<String, dynamic>? locationData;
+      if (surveyData['encrypted_location_data'] != null) {
+        try {
+          // Parse the location data JSON and include it directly in survey
+          locationData = jsonDecode(surveyData['encrypted_location_data'].toString());
+        } catch (e) {
+          print('⚠️ Error parsing location data: $e');
+          locationData = null;
+        }
+      } else if (surveyData['location_data'] != null) {
+        // Fallback for legacy field name
+        try {
+          locationData = jsonDecode(surveyData['location_data'].toString());
+        } catch (e) {
+          print('⚠️ Error parsing legacy location data: $e');
+          locationData = null;
+        }
       }
       
       final surveyJson = {
@@ -151,10 +165,11 @@ AKr5gbTqca/dY/+Or3Ha/sECAwEAAQ==
         'survey_id': surveyData['id'],
         'timestamp': DateTime.now().toIso8601String(),
         'data': surveyData,
-        'location_data': locationData,
+        'location_data': locationData, // Include parsed location data directly
         'metadata': {
           'app_version': '1.0.0',
           'submission_method': 'encrypted_proxy',
+          'encryption_unified': true, // Flag to indicate unified encryption approach
         }
       };
       
