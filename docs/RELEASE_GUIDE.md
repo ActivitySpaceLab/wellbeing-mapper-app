@@ -247,6 +247,30 @@ If you encounter code signing issues during manual builds:
 # Local release build
 ./build-release.sh
 
+# For USB testing on Android
+
+# ensure adb is available
+which adb || echo "install platform-tools: brew install android-platform-tools"
+
+# see connected devices
+adb devices
+
+# install (replace with the actual apk path your build produced)
+adb install -r build/app/outputs/flutter-apk/app-release.apk
+
+# if you want to auto-grant runtime permissions
+adb install -r -g build/app/outputs/flutter-apk/app-release.apk
+
+# if the install fails due to signature/conflict, uninstall first (replace package name)
+adb uninstall com.your.package.name
+adb install -r build/app/outputs/flutter-apk/app-release.apk
+
+# quick way to launch the app (replace package)
+adb shell monkey -p com.your.package.name -c android.intent.category.LAUNCHER 1
+
+# view runtime logs if something goes wrong
+adb logcat --regex YourAppTagOrException
+
 # Automated release (complete process)
 # 1. Update version in pubspec.yaml
 # 2. Run version check
