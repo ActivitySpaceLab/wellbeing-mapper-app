@@ -4,7 +4,6 @@ import 'dart:convert';
 import '../models/survey_models.dart';
 import '../models/consent_models.dart';
 import '../models/data_sharing_consent.dart';
-import '../services/data_upload_service.dart';
 
 class SurveyDatabase {
   static final SurveyDatabase _instance = SurveyDatabase._internal();

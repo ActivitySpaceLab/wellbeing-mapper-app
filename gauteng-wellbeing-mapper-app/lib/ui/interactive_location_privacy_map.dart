@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../services/data_upload_service.dart';
 import '../theme/south_african_theme.dart';
 import '../models/data_sharing_consent.dart';
+import '../models/survey_models.dart';
 import '../db/survey_database.dart';
 
 /// Interactive map widget that allows users to selectively erase location points 

@@ -11,7 +11,6 @@ import '../ui/recurring_survey_screen.dart';
 import '../ui/survey_list_screen.dart';
 import '../ui/participation_selection_screen.dart';
 import '../ui/consent_form_screen.dart';
-import '../ui/data_upload_screen.dart';
 import '../ui/data_sharing_preferences_screen.dart';
 import '../ui/wellbeing_survey_screen.dart';
 import '../ui/wellbeing_map_view.dart';
@@ -133,8 +132,6 @@ class RouteGenerator {
           );
         }
         return _errorRoute();
-      case '/data_upload':
-        return MaterialPageRoute(builder: (_) => DataUploadScreen());
       case '/data_sharing_preferences':
         return MaterialPageRoute(builder: (_) => DataSharingPreferencesScreen());
       case '/wellbeing_survey':

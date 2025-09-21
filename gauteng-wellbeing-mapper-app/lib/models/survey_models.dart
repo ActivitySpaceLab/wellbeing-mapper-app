@@ -367,3 +367,48 @@ class RecurringSurveyResponse {
     );
   }
 }
+
+/// Location track data model
+class LocationTrack {
+  final DateTime timestamp;
+  final double latitude;
+  final double longitude;
+  final double? accuracy;
+  final double? altitude;
+  final double? speed;
+  final String? activity;
+
+  LocationTrack({
+    required this.timestamp,
+    required this.latitude,
+    required this.longitude,
+    this.accuracy,
+    this.altitude,
+    this.speed,
+    this.activity,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'timestamp': timestamp.toIso8601String(),
+      'latitude': latitude,
+      'longitude': longitude,
+      'accuracy': accuracy,
+      'altitude': altitude,
+      'speed': speed,
+      'activity': activity,
+    };
+  }
+
+  factory LocationTrack.fromJson(Map<String, dynamic> json) {
+    return LocationTrack(
+      timestamp: DateTime.parse(json['timestamp']),
+      latitude: json['latitude'].toDouble(),
+      longitude: json['longitude'].toDouble(),
+      accuracy: json['accuracy']?.toDouble(),
+      altitude: json['altitude']?.toDouble(),
+      speed: json['speed']?.toDouble(),
+      activity: json['activity'],
+    );
+  }
+}

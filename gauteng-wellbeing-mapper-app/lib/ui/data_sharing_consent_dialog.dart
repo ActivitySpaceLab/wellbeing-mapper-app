@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 import '../models/data_sharing_consent.dart';
-import '../services/data_upload_service.dart';
+import '../models/survey_models.dart';
 import '../db/survey_database.dart';
 import '../theme/south_african_theme.dart';
 import 'interactive_location_privacy_map.dart';
