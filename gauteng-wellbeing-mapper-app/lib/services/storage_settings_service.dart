@@ -4,11 +4,11 @@ import 'package:flutter/foundation.dart';
 import '../db/survey_database.dart';
 
 class StorageSettingsService {
-  // Default values - changed minimum retention to 14 days for survey compatibility
-  static const int DEFAULT_LOCATION_RETENTION_DAYS = 30;
-  static const int DEFAULT_MAP_DISPLAY_DAYS = 14;
-  static const int DEFAULT_MAX_MAP_MARKERS = 500;
-  static const bool DEFAULT_AUTO_CLEANUP_ENABLED = true;
+  // Default values - balanced for research usage and performance
+  static const int DEFAULT_LOCATION_RETENTION_DAYS = 60; // 2 months for research
+  static const int DEFAULT_MAP_DISPLAY_DAYS = 21; // 3 weeks display for good overview
+  static const int DEFAULT_MAX_MAP_MARKERS = 750; // Balanced performance
+  static const bool DEFAULT_AUTO_CLEANUP_ENABLED = true; // Re-enabled with fix
   static const int MINIMUM_LOCATION_RETENTION_DAYS = 14; // Minimum for survey requirements
   
   // Unlimited constants
@@ -164,7 +164,7 @@ class StorageSettingsService {
     
     final cutoffDate = DateTime.now().subtract(Duration(days: retentionDays));
     
-    print('[StorageSettingsService] Performing cleanup - removing data older than $retentionDays days');
+    print('[StorageSettingsService] Performing cleanup - removing data older than $retentionDays days (cutoff: ${cutoffDate.toIso8601String()})');
     
     try {
       // Clean up background geolocation plugin data
@@ -172,12 +172,14 @@ class StorageSettingsService {
         final allLocations = await bg.BackgroundGeolocation.locations;
         int removedCount = 0;
         
+        print('[StorageSettingsService] Found ${allLocations.length} total location records to check');
+        
         for (var location in allLocations) {
-          final locationDate = DateTime.fromMillisecondsSinceEpoch(
-            (location['timestamp'] as num).toInt()
-          );
+          // FIXED: location['timestamp'] is an ISO string, not milliseconds
+          final locationDate = DateTime.parse(location['timestamp']);
           
           if (locationDate.isBefore(cutoffDate)) {
+            print('[StorageSettingsService] Removing old location: ${location['timestamp']} (${locationDate.toIso8601String()})');
             await bg.BackgroundGeolocation.destroyLocation(location['uuid']);
             removedCount++;
           }
@@ -225,9 +227,8 @@ class StorageSettingsService {
       // Filter by date
       final cutoffDate = DateTime.now().subtract(Duration(days: displayDays));
       final recentLocations = allLocations.where((location) {
-        final locationDate = DateTime.fromMillisecondsSinceEpoch(
-          (location['timestamp'] as num).toInt()
-        );
+        // FIXED: location['timestamp'] is an ISO string, not milliseconds
+        final locationDate = DateTime.parse(location['timestamp']);
         return locationDate.isAfter(cutoffDate);
       }).toList();
       
