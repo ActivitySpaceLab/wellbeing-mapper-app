@@ -39,7 +39,7 @@ jobs:
         echo "Processing tag: $TAG"
         
         if [[ "$TAG" =~ -beta ]]; then
-          echo "❌ ERROR: Beta tag detected in production workflow!"
+          echo "ERROR: Beta tag detected in production workflow!"
           echo "Tag '$TAG' contains '-beta' suffix which should not trigger this workflow."
           echo "Beta tags should only trigger the 'CD-deploy-beta-releases.yml' workflow."
           echo "If you see this error, the workflow trigger patterns need to be updated."
@@ -48,13 +48,13 @@ jobs:
         
         # Verify tag matches expected production pattern
         if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]]; then
-          echo "❌ ERROR: Invalid production tag format!"
+          echo "ERROR: Invalid production tag format!"
           echo "Expected format: v1.0.0 or v1.0.0-123 (semantic version with optional build number)"
           echo "Received: $TAG"
           exit 1
         fi
         
-        echo "✅ Confirmed valid production release tag: $TAG"
+        echo "Confirmed valid production release tag: $TAG"
         echo "is_production=true" >> $GITHUB_OUTPUT
 
     - name: Validate version consistency
@@ -69,9 +69,9 @@ jobs:
         echo "Git tag version: $TAG_VERSION"
         
         if [ "$PUBSPEC_VERSION" = "$TAG_VERSION" ]; then
-          echo "✅ Versions match!"
+          echo "Versions match!"
         else
-          echo "❌ Version mismatch between pubspec.yaml ($PUBSPEC_VERSION) and git tag ($TAG_VERSION)"
+          echo "Version mismatch between pubspec.yaml ($PUBSPEC_VERSION) and git tag ($TAG_VERSION)"
           echo "Please update pubspec.yaml version to match the git tag"
           exit 1
         fi
@@ -82,24 +82,24 @@ jobs:
 
     - name: Verify iOS entitlements configuration
       run: |
-        echo "🔍 Verifying iOS entitlements are properly configured..."
+        echo "Verifying iOS entitlements are properly configured..."
         
         # Check entitlements file exists
         if [ ! -f "ios/Runner/Runner.entitlements" ]; then
-          echo "❌ ERROR: Entitlements file missing!"
+          echo "ERROR: Entitlements file missing!"
           exit 1
         fi
         
         # Check entitlements are linked in Xcode project
         if ! grep -q "CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements" ios/Runner.xcodeproj/project.pbxproj; then
-          echo "❌ ERROR: Entitlements not linked in Xcode project!"
+          echo "ERROR: Entitlements not linked in Xcode project!"
           exit 1
         fi
         
         # Count linked configurations
         ENTITLEMENT_COUNT=$(grep -c "CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements" ios/Runner.xcodeproj/project.pbxproj)
         if [ "$ENTITLEMENT_COUNT" -lt 3 ]; then
-          echo "❌ ERROR: Entitlements not linked in all build configurations!"
+          echo "ERROR: Entitlements not linked in all build configurations!"
           exit 1
         fi
         
@@ -107,12 +107,12 @@ jobs:
         REQUIRED_KEYS=("NSLocationAlwaysAndWhenInUseUsageDescription" "NSLocationAlwaysUsageDescription" "NSLocationWhenInUseUsageDescription" "NSLocationUsageDescription")
         for key in "${REQUIRED_KEYS[@]}"; do
           if ! grep -q "$key" ios/Runner/Info.plist; then
-            echo "❌ ERROR: Missing location permission key: $key"
+            echo "ERROR: Missing location permission key: $key"
             exit 1
           fi
         done
         
-        echo "✅ iOS entitlements configuration verified"
+        echo "iOS entitlements configuration verified"
       working-directory: gauteng-wellbeing-mapper-app
 
     - name: Statically analyze the Dart code for any errors
@@ -126,7 +126,7 @@ jobs:
     # Android Builds - Production Flavor
     - name: Build Android APKs (Production) - Multiple Architectures
       run: |
-        echo "📱 Building Production Android APKs for multiple architectures..."
+        echo "Building Production Android APKs for multiple architectures..."
         
         # Build APKs for all supported architectures
         flutter build apk --release \
@@ -134,7 +134,7 @@ jobs:
           --dart-define=APP_FLAVOR=production \
           --split-per-abi
         
-        echo "✅ Production Android APKs built successfully!"
+        echo "Production Android APKs built successfully!"
         echo "APK locations:"
         find build/app/outputs/flutter-apk/ -name "*.apk" -type f | sort
         echo "Listing all APK files:"
@@ -143,12 +143,12 @@ jobs:
 
     - name: Build Android App Bundle (Production)
       run: |
-        echo "📦 Building Production Android App Bundle..."
+        echo "Building Production Android App Bundle..."
         flutter build appbundle --release \
           --flavor=production \
           --dart-define=APP_FLAVOR=production
         
-        echo "✅ Production App Bundle built successfully!"
+        echo "Production App Bundle built successfully!"
         echo "AAB location:"
         ls -la build/app/outputs/bundle/productionRelease/app-production-release.aab || echo "AAB file not found"
       working-directory: gauteng-wellbeing-mapper-app
@@ -160,18 +160,18 @@ jobs:
       
     - name: Build iOS (Production) - Unsigned for Distribution
       run: |
-        echo "🍎 Building iOS Production without code signing for distribution..."
+        echo "Building iOS Production without code signing for distribution..."
         
         # Set the appropriate Info.plist for production flavor
         cp ios/Runner/Info-Production.plist ios/Runner/Info.plist
-        echo "📄 Using Production Info.plist with bundle ID: com.github.activityspacelab.wellbeingmapper.gauteng"
+        echo "Using Production Info.plist with bundle ID: com.github.activityspacelab.wellbeingmapper.gauteng"
         
         # Build iOS without code signing (for distribution only)
         flutter build ios --release \
           --dart-define=APP_FLAVOR=production \
           --no-codesign
         
-        echo "✅ iOS Production build complete (unsigned)!"
+        echo "iOS Production build complete (unsigned)!"
         echo "iOS build location:"
         ls -la build/ios/iphoneos/ || echo "iOS build directory not found"
         
@@ -180,7 +180,7 @@ jobs:
         zip -r ../../../wellbeing-mapper-production-ios.zip Runner.app/
         cd ../../../
         
-        echo "📦 iOS app archived as wellbeing-mapper-production-ios.zip"
+        echo "iOS app archived as wellbeing-mapper-production-ios.zip"
         echo "Note: This build is for distribution - actual App Store submission requires proper provisioning profiles and signing"
       working-directory: gauteng-wellbeing-mapper-app
     
@@ -195,21 +195,21 @@ jobs:
         tag: ${{ steps.version.outputs.content }}
         name: "Wellbeing Mapper ${{ steps.version.outputs.content }} - Production Release"
         body: |
-          # 🚀 Wellbeing Mapper Production Release ${{ steps.version.outputs.content }}
+          # Wellbeing Mapper Production Release ${{ steps.version.outputs.content }}
           
           **This is the official production release of Wellbeing Mapper!**
           
-          ## 📱 What is Wellbeing Mapper?
+          ## What is Wellbeing Mapper?
           Wellbeing Mapper helps you track your mental wellbeing and movement patterns. This production version offers both private personal use and research participation options.
           
-          ## 🔥 What's New in This Release
+          ## What's New in This Release
           - Stable production build with full testing
           - Enhanced privacy controls and data protection
           - Improved user interface and experience
           - Comprehensive location and survey features
           - Research participation capabilities (optional)
           
-          ## 📲 How to Download and Install
+          ## How to Download and Install
           
           ### Android Users
           **Download one of the production APK files below:**
@@ -233,30 +233,30 @@ jobs:
           - App Store distribution requires additional signing and review process
           - Developers can re-sign the build with their own provisioning profiles
           
-          ## 🔒 Privacy & Data Protection
+          ## Privacy & Data Protection
           - **Private Mode**: All data stays securely on your device
           - **Research Mode**: Optional data sharing with explicit consent
           - **No Tracking**: No advertising or third-party analytics
           - **Your Control**: Delete all data anytime from app settings
           
-          ## 🆚 Production vs Beta
+          ## Production vs Beta
           This is the **stable production release** - recommended for:
-          - ✅ Regular users wanting reliable functionality
-          - ✅ Research participants in official studies
-          - ✅ Long-term personal wellbeing tracking
+          - Regular users wanting reliable functionality
+          - Research participants in official studies
+          - Long-term personal wellbeing tracking
           
           For testing new features, see our beta releases with `-beta` tags.
           
-          ## � Support & Feedback
-          - 📧 Email: john.palmer@upf.edu
-          - 📖 Full Documentation: [User Guide](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/blob/main/docs/USER_GUIDE.md)
-          - 🐛 Report Issues: Use GitHub Issues or in-app feedback
+          ## Support & Feedback
+          - Email: john.palmer@upf.edu
+          - Full Documentation: [User Guide](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/blob/main/docs/USER_GUIDE.md)
+          - Report Issues: Use GitHub Issues or in-app feedback
           
-          ## 📦 What's Included
-          - ✅ Multiple Production Android APKs (automatically optimized for different devices)
-          - ✅ Android App Bundle for Play Store
-          - ✅ iOS app archive ready for App Store submission or re-signing
-          - ✅ Full test coverage and quality assurance
-          - ✅ Complete privacy and security implementations
+          ## What's Included
+          - Multiple Production Android APKs (automatically optimized for different devices)
+          - Android App Bundle for Play Store
+          - iOS app archive ready for App Store submission or re-signing
+          - Full test coverage and quality assurance
+          - Complete privacy and security implementations
         draft: false
         prerelease: false

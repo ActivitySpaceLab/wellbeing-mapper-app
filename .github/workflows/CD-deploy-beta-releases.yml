@@ -36,11 +36,11 @@ jobs:
       run: |
         TAG="${GITHUB_REF#refs/tags/}"
         if [[ ! "$TAG" =~ -beta ]]; then
-          echo "❌ This workflow is for beta releases only. Production tags should not trigger this workflow."
+          echo "This workflow is for beta releases only. Production tags should not trigger this workflow."
           echo "Production releases should be tagged without -beta suffix."
           exit 1
         fi
-        echo "✅ Confirmed beta release tag: $TAG"
+        echo "Confirmed beta release tag: $TAG"
         echo "is_beta=true" >> $GITHUB_OUTPUT
 
     - name: Validate version consistency
@@ -57,9 +57,9 @@ jobs:
         echo "Full git tag: $TAG_VERSION"
         
         if [ "$PUBSPEC_VERSION" = "$TAG_VERSION_BASE" ]; then
-          echo "✅ Versions match!"
+          echo "Versions match!"
         else
-          echo "❌ Version mismatch between pubspec.yaml ($PUBSPEC_VERSION) and git tag base ($TAG_VERSION_BASE)"
+          echo "Version mismatch between pubspec.yaml ($PUBSPEC_VERSION) and git tag base ($TAG_VERSION_BASE)"
           echo "Please update pubspec.yaml version to match the git tag base version"
           exit 1
         fi
@@ -70,24 +70,24 @@ jobs:
 
     - name: Verify iOS entitlements configuration
       run: |
-        echo "🔍 Verifying iOS entitlements are properly configured..."
+        echo "Verifying iOS entitlements are properly configured..."
         
         # Check entitlements file exists
         if [ ! -f "ios/Runner/Runner.entitlements" ]; then
-          echo "❌ ERROR: Entitlements file missing!"
+          echo "ERROR: Entitlements file missing!"
           exit 1
         fi
         
         # Check entitlements are linked in Xcode project
         if ! grep -q "CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements" ios/Runner.xcodeproj/project.pbxproj; then
-          echo "❌ ERROR: Entitlements not linked in Xcode project!"
+          echo "ERROR: Entitlements not linked in Xcode project!"
           exit 1
         fi
         
         # Count linked configurations
         ENTITLEMENT_COUNT=$(grep -c "CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements" ios/Runner.xcodeproj/project.pbxproj)
         if [ "$ENTITLEMENT_COUNT" -lt 3 ]; then
-          echo "❌ ERROR: Entitlements not linked in all build configurations!"
+          echo "ERROR: Entitlements not linked in all build configurations!"
           exit 1
         fi
         
@@ -95,12 +95,12 @@ jobs:
         REQUIRED_KEYS=("NSLocationAlwaysAndWhenInUseUsageDescription" "NSLocationAlwaysUsageDescription" "NSLocationWhenInUseUsageDescription" "NSLocationUsageDescription")
         for key in "${REQUIRED_KEYS[@]}"; do
           if ! grep -q "$key" ios/Runner/Info.plist; then
-            echo "❌ ERROR: Missing location permission key: $key"
+            echo "ERROR: Missing location permission key: $key"
             exit 1
           fi
         done
         
-        echo "✅ iOS entitlements configuration verified"
+        echo "iOS entitlements configuration verified"
       working-directory: gauteng-wellbeing-mapper-app
 
     - name: Statically analyze the Dart code for any errors
@@ -114,7 +114,7 @@ jobs:
     # Android Builds - Beta Flavor
     - name: Build Android APKs (Beta) - Multiple Architectures
       run: |
-        echo "📱 Building Beta Android APKs for multiple architectures..."
+        echo "Building Beta Android APKs for multiple architectures..."
         
         # Build APKs for all supported architectures
         flutter build apk --release \
@@ -122,7 +122,7 @@ jobs:
           --dart-define=APP_FLAVOR=beta \
           --split-per-abi
         
-        echo "✅ Beta Android APKs built successfully!"
+        echo "Beta Android APKs built successfully!"
         echo "APK locations:"
         find build/app/outputs/flutter-apk/ -name "*.apk" -type f | sort
         echo "Listing all APK files:"
@@ -131,12 +131,12 @@ jobs:
 
     - name: Build Android App Bundle (Beta)
       run: |
-        echo "📦 Building Beta Android App Bundle..."
+        echo "Building Beta Android App Bundle..."
         flutter build appbundle --release \
           --flavor=beta \
           --dart-define=APP_FLAVOR=beta
         
-        echo "✅ Beta App Bundle built successfully!"
+        echo "Beta App Bundle built successfully!"
         echo "AAB location:"
         ls -la build/app/outputs/bundle/betaRelease/app-beta-release.aab || echo "AAB file not found"
       working-directory: gauteng-wellbeing-mapper-app
@@ -148,18 +148,18 @@ jobs:
       
     - name: Build iOS (Beta) - Unsigned for Distribution
       run: |
-        echo "🍎 Building iOS Beta without code signing for distribution..."
+        echo "Building iOS Beta without code signing for distribution..."
         
         # Set the appropriate Info.plist for beta flavor
         cp ios/Runner/Info-Beta.plist ios/Runner/Info.plist
-        echo "📄 Using Beta Info.plist with bundle ID: com.github.activityspacelab.wellbeingmapper.gauteng.beta"
+        echo "Using Beta Info.plist with bundle ID: com.github.activityspacelab.wellbeingmapper.gauteng.beta"
         
         # Build iOS without code signing (for distribution only)
         flutter build ios --release \
           --dart-define=APP_FLAVOR=beta \
           --no-codesign
         
-        echo "✅ iOS Beta build complete (unsigned)!"
+        echo "iOS Beta build complete (unsigned)!"
         echo "iOS build location:"
         ls -la build/ios/iphoneos/ || echo "iOS build directory not found"
         
@@ -168,7 +168,7 @@ jobs:
         zip -r ../../../wellbeing-mapper-beta-ios.zip Runner.app/
         cd ../../../
         
-        echo "📦 iOS app archived as wellbeing-mapper-beta-ios.zip"
+        echo "iOS app archived as wellbeing-mapper-beta-ios.zip"
         echo "Note: This build is for distribution - actual device installation requires proper provisioning profiles"
       working-directory: gauteng-wellbeing-mapper-app
     
@@ -183,23 +183,23 @@ jobs:
         tag: ${{ steps.version.outputs.content }}
         name: "Wellbeing Mapper ${{ steps.version.outputs.content }} - Beta Release"
         body: |
-          # 🧪 Wellbeing Mapper Beta Release ${{ steps.version.outputs.content }}
+          # Wellbeing Mapper Beta Release ${{ steps.version.outputs.content }}
           
           **This is a beta testing release - help us improve Wellbeing Mapper!**
           
           Thank you for helping us test and improve this privacy-focused app for mapping your mental wellbeing.
           
-          ## 📱 What is Wellbeing Mapper?
+          ## What is Wellbeing Mapper?
           Wellbeing Mapper helps you track your mental wellbeing and movement patterns. This beta version includes the latest features and improvements that need testing before the next production release.
           
-          ## 🧪 Beta Testing Features
+          ## Beta Testing Features
           - Latest experimental features and improvements
           - Enhanced privacy controls and data protection
           - New user interface elements and interactions
           - Performance optimizations and bug fixes
           - Research mode capabilities for testing
           
-          ## 📲 How to Download and Install
+          ## How to Download and Install
           
           ### Android Users
           **Download one of the beta APK files below:**
@@ -212,7 +212,7 @@ jobs:
           3. Tap the APK file and follow the installation prompts
           4. Open Wellbeing Mapper and start testing!
           
-          **⚠️ Beta Installation Notes:**
+          **Beta Installation Notes:**
           - You can install this beta alongside the production version (different package names)
           - Beta versions may have bugs or incomplete features
           - Your feedback is crucial for improving the final release
@@ -234,43 +234,43 @@ jobs:
           - **No Production Data**: Beta testing data is separate from production
           - **Full Control**: Delete all beta data anytime from app settings
           
-          ## 🆚 Beta vs Production
+          ## Beta vs Production
           This is a **beta testing release** - recommended for:
-          - ✅ Testers wanting to try new features early
-          - ✅ Developers testing integrations
-          - ✅ Research team validation before production
-          - ✅ Bug hunting and feedback collection
+          - Testers wanting to try new features early
+          - Developers testing integrations
+          - Research team validation before production
+          - Bug hunting and feedback collection
           
           **Not recommended for:**
-          - ❌ Production research studies
-          - ❌ Long-term personal data tracking
-          - ❌ Users needing stable, reliable functionality
+          - Production research studies
+          - Long-term personal data tracking
+          - Users needing stable, reliable functionality
           
-          ## 💡 How to Help with Beta Testing
+          ## How to Help with Beta Testing
           - **Explore all features**: Try surveys, location tracking, notifications, and settings
           - **Test edge cases**: Use unusual inputs, test permission scenarios
           - **Report issues**: Use GitHub Issues or in-app feedback for any problems
           - **Share suggestions**: Let us know what works well and what could be improved
           
-          ## 📞 Beta Support & Feedback
-          - 📧 Email: john.palmer@upf.edu (include "BETA" in subject)
-          - 📖 Beta Guide: [Beta Testing Guide](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/blob/main/docs/BETA_TESTING_GUIDE.md)
-          - 🐛 Report Issues: Use GitHub Issues with "beta" label
-          - 💬 In-app feedback: Use the built-in feedback system
+          ## Beta Support & Feedback
+          - Email: john.palmer@upf.edu (include "BETA" in subject)
+          - Beta Guide: [Beta Testing Guide](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/blob/main/docs/BETA_TESTING_GUIDE.md)
+          - Report Issues: Use GitHub Issues with "beta" label
+          - In-app feedback: Use the built-in feedback system
           
-          ## 📦 What's Included
-          - ✅ Multiple Beta Android APKs (automatically optimized for different devices)
-          - ✅ Android App Bundle for internal distribution
-          - ✅ iOS app archive ready for TestFlight or re-signing
-          - ✅ Latest features and improvements
-          - ✅ Enhanced debugging and testing tools
+          ## What's Included
+          - Multiple Beta Android APKs (automatically optimized for different devices)
+          - Android App Bundle for internal distribution
+          - iOS app archive ready for TestFlight or re-signing
+          - Latest features and improvements
+          - Enhanced debugging and testing tools
           
-          ## 🔄 Next Steps
+          ## Next Steps
           1. **Download**: Get the appropriate APK for your Android device
           2. **Test**: Explore all features thoroughly
           3. **Report**: Share bugs, suggestions, and feedback
           4. **Wait**: Watch for the production release based on your testing!
           
-          Thank you for being part of the Wellbeing Mapper beta testing community! 🙏
+          Thank you for being part of the Wellbeing Mapper beta testing community!
         draft: false
         prerelease: true
