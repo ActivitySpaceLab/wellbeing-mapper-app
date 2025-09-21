@@ -838,7 +838,13 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () => _setLocationSharingOption(LocationSharingOption.fullData),
-                        icon: Icon(Icons.location_on, size: 18),
+                        icon: Icon(
+                          Icons.location_on, 
+                          size: 18,
+                          color: _locationSharingOption == LocationSharingOption.fullData 
+                              ? Colors.white 
+                              : Colors.grey[700],
+                        ),
                         label: Text('Share All', style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _locationSharingOption == LocationSharingOption.fullData 
@@ -855,7 +861,13 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: _openLocationSelection,
-                        icon: Icon(Icons.edit_location, size: 18),
+                        icon: Icon(
+                          Icons.edit_location, 
+                          size: 18,
+                          color: _locationSharingOption == LocationSharingOption.partialData 
+                              ? Colors.white 
+                              : Colors.grey[700],
+                        ),
                         label: Text('Select', style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _locationSharingOption == LocationSharingOption.partialData 
@@ -872,7 +884,13 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () => _setLocationSharingOption(LocationSharingOption.surveyOnly),
-                        icon: Icon(Icons.location_off, size: 18),
+                        icon: Icon(
+                          Icons.location_off, 
+                          size: 18,
+                          color: _locationSharingOption == LocationSharingOption.surveyOnly 
+                              ? Colors.white 
+                              : Colors.grey[700],
+                        ),
                         label: Text('None', style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _locationSharingOption == LocationSharingOption.surveyOnly 
