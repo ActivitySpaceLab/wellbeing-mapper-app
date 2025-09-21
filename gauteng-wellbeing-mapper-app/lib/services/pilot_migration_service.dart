@@ -3,14 +3,17 @@ import 'package:wellbeing_mapper/db/survey_database.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 import 'dart:convert';
 
-/// Service to handle migration from pilot version to production version
+/// Service to handle migration from pre-production versions to production version
 /// 
-/// This service ensures that existing pilot users can smoothly transition to the
-/// production version while:
+/// This service ensures that existing users can smoothly transition to the
+/// production version (1.1.0+) while:
 /// - Preserving their personal location data and happiness surveys
 /// - Clearing old research participation data (forcing re-authentication)
 /// - Requiring new participant codes, consent, and initial survey for research
 /// - Maintaining seamless personal/private use of preserved data
+/// 
+/// Treats any version before 1.1.0 as pre-production (including pilot versions
+/// 1.0.6 and below, and early production versions 1.0.7 and below)
 class PilotMigrationService {
   static const String _appVersionKey = 'app_version';
   static const String _migrationCompletedKey = 'pilot_migration_completed';
@@ -18,10 +21,10 @@ class PilotMigrationService {
   static const String _preservedDataKey = 'preserved_pilot_data';
   
   /// Current production version - update this when releasing new versions
-  static const String currentProductionVersion = '1.0.7+132';
+  static const String currentProductionVersion = '1.1.0+2134';
   
-  /// Version that identifies pilot users (any version before production)
-  static const String pilotVersionThreshold = '1.0.6';
+  /// Build number threshold for production - any build number below this needs migration
+  static const int productionBuildThreshold = 2134;
   
   /// Check if this is a fresh install or an update from pilot
   static Future<MigrationStatus> checkMigrationStatus() async {
@@ -50,13 +53,13 @@ class PilotMigrationService {
       return MigrationStatus.freshInstall;
     }
     
-    // Check if user is upgrading from pilot version
+    // Check if user is upgrading from pre-production version (build number < 2134)
     final isPilot = _isPilotVersion(previousVersion);
-    print('[PilotMigration] Is pilot version ($previousVersion): $isPilot');
+    print('[PilotMigration] Is pre-production version ($previousVersion): $isPilot');
     
     if (isPilot) {
-      // This is a pilot user upgrading to production
-      print('[PilotMigration] Pilot user upgrade detected');
+      // This is a user upgrading from pre-production to production
+      print('[PilotMigration] Pre-production user upgrade detected - migration required');
       await _markAsPilotUser();
       return MigrationStatus.pilotUpgrade;
     }
@@ -135,20 +138,29 @@ class PilotMigrationService {
   // Private helper methods
   
   static bool _isPilotVersion(String version) {
-    // Simple version comparison - any version < 1.0.7 is considered pilot
-    // Production versions start from 1.0.7, so anything below is pilot
-    final versionParts = version.split('+')[0].split('.');
-    final currentParts = pilotVersionThreshold.split('.');
-    
-    for (int i = 0; i < 3; i++) {
-      final versionNum = int.tryParse(versionParts.length > i ? versionParts[i] : '0') ?? 0;
-      final thresholdNum = int.tryParse(currentParts.length > i ? currentParts[i] : '0') ?? 0;
+    // Use build number for more reliable version comparison
+    // Any build number below 2134 is considered pre-production and needs migration
+    try {
+      // Extract build number from version string (format: "1.0.7+132" -> 132)
+      if (!version.contains('+')) {
+        // No build number means very old version, definitely pre-production
+        return true;
+      }
       
-      if (versionNum < thresholdNum) return true; // Definitely pilot
-      if (versionNum > thresholdNum) return false; // Definitely production
+      final buildNumberStr = version.split('+')[1];
+      final buildNumber = int.tryParse(buildNumberStr);
+      
+      if (buildNumber == null) {
+        // Invalid build number, treat as pre-production for safety
+        return true;
+      }
+      
+      return buildNumber < productionBuildThreshold;
+    } catch (e) {
+      // Any parsing error means we can't determine version safely, treat as pre-production
+      print('[PilotMigration] Error parsing version "$version": $e');
+      return true;
     }
-    // Equal versions (1.0.6 == 1.0.6) are considered pilot - only 1.0.7+ are production
-    return true;
   }
   
   static Future<void> _recordCurrentVersion() async {
