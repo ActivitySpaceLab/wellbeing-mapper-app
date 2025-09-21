@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wellbeing_mapper/db/survey_database.dart';
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 import 'dart:convert';
 
 /// Service to handle migration from pilot version to production version
@@ -213,15 +214,42 @@ class PilotMigrationService {
   }
   
   static Future<int> _getLocationDataCount() async {
-    // This would need to integrate with your location tracking service
-    // For now, return a placeholder - you'll need to implement this based on your location storage
-    return 0; // TODO: Implement actual location data counting
+    try {
+      // Get all location data from flutter_background_geolocation
+      final allLocations = await bg.BackgroundGeolocation.locations;
+      print('[PilotMigration] Found ${allLocations.length} location records to preserve');
+      return allLocations.length;
+    } catch (e) {
+      print('[PilotMigration] Error getting location data count: $e');
+      return 0;
+    }
   }
   
   static Future<DateTime?> _getEarliestLocationDate() async {
-    // This would need to integrate with your location tracking service
-    // For now, return a placeholder - you'll need to implement this based on your location storage
-    return null; // TODO: Implement actual earliest location date retrieval
+    try {
+      // Get all location data from flutter_background_geolocation
+      final allLocations = await bg.BackgroundGeolocation.locations;
+      
+      if (allLocations.isEmpty) {
+        print('[PilotMigration] No location data found');
+        return null;
+      }
+      
+      // Find the earliest timestamp
+      DateTime? earliest;
+      for (final location in allLocations) {
+        final locationDate = DateTime.fromMillisecondsSinceEpoch(location.timestamp.toInt());
+        if (earliest == null || locationDate.isBefore(earliest)) {
+          earliest = locationDate;
+        }
+      }
+      
+      print('[PilotMigration] Earliest location data: $earliest');
+      return earliest;
+    } catch (e) {
+      print('[PilotMigration] Error getting earliest location date: $e');
+      return null;
+    }
   }
 }
 
