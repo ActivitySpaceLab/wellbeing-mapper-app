@@ -69,7 +69,7 @@ except ImportError:
 class AutomatedDecryptionPipeline:
     """Complete pipeline for downloading and decrypting Qualtrics survey data"""
     
-    def __init__(self, private_key_path: str = './private_key.pem'):
+    def __init__(self, private_key_path: str = '../../untracked/private_key.pem'):
         self.private_key_path = private_key_path
         self.private_key = None
         self.results = {
@@ -620,8 +620,8 @@ Examples:
                        help='Download specific survey (use with --download-first)')
     
     # Security options
-    parser.add_argument('--private-key', default='./private_key.pem',
-                       help='Path to RSA private key file (default: ./private_key.pem)')
+    parser.add_argument('--private-key', default='../../untracked/private_key.pem',
+                       help='Path to RSA private key file (default: ../../untracked/private_key.pem)')
     
     parser.add_argument('--password', 
                        help='Private key password (will prompt if not provided)')

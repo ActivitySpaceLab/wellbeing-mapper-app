@@ -49,7 +49,7 @@ def test_final_flutter_hybrid():
     
     try:
         # Load public key
-        with open('decryption_tools/public_key.pem', 'rb') as f:
+        with open('decryption_tools/../../untracked/public_key.pem', 'rb') as f:
             public_key = serialization.load_pem_public_key(f.read(), backend=default_backend())
         
         # FLUTTER HYBRID ENCRYPTION SIMULATION
@@ -99,7 +99,7 @@ def test_final_flutter_hybrid():
         passphrase = input("Enter private key passphrase: ")
         decrypted_data = decrypt_hybrid_format(
             encrypted_package, 
-            'decryption_tools/private_key.pem', 
+            'decryption_tools/../../untracked/private_key.pem', 
             passphrase
         )
         

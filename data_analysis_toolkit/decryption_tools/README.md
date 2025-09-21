@@ -10,8 +10,11 @@ This directory contains tools and test data for decrypting survey data from the 
 
 ### Test Data
 - `test_survey_data.csv` - Sample encrypted survey data for testing decryption
-- `private_key.pem` - RSA private key for decryption (password protected)
-- `public_key.pem` - RSA public key (for reference)
+
+### Encryption Keys
+- **Location**: `../../untracked/private_key.pem` and `../../untracked/public_key.pem`
+- **Security**: Production keys are stored in `untracked/` directory (single source of truth)
+- **Protection**: Private key is password protected with 4096-bit RSA encryption
 
 ## Usage
 

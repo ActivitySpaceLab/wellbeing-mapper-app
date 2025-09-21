@@ -210,7 +210,7 @@ def main():
         passphrase = getpass.getpass("Enter private key passphrase: ")
         
         # Load private key to verify it works
-        private_key = load_private_key('private_key.pem', passphrase.encode())
+        private_key = load_private_key('../../untracked/private_key.pem', passphrase.encode())
         print("✅ Private key loaded successfully")
         
         # Decrypt each survey
@@ -219,7 +219,7 @@ def main():
             print(f"Decrypting {survey['type']} survey #{i+1}")
             print(f"{'='*50}")
             
-            decrypted_data = decrypt_data(survey['data'], 'private_key.pem', passphrase)
+            decrypted_data = decrypt_data(survey['data'], '../../untracked/private_key.pem', passphrase)
             
             if decrypted_data:
                 print("✅ Decryption successful!")

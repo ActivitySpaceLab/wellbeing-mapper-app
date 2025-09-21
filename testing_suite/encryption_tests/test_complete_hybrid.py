@@ -45,7 +45,7 @@ def test_hybrid_encryption():
     
     try:
         # Load the public key for encryption
-        with open('decryption_tools/public_key.pem', 'rb') as f:
+        with open('../untracked/public_key.pem', 'rb') as f:
             public_key = serialization.load_pem_public_key(f.read(), backend=default_backend())
         
         print("✅ Public key loaded successfully")
@@ -96,7 +96,7 @@ def test_hybrid_encryption():
         passphrase = input("Enter private key passphrase: ")
         decrypted_data = decrypt_hybrid_format(
             encrypted_package, 
-            'decryption_tools/private_key.pem', 
+            '../untracked/private_key.pem', 
             passphrase
         )
         

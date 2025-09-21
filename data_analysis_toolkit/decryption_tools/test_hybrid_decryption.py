@@ -17,7 +17,8 @@ test_hybrid_data = {
 }
 
 if __name__ == "__main__":
-    private_key_path = "private_key.pem"
+        # Test decryption
+    private_key_path = "../../untracked/private_key.pem"
     # Use production passphrase in production
     passphrase = input("Enter private key passphrase: ")
     

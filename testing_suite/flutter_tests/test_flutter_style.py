@@ -33,7 +33,7 @@ def test_flutter_style_hybrid():
     
     try:
         # Load keys
-        with open('decryption_tools/public_key.pem', 'rb') as f:
+        with open('decryption_tools/../../untracked/public_key.pem', 'rb') as f:
             public_key = serialization.load_pem_public_key(f.read(), backend=default_backend())
         
         # Step 1: Generate AES key (matching Flutter: Random.secure() + 32 bytes)
@@ -83,7 +83,7 @@ def test_flutter_style_hybrid():
         # Test decryption with production passphrase
         print("\nTesting decryption with raw bytes approach:")
         passphrase = input("Enter private key passphrase: ")
-        decrypted = decrypt_hybrid_format(hybrid_package, 'decryption_tools/private_key.pem', passphrase)
+        decrypted = decrypt_hybrid_format(hybrid_package, 'decryption_tools/../../untracked/private_key.pem', passphrase)
         
         if decrypted and decrypted == sample_survey:
             print("✅ Raw bytes approach works perfectly!")
