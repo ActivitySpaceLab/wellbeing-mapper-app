@@ -11,8 +11,11 @@ import 'package:wellbeing_mapper/theme/south_african_theme.dart';
 // import 'package:wellbeing_mapper/debug/ios_location_debug.dart'; // Commented out with iOS Location Debug menu (August 5, 2025)
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
     as bg;
 
@@ -25,12 +28,50 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
   AppMode currentMode = AppMode.private; // Default to private mode
   bool isLoading = true;
   bool hasCompletedInitialSurvey = false;
+  String appVersion = '';
+  String buildNumber = '';
+  String userUuid = '';
 
   @override
   void initState() {
     super.initState();
     _loadCurrentMode();
     _checkInitialSurveyStatus();
+    _loadAppInfo();
+  }
+
+  Future<void> _loadAppInfo() async {
+    try {
+      // Get package info for version and build number
+      PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      
+      // Get user UUID from shared preferences
+      final prefs = await SharedPreferences.getInstance();
+      final uuid = prefs.getString("user_uuid") ?? 'Not available';
+      
+      setState(() {
+        appVersion = packageInfo.version;
+        buildNumber = packageInfo.buildNumber;
+        userUuid = uuid;
+      });
+    } catch (e) {
+      print('Error loading app info: $e');
+      setState(() {
+        appVersion = 'Unknown';
+        buildNumber = 'Unknown';
+        userUuid = 'Unknown';
+      });
+    }
+  }
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied to clipboard'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _loadCurrentMode() async {
@@ -451,6 +492,49 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
                 onTap: () {
                   Navigator.of(context).pushNamed('/report_an_issue');
                 },
+              ),
+            ),
+            // App Version & User Info - For testing and support
+            Card(
+              color: Colors.grey[50],
+              child: ExpansionTile(
+                leading: const Icon(Icons.info_outline),
+                title: Text("App Information"),
+                subtitle: Text("Version & User ID"),
+                children: [
+                  ListTile(
+                    dense: true,
+                    title: Text("App Version"),
+                    subtitle: Text("$appVersion ($buildNumber)"),
+                    trailing: IconButton(
+                      icon: Icon(Icons.copy, size: 16),
+                      onPressed: () => _copyToClipboard(
+                        "Version: $appVersion\nBuild: $buildNumber",
+                        "Version info"
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    dense: true,
+                    title: Text("User UUID"),
+                    subtitle: Text(userUuid.length > 30 ? "${userUuid.substring(0, 30)}..." : userUuid),
+                    trailing: IconButton(
+                      icon: Icon(Icons.copy, size: 16),
+                      onPressed: () => _copyToClipboard(userUuid, "User UUID"),
+                    ),
+                  ),
+                  ListTile(
+                    dense: true,
+                    title: Text("Copy All Info"),
+                    trailing: IconButton(
+                      icon: Icon(Icons.copy_all),
+                      onPressed: () => _copyToClipboard(
+                        "App Version: $appVersion\nBuild Number: $buildNumber\nUser UUID: $userUuid",
+                        "All app information"
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
