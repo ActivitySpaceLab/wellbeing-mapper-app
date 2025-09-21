@@ -10,10 +10,6 @@ class ParticipantValidationService {
   // Production server endpoints (Lambda Function URL - more reliable than API Gateway)
   static const String _baseUrl = 'https://6p7hir7licc5yisxhkner4wt2i0yhtzo.lambda-url.af-south-1.on.aws';
   static const String _validateEndpoint = '/api/v1/participants/validate';
-  static const String _healthEndpoint = '/health';
-  
-  // Local development server (fallback)
-  static const String _localBaseUrl = 'http://localhost:3000';
   
   // Local storage keys
   static const String _validatedParticipantKey = 'validated_participant_code';
