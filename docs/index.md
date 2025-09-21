@@ -6,13 +6,13 @@ description: A mobile app for studying mental wellbeing in environmental & clima
 
 Welcome to the **Wellbeing Mapper** documentation website. Wellbeing Mapper is a mobile app for studying mental wellbeing in environmental & climate context. It has been developed as part of the [Planet4Health project](https://planet4health.eu), funded by the European Union. 
 
-## 🧪 Current Status: Pilot Testing
+## Current Status: Pilot Testing
 
 The app is currently in **pilot testing phase** with research participants in Gauteng, South Africa.
 
 ### Available App Modes
-- **🔒 Private Mode**: Use the app for personal wellbeing tracking (all data stays on your device)
-- **🔬 Research Mode**: Participate in the Planet4Health study with anonymous, encrypted data sharing
+- **Private Mode**: Use the app for personal wellbeing tracking (all data stays on your device)
+- **Research Mode**: Participate in the Planet4Health study with anonymous, encrypted data sharing
 
 For pilot testing, participants should use **Research Mode** with their assigned participant codes.
 
@@ -83,8 +83,8 @@ We take your privacy seriously:
 - **Privacy Features**: Data handling, permission controls
 
 ### Key Features
-- **🔒 Private Mode**: Track where you spend your time privately on your device
-- **🧪 App Testing Mode**: Test all research features safely (beta version)
+- **Private Mode**: Track where you spend your time privately on your device
+- **App Testing Mode**: Test all research features safely (beta version)
 - **Location Tracking**: Background GPS tracking with full user control
 - **Wellbeing Surveys**: Quick 2-3 minute surveys about your mental wellbeing
 - **Data Export**: Full control over your personal data
@@ -93,12 +93,12 @@ We take your privacy seriously:
 ### App Modes (Beta Version)
 The beta version offers two modes for different user needs:
 
-**🔒 Private Mode**
+**Private Mode**
 - All data stays on your phone
 - No automatic sharing with researchers
 - Perfect for personal wellbeing tracking
 
-**🧪 App Testing Mode** *(Beta Only)*
+**App Testing Mode** *(Beta Only)*
 - Experience all research features safely
 - Practice with surveys and location mapping  
 - NO real research data is collected

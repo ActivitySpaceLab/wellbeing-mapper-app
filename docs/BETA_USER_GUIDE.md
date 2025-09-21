@@ -1,6 +1,6 @@
 # Beta Testing User Guide
 
-## Welcome to Wellbeing Mapper Beta! 🧪
+## Welcome to Wellbeing Mapper Beta!
 
 Thank you for participating in the beta testing of Wellbeing Mapper. This guide will help you understand what's available in the beta version and how to make the most of your testing experience.
 
@@ -88,13 +88,13 @@ For iOS users, the app is available through TestFlight:
 
 When you first open the app, you'll see two options:
 
-#### 🔒 **Private Mode**
+#### **Private Mode**
 - Use the app for personal wellbeing tracking
 - All data stays on your device
 - Great for personal mental health awareness
 - No sharing with anyone
 
-#### 🧪 **App Testing Mode** *(Beta Special)*
+#### **App Testing Mode** *(Beta Special)*
 - Experience all research features safely
 - Practice with surveys and location mapping
 - **No real data collection** - everything stays local
@@ -319,4 +319,4 @@ Your feedback helps create a better experience for future research participants 
 3. **Provide Feedback**: Share your experience with the development team
 4. **Stay Updated**: Watch for beta updates and new features
 
-Happy testing! 🧪📱
+Happy testing!

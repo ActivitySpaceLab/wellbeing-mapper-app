@@ -1,6 +1,6 @@
 # Beta Testing Guide
 
-## 🧪 Join the Beta Program
+## Join the Beta Program
 
 **[Join TestFlight Beta Testing →](https://testflight.apple.com/join/32WkKXs6)**
 
@@ -23,13 +23,13 @@ The Wellbeing Mapper app is currently in **beta testing phase**. This document o
 
 ### App Modes Available in Beta
 
-1. **Private Mode** 🔒
+1. **Private Mode**
    - Personal wellbeing tracking only
    - Data stays on device
    - No data sharing with researchers
    - All features available for personal use
 
-2. **App Testing Mode** 🧪  
+2. **App Testing Mode**
    - Test all research features safely
    - Experience surveys and mapping functionality
    - NO real research data is collected
@@ -51,7 +51,7 @@ The Wellbeing Mapper app is currently in **beta testing phase**. This document o
 ## Beta Testing Features
 
 ### User Experience in Beta
-- **Welcome Screen**: Shows "🧪 BETA VERSION" indicator
+- **Welcome Screen**: Shows "BETA VERSION" indicator
 - **Mode Selection**: Choose between Private and App Testing
 - **No Barriers**: No participant codes or consent forms required
 - **Full Feature Access**: Can test all research features safely

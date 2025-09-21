@@ -98,7 +98,7 @@ The hamburger menu (three lines) in the top-left:
 
 ## App Modes
 
-### Private Mode 🔒
+### Private Mode
 - All data stays on your phone only
 - No automatic data sharing with researchers
 - You control all data export and sharing

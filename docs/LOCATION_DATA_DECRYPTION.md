@@ -10,7 +10,7 @@ This guide explains how to decrypt location data collected through the Wellbeing
 
 ## Overview
 
-The Wellbeing Mapper app encrypts all location data using a hybrid RSA+AES encryption system before uploading to Qualtrics. This ensures participant privacy during data transmission and storage. As a researcher, you need to decrypt this data using your private key to analyze the location information.
+The Wellbeing Mapper app encrypts all location data using a hybrid RSA+AES encryption system before uploading through a secure proxy server to Qualtrics. This ensures participant privacy during data transmission and storage. As a researcher, you need to decrypt this data using your private key to analyze the location information.
 
 ## What You'll Need
 
