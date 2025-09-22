@@ -169,9 +169,13 @@ void backgroundFetchHeadlessTask(HeadlessTask task) async {
 
     print("[BackgroundFetch] HeadlessTask start: $taskId");
 
-    //
-    // Perform your work here.
-    //
+    // Check for notification triggers
+    try {
+      await notificationHeadlessTask(taskId);
+      print("[BackgroundFetch] Notification check completed");
+    } catch (notificationError) {
+      print("[BackgroundFetch] Notification check error: $notificationError");
+    }
 
     BackgroundFetch.finish(taskId);
   } catch (error) {
