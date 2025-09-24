@@ -108,6 +108,13 @@ jobs:
       run: flutter pub get
       working-directory: gauteng-wellbeing-mapper-app
 
+    - name: Sync version information
+      run: |
+        echo "🔄 Syncing version information using sync-version.sh..."
+        chmod +x sync-version.sh
+        ./sync-version.sh
+        echo "✅ Version sync complete"
+
     - name: Verify iOS entitlements configuration
       run: |
         echo "Verifying iOS entitlements are properly configured..."

@@ -215,29 +215,20 @@ void main() {
     print('[main.dart] userUUID: $userUUID');
     print('[main.dart] sampleId: $sampleId');
 
-    // Check for pilot user migration
+    // Check for fresh start migration (universal for ALL users)
     try {
-      print('[main.dart] Checking migration status...');
-      final migrationStatus = await PilotMigrationService.checkMigrationStatus();
+      print('[main.dart] Checking fresh start migration status...');
+      final needsMigration = await FreshStartMigrationService.needsFreshStartMigration();
       
-      switch (migrationStatus) {
-        case MigrationStatus.pilotUpgrade:
-          print('[main.dart] Pilot user detected - executing migration...');
-          await PilotMigrationService.executePilotMigration();
-          print('[main.dart] ✅ Pilot migration completed');
-          break;
-        case MigrationStatus.freshInstall:
-          print('[main.dart] Fresh install detected');
-          break;
-        case MigrationStatus.productionUpgrade:
-          print('[main.dart] Production upgrade detected');
-          break;
-        case MigrationStatus.completed:
-          print('[main.dart] Migration already completed');
-          break;
+      if (needsMigration) {
+        print('[main.dart] Fresh start migration needed - executing universal migration...');
+        await FreshStartMigrationService.executeFreshStartMigration();
+        print('[main.dart] ✅ Fresh start migration completed - all users will go through new consent');
+      } else {
+        print('[main.dart] Fresh start migration already completed');
       }
     } catch (error) {
-      print('[main.dart] Error during migration check (non-fatal): $error');
+      print('[main.dart] Error during fresh start migration check (non-fatal): $error');
       // Continue app startup even if migration fails
     }
 

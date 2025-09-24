@@ -3,109 +3,85 @@ import 'package:wellbeing_mapper/db/survey_database.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 import 'dart:convert';
 
-/// Service to handle migration from pre-production versions to production version
+/// Service to handle universal fresh start migration for ALL users
 /// 
-/// This service ensures that existing users can smoothly transition to the
-/// production version (1.1.0+) while:
-/// - Preserving their personal location data and happiness surveys
-/// - Clearing old research participation data (forcing re-authentication)
-/// - Requiring new participant codes, consent, and initial survey for research
-/// - Maintaining seamless personal/private use of preserved data
+/// This service ensures that ALL users (existing and new) go through the
+/// new consent process and start fresh with surveys, while preserving
+/// their personal location data for continued personal use.
 /// 
-/// Treats any version before 1.1.0 as pre-production (including pilot versions
-/// 1.0.6 and below, and early production versions 1.0.7 and below)
-class PilotMigrationService {
+/// Universal Fresh Start Migration:
+/// - Preserves location data for personal use
+/// - Clears ALL consent responses (everyone must re-consent)
+/// - Clears ALL initial survey responses (everyone must retake)
+/// - Clears ALL biweekly survey responses (fresh research start)
+/// - Resets onboarding flags to force new consent flow
+/// - No version-based logic - everyone gets same treatment
+class FreshStartMigrationService {
   static const String _appVersionKey = 'app_version';
-  static const String _migrationCompletedKey = 'pilot_migration_completed';
-  static const String _pilotUserFlagKey = 'is_pilot_user';
-  static const String _preservedDataKey = 'preserved_pilot_data';
+  static const String _freshStartCompletedKey = 'fresh_start_migration_completed';
+  static const String _preservedDataKey = 'preserved_user_data';
   
-  /// Current production version - update this when releasing new versions
-  static const String currentProductionVersion = '1.1.0+2134';
+  /// Migration identifier for this fresh start release
+  static const String freshStartMigrationId = '1.1.8_fresh_start';
   
-  /// Build number threshold for production - any build number below this needs migration
-  static const int productionBuildThreshold = 2134;
-  
-  /// Check if this is a fresh install or an update from pilot
-  static Future<MigrationStatus> checkMigrationStatus() async {
+  /// Check if fresh start migration needs to be performed
+  /// Returns true if migration is needed, false if already completed
+  static Future<bool> needsFreshStartMigration() async {
     final prefs = await SharedPreferences.getInstance();
     
-    print('[PilotMigration] Checking migration status...');
+    print('[FreshStartMigration] Checking if fresh start migration is needed...');
     
-    // Check if migration was already completed
-    final migrationCompleted = prefs.getBool(_migrationCompletedKey) ?? false;
-    print('[PilotMigration] Migration completed flag: $migrationCompleted');
+    // Check if this specific fresh start migration was already completed
+    final migrationCompleted = prefs.getBool(_freshStartCompletedKey) ?? false;
+    print('[FreshStartMigration] Fresh start migration completed: $migrationCompleted');
     
     if (migrationCompleted) {
-      print('[PilotMigration] Migration already completed - treating as production user');
-      return MigrationStatus.completed;
+      print('[FreshStartMigration] Fresh start migration already completed');
+      return false;
     }
     
-    // Check if this is a fresh install (no previous version recorded)
+    // Migration needed - either fresh install or existing user
     final previousVersion = prefs.getString(_appVersionKey);
-    print('[PilotMigration] Previous version: $previousVersion');
-    print('[PilotMigration] Current version: $currentProductionVersion');
-    
     if (previousVersion == null) {
-      // Fresh install - record current version and proceed normally
-      print('[PilotMigration] Fresh install detected');
-      await _recordCurrentVersion();
-      return MigrationStatus.freshInstall;
+      print('[FreshStartMigration] Fresh install - will perform fresh start setup');
+    } else {
+      print('[FreshStartMigration] Existing user ($previousVersion) - will perform fresh start migration');
     }
     
-    // Check if user is upgrading from pre-production version (build number < 2134)
-    final isPilot = _isPilotVersion(previousVersion);
-    print('[PilotMigration] Is pre-production version ($previousVersion): $isPilot');
-    
-    if (isPilot) {
-      // This is a user upgrading from pre-production to production
-      print('[PilotMigration] Pre-production user upgrade detected - migration required');
-      await _markAsPilotUser();
-      return MigrationStatus.pilotUpgrade;
-    }
-    
-    // User is upgrading from a previous production version
-    print('[PilotMigration] Production upgrade detected - no migration needed');
-    await prefs.setBool(_migrationCompletedKey, true); // Mark migration as completed so it doesn't run again
-    await _recordCurrentVersion();
-    return MigrationStatus.productionUpgrade;
+    return true;
   }
   
-  /// Execute migration for pilot users
-  static Future<void> executePilotMigration() async {
+  /// Execute universal fresh start migration for ALL users
+  /// This ensures everyone goes through the new consent process
+  static Future<void> executeFreshStartMigration() async {
     final prefs = await SharedPreferences.getInstance();
     
     try {
-      print('[PilotMigration] Starting pilot user migration...');
+      print('[FreshStartMigration] Starting universal fresh start migration...');
       
-      // 1. Preserve location data and personal happiness surveys
-      await _preservePersonalData();
+      // 1. Preserve location data for continued personal use
+      await _preserveLocationData();
       
-      // 2. Clear research-related data (participation settings, consent, etc.)
-      await _clearResearchData();
+      // 2. Clear ALL research participation data (no exceptions)
+      await _clearAllResearchData();
       
-      // 3. Set app to require new onboarding for research participation
-      await _resetOnboardingFlags();
+      // 3. Reset ALL onboarding flags to force new consent flow
+      await _resetAllOnboardingFlags();
       
-      // 4. Mark migration as completed
-      await prefs.setBool(_migrationCompletedKey, true);
-      await _recordCurrentVersion();
+      // 4. Mark this fresh start migration as completed
+      await prefs.setBool(_freshStartCompletedKey, true);
+      await _recordMigrationCompletion();
       
-      print('[PilotMigration] ✅ Pilot migration completed successfully');
+      print('[FreshStartMigration] ✅ Fresh start migration completed successfully');
+      print('[FreshStartMigration] All users will now go through new consent process');
       
     } catch (e) {
-      print('[PilotMigration] ❌ Error during migration: $e');
-      throw MigrationException('Failed to migrate pilot user data: $e');
+      print('[FreshStartMigration] ❌ Error during fresh start migration: $e');
+      throw MigrationException('Failed to perform fresh start migration: $e');
     }
   }
   
-  /// Check if user is a migrated pilot user
-  static Future<bool> isPilotUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_pilotUserFlagKey) ?? false;
-  }
-  
-  /// Get preserved pilot data summary for user information
+  /// Get preserved data summary for user information
   static Future<Map<String, dynamic>?> getPreservedDataSummary() async {
     final prefs = await SharedPreferences.getInstance();
     final preservedDataJson = prefs.getString(_preservedDataKey);
@@ -116,113 +92,79 @@ class PilotMigrationService {
     return null;
   }
   
-  /// Clear pilot user flag (for testing or manual reset)
-  static Future<void> clearPilotFlag() async {
+  /// Clear migration flags for testing/debugging
+  static Future<void> resetMigrationFlags() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_pilotUserFlagKey);
+    await prefs.remove(_freshStartCompletedKey);
     await prefs.remove(_preservedDataKey);
-    await prefs.remove(_migrationCompletedKey);
-    print('[PilotMigration] ✅ Cleared all migration flags - user will be treated as fresh install');
-  }
-  
-  /// Mark current installation as production (for testing with new test codes)
-  static Future<void> markAsProductionUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_migrationCompletedKey, true);
-    await _recordCurrentVersion();
-    await prefs.remove(_pilotUserFlagKey);
-    await prefs.remove(_preservedDataKey);
-    print('[PilotMigration] ✅ Marked as production user - future updates will not trigger migration');
+    print('[FreshStartMigration] ✅ Reset migration flags - will trigger fresh start migration on next app launch');
   }
   
   // Private helper methods
   
-  static bool _isPilotVersion(String version) {
-    // Use build number for more reliable version comparison
-    // Any build number below 2134 is considered pre-production and needs migration
-    try {
-      // Extract build number from version string (format: "1.0.7+132" -> 132)
-      if (!version.contains('+')) {
-        // No build number means very old version, definitely pre-production
-        return true;
-      }
-      
-      final buildNumberStr = version.split('+')[1];
-      final buildNumber = int.tryParse(buildNumberStr);
-      
-      if (buildNumber == null) {
-        // Invalid build number, treat as pre-production for safety
-        return true;
-      }
-      
-      return buildNumber < productionBuildThreshold;
-    } catch (e) {
-      // Any parsing error means we can't determine version safely, treat as pre-production
-      print('[PilotMigration] Error parsing version "$version": $e');
-      return true;
-    }
-  }
-  
-  static Future<void> _recordCurrentVersion() async {
+  /// Preserve location data for personal use
+  static Future<void> _preserveLocationData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_appVersionKey, currentProductionVersion);
-  }
-  
-  static Future<void> _markAsPilotUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_pilotUserFlagKey, true);
-  }
-  
-  static Future<void> _preservePersonalData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final db = SurveyDatabase();
     
-    // Count and preserve location data and happiness surveys
+    // Count location data to inform user what's being preserved
     final locationCount = await _getLocationDataCount();
-    final happinessCount = await db.getRecurringSurveyCount();
     final earliestLocation = await _getEarliestLocationDate();
-    final latestHappiness = await db.getLastRecurringSurveyDate();
     
     final preservedData = {
       'migrationDate': DateTime.now().toIso8601String(),
+      'migrationType': 'fresh_start_universal',
       'locationRecords': locationCount,
-      'happinessSurveys': happinessCount,
       'earliestLocationDate': earliestLocation?.toIso8601String(),
-      'latestHappinessDate': latestHappiness?.toIso8601String(),
-      'preservationNote': 'Your personal location tracks and happiness surveys have been preserved for your continued personal use.',
+      'preservationNote': 'Your personal location history has been preserved for continued personal use. All research data has been cleared to ensure you go through the new consent process.',
     };
     
     await prefs.setString(_preservedDataKey, jsonEncode(preservedData));
-    print('[PilotMigration] Preserved $locationCount location records and $happinessCount happiness surveys');
+    print('[FreshStartMigration] Preserved $locationCount location records for personal use');
   }
   
-  static Future<void> _clearResearchData() async {
+  /// Clear ALL research-related data (consent, surveys, settings)
+  static Future<void> _clearAllResearchData() async {
     final prefs = await SharedPreferences.getInstance();
     
-    // Clear research participation settings
+    // Clear all research participation settings
     await prefs.remove('participation_settings');
     await prefs.remove('consent_response');
+    await prefs.remove('participant_code');
+    await prefs.remove('researcher_contact');
     
-    // Clear app mode (will default to private)
+    // Clear app mode (will default to private until user chooses research participation)
     await prefs.remove('app_mode');
     
-    // Clear any research-specific survey responses (but keep happiness surveys)
+    // Clear ALL survey responses from database
     final db = SurveyDatabase();
-    await db._clearResearchSurveys();
+    await db._clearAllSurveyData();
     
-    print('[PilotMigration] Cleared research participation data');
+    print('[FreshStartMigration] Cleared ALL research participation data and surveys');
   }
   
-  static Future<void> _resetOnboardingFlags() async {
+  /// Reset ALL onboarding flags to force complete re-onboarding
+  static Future<void> _resetAllOnboardingFlags() async {
     final prefs = await SharedPreferences.getInstance();
     
-    // Remove any "first run" or "onboarding completed" flags
-    // This will force users to go through participation selection again
+    // Remove all onboarding completion flags
     await prefs.remove('first_run_completed');
     await prefs.remove('onboarding_completed');
     await prefs.remove('setup_completed');
+    await prefs.remove('consent_completed');
+    await prefs.remove('initial_survey_completed');
     
-    print('[PilotMigration] Reset onboarding flags - user will see participation selection');
+    // Remove any tutorial or intro flags
+    await prefs.remove('tutorial_shown');
+    await prefs.remove('intro_seen');
+    
+    print('[FreshStartMigration] Reset ALL onboarding flags - users will see complete onboarding flow');
+  }
+  
+  /// Record that this migration has completed
+  static Future<void> _recordMigrationCompletion() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_appVersionKey, freshStartMigrationId);
+    print('[FreshStartMigration] Recorded migration completion with ID: $freshStartMigrationId');
   }
   
   static Future<int> _getLocationDataCount() async {
@@ -265,33 +207,31 @@ class PilotMigrationService {
   }
 }
 
-/// Extension to SurveyDatabase for migration-specific operations
-extension MigrationDatabase on SurveyDatabase {
-  /// Clear research-specific surveys while preserving personal happiness surveys
-  Future<void> _clearResearchSurveys() async {
+/// Extension to SurveyDatabase for fresh start migration operations
+extension FreshStartMigrationDatabase on SurveyDatabase {
+  /// Clear ALL survey data for fresh start (both research and personal)
+  Future<void> _clearAllSurveyData() async {
     final db = await database;
     
-    // Clear initial survey responses (research participants will retake)
+    // Clear ALL survey responses - fresh start for everyone
     await db.delete('initial_survey_responses');
-    
-    // Clear consent responses (research participants will re-consent)
+    await db.delete('recurring_survey_responses'); // This includes biweekly/happiness surveys
     await db.delete('consent_responses');
-    
-    // Clear data sharing consent (research participants will re-decide)
     await db.delete('data_sharing_consent');
     
-    // NOTE: We keep recurring_survey_responses (happiness surveys) for personal use
+    // Clear any other survey-related tables
+    await db.delete('survey_metadata');
+    await db.delete('survey_schedule');
     
-    print('[PilotMigration] Cleared research survey data, preserved happiness surveys');
+    print('[FreshStartMigration] Cleared ALL survey data - complete fresh start');
   }
 }
 
 /// Status of migration process
 enum MigrationStatus {
-  freshInstall,       // Brand new user
-  pilotUpgrade,       // Pilot user upgrading to production
-  productionUpgrade,  // Production user upgrading to newer version
-  completed,          // Migration already completed
+  freshInstall,       // Brand new user (still relevant for initial setup)
+  migrationNeeded,    // User needs fresh start migration
+  completed,          // Fresh start migration already completed
 }
 
 /// Exception thrown during migration

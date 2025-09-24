@@ -5,6 +5,15 @@
 
 echo "🚀 Building Wellbeing Mapper for release..."
 
+# Sync version information first to ensure correct version
+echo "🔄 Syncing version information..."
+if [ -f "../sync-version.sh" ]; then
+    cd .. && ./sync-version.sh && cd gauteng-wellbeing-mapper-app
+else
+    echo "⚠️  sync-version.sh not found, proceeding with current version..."
+fi
+echo ""
+
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
 fvm flutter clean

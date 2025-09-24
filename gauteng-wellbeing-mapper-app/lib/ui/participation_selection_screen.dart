@@ -45,15 +45,16 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
 
   Future<void> _checkPilotStatus() async {
     try {
-      final isPilot = await PilotMigrationService.isPilotUser();
-      final preservedData = await PilotMigrationService.getPreservedDataSummary();
+      // With fresh start migration, all users are treated the same
+      // Check if there's any preserved data to show to users
+      final preservedData = await FreshStartMigrationService.getPreservedDataSummary();
       
       setState(() {
-        _isPilotUser = isPilot;
+        _isPilotUser = preservedData != null; // Show preserved data message if there's any preserved data
         _preservedData = preservedData;
       });
     } catch (e) {
-      print('[ParticipationSelection] Error checking pilot status: $e');
+      print('[ParticipationSelection] Error checking migration status: $e');
     }
   }
 
