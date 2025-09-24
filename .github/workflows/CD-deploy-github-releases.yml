@@ -77,6 +77,33 @@ jobs:
             exit 1
           fi
 
+    # CRITICAL: Clean all caches before building
+    - name: Clean all build caches
+      working-directory: gauteng-wellbeing-mapper-app
+      run: |
+        echo "🧹 Cleaning all build caches to ensure correct version..."
+        
+        # Clean Flutter build cache
+        flutter clean
+        
+        # Remove iOS build artifacts
+        rm -rf ios/Pods
+        rm -rf ios/.symlinks
+        rm -rf ios/Flutter/Flutter.framework
+        rm -rf ios/Flutter/Flutter.podspec
+        
+        # Remove Android build artifacts and caches
+        rm -rf android/.gradle
+        rm -rf android/app/build
+        rm -rf android/build
+        rm -rf .dart_tool
+        rm -rf build
+        
+        # Remove any existing local.properties
+        rm -f android/local.properties
+        
+        echo "✅ All caches cleaned"
+
     - name: Get flutter dependencies
       run: flutter pub get
       working-directory: gauteng-wellbeing-mapper-app
@@ -124,9 +151,9 @@ jobs:
       run: flutter test --dart-define=FLUTTER_TEST_MODE=true
       working-directory: gauteng-wellbeing-mapper-app
 
-    - name: Generate correct local.properties with version info
+    - name: Generate and verify local.properties with version info
       run: |
-        echo "Regenerating local.properties with correct version information..."
+        echo "📝 Creating local.properties with correct version information..."
         
         # Extract version and build number from pubspec.yaml
         FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
@@ -138,7 +165,7 @@ jobs:
         echo "  Version name: $VERSION_NAME" 
         echo "  Version code: $VERSION_CODE"
         
-        # Regenerate local.properties with correct version info
+        # Create local.properties with correct version info
         cat > android/local.properties << EOF
         sdk.dir=/opt/android-sdk-linux
         flutter.sdk=/opt/hostedtoolcache/flutter
@@ -149,47 +176,64 @@ jobs:
         
         echo "Generated local.properties:"
         cat android/local.properties
+        
+        # Also update gradle.properties to ensure version is used
+        echo "" >> android/gradle.properties
+        echo "# Version overrides from CI" >> android/gradle.properties
+        echo "versionName=$VERSION_NAME" >> android/gradle.properties
+        echo "versionCode=$VERSION_CODE" >> android/gradle.properties
+        
+        echo "Updated gradle.properties:"
+        tail -5 android/gradle.properties
       working-directory: gauteng-wellbeing-mapper-app
 
     # Android Builds - Production Flavor
     - name: Build Android APKs (Production) - Multiple Architectures
       run: |
-        echo "Building Production Android APKs for multiple architectures..."
+        echo "🚀 Building Production Android APKs for multiple architectures..."
         
         # Extract version info for command-line override
         FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
         VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
         VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
         
-        echo "Using version override: $VERSION_NAME (code: $VERSION_CODE)"
+        echo "Using version: $VERSION_NAME (code: $VERSION_CODE)"
         
-        # Build APKs with explicit version override
+        # Clean gradle cache before build
+        cd android && ./gradlew clean && cd ..
+        
+        # Build APKs with explicit version override and verbose output
         flutter build apk --release \
           --flavor=production \
           --dart-define=APP_FLAVOR=production \
           --build-name="$VERSION_NAME" \
           --build-number="$VERSION_CODE" \
-          --split-per-abi
+          --split-per-abi \
+          --verbose
         
-        echo "Production Android APKs built successfully!"
+        echo "✅ Production Android APKs built successfully!"
         echo "APK locations:"
         find build/app/outputs/flutter-apk/ -name "*.apk" -type f | sort
-        echo "Listing all APK files:"
-        ls -la build/app/outputs/flutter-apk/ || echo "APK directory not found"
         
-        # Validate APK version
-        echo "Validating APK version..."
+        # Verify APK version using aapt (more reliable than strings)
+        echo "🔍 Verifying APK versions with aapt..."
         for apk in build/app/outputs/flutter-apk/*.apk; do
           if [ -f "$apk" ]; then
-            echo "Checking version in: $(basename "$apk")"
-            strings "$apk" | grep -E '^1\.[0-9]+\.[0-9]+\+[0-9]+' | head -3 || echo "No version found in $apk"
+            echo "Checking: $(basename "$apk")"
+            # Try to use aapt if available
+            if command -v aapt &> /dev/null; then
+              aapt dump badging "$apk" | grep -E "package:|versionCode|versionName" || true
+            else
+              # Fallback to checking AndroidManifest.xml content
+              unzip -p "$apk" AndroidManifest.xml | strings | grep -E "1\.[0-9]+\.[0-9]+" | head -5 || true
+            fi
           fi
         done
       working-directory: gauteng-wellbeing-mapper-app
 
     - name: Build Android App Bundle (Production)
       run: |
-        echo "Building Production Android App Bundle..."
+        echo "📦 Building Production Android App Bundle..."
         
         # Extract version info for command-line override
         FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
@@ -202,19 +246,23 @@ jobs:
           --build-name="$VERSION_NAME" \
           --build-number="$VERSION_CODE"
         
-        echo "Production App Bundle built successfully!"
+        echo "✅ Production App Bundle built successfully!"
         echo "AAB location:"
         ls -la build/app/outputs/bundle/productionRelease/app-production-release.aab || echo "AAB file not found"
       working-directory: gauteng-wellbeing-mapper-app
 
     # iOS Builds - Production Flavor
     - name: Install iOS dependencies
-      run: cd ios && pod install && cd ..
+      run: |
+        cd ios 
+        pod cache clean --all
+        pod install --repo-update
+        cd ..
       working-directory: gauteng-wellbeing-mapper-app
       
     - name: Build iOS (Production) - Unsigned for Distribution
       run: |
-        echo "Building iOS Production without code signing for distribution..."
+        echo "🍎 Building iOS Production without code signing for distribution..."
         
         # Set the appropriate Info.plist for production flavor
         cp ios/Runner/Info-Production.plist ios/Runner/Info.plist
@@ -225,7 +273,7 @@ jobs:
           --dart-define=APP_FLAVOR=production \
           --no-codesign
         
-        echo "iOS Production build complete (unsigned)!"
+        echo "✅ iOS Production build complete (unsigned)!"
         echo "iOS build location:"
         ls -la build/ios/iphoneos/ || echo "iOS build directory not found"
         
