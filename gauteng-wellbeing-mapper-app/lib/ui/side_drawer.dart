@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:wellbeing_mapper/main.dart';
 import 'package:wellbeing_mapper/models/app_localizations.dart';
-import 'package:wellbeing_mapper/models/custom_locations.dart';
 import 'package:wellbeing_mapper/models/app_mode.dart';
 import 'package:wellbeing_mapper/services/app_mode_service.dart';
 import 'package:wellbeing_mapper/services/wellbeing_survey_service.dart';
@@ -130,7 +129,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
       );
 
       // Get location data from app database (source of truth)
-      List<ShareLocation> customLocation = [];
+      List<Map<String, dynamic>> customLocation = [];
       
       if (kIsWeb) {
         print('[SideDrawer] Web platform detected - skipping location data export');
@@ -141,15 +140,16 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
           final locationTracks = await db.getAllLocationTracks();
           print('[SideDrawer] 🗃️ Retrieved ${locationTracks.length} location records from app database');
           
-          // Convert LocationTrack objects to ShareLocation format
+          // Convert LocationTrack objects to export format
           for (var track in locationTracks) {
-            ShareLocation shareLocation = ShareLocation(
-                track.timestamp.toIso8601String(),
-                track.latitude,
-                track.longitude,
-                track.accuracy ?? 0.0,
-                GlobalData.userUUID);
-            customLocation.add(shareLocation);
+            Map<String, dynamic> locationData = {
+              'timestamp': track.timestamp.toIso8601String(),
+              'latitude': track.latitude,
+              'longitude': track.longitude,
+              'accuracy': track.accuracy ?? 0.0,
+              'uuid': GlobalData.userUUID,
+            };
+            customLocation.add(locationData);
           }
           
           print('[SideDrawer] ✅ Converted ${customLocation.length} location tracks for export');
@@ -209,7 +209,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
                 'note': 'No location data available',
               },
         },
-        'location_data': customLocation.map((loc) => loc.toJson()).toList(),
+        'location_data': customLocation,
         'wellbeing_surveys': wellbeingSurveys,
         'initial_survey': initialSurveyData,
         'privacy_note': currentMode == AppMode.private 
