@@ -128,7 +128,7 @@ jobs:
         echo "Regenerating local.properties with correct version information..."
         
         # Extract version and build number from pubspec.yaml
-        FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
+        FULL_VERSION=$(grep "version:" gauteng-wellbeing-mapper-app/pubspec.yaml | sed 's/version: //' | tr -d ' ')
         VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
         VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
         
@@ -156,7 +156,7 @@ jobs:
         echo "Building Production Android APKs for multiple architectures..."
         
         # Extract version info for command-line override
-        FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
+        FULL_VERSION=$(grep "version:" gauteng-wellbeing-mapper-app/pubspec.yaml | sed 's/version: //' | tr -d ' ')
         VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
         VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
         
@@ -191,7 +191,7 @@ jobs:
         echo "Building Production Android App Bundle..."
         
         # Extract version info for command-line override
-        FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
+        FULL_VERSION=$(grep "version:" gauteng-wellbeing-mapper-app/pubspec.yaml | sed 's/version: //' | tr -d ' ')
         VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
         VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
         
