@@ -155,10 +155,19 @@ jobs:
       run: |
         echo "Building Production Android APKs for multiple architectures..."
         
-        # Build APKs for all supported architectures
+        # Extract version info for command-line override
+        FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
+        VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
+        VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
+        
+        echo "Using version override: $VERSION_NAME (code: $VERSION_CODE)"
+        
+        # Build APKs with explicit version override
         flutter build apk --release \
           --flavor=production \
           --dart-define=APP_FLAVOR=production \
+          --build-name="$VERSION_NAME" \
+          --build-number="$VERSION_CODE" \
           --split-per-abi
         
         echo "Production Android APKs built successfully!"
@@ -166,14 +175,31 @@ jobs:
         find build/app/outputs/flutter-apk/ -name "*.apk" -type f | sort
         echo "Listing all APK files:"
         ls -la build/app/outputs/flutter-apk/ || echo "APK directory not found"
+        
+        # Validate APK version
+        echo "Validating APK version..."
+        for apk in build/app/outputs/flutter-apk/*.apk; do
+          if [ -f "$apk" ]; then
+            echo "Checking version in: $(basename "$apk")"
+            strings "$apk" | grep -E '^1\.[0-9]+\.[0-9]+\+[0-9]+' | head -3 || echo "No version found in $apk"
+          fi
+        done
       working-directory: gauteng-wellbeing-mapper-app
 
     - name: Build Android App Bundle (Production)
       run: |
         echo "Building Production Android App Bundle..."
+        
+        # Extract version info for command-line override
+        FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
+        VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
+        VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
+        
         flutter build appbundle --release \
           --flavor=production \
-          --dart-define=APP_FLAVOR=production
+          --dart-define=APP_FLAVOR=production \
+          --build-name="$VERSION_NAME" \
+          --build-number="$VERSION_CODE"
         
         echo "Production App Bundle built successfully!"
         echo "AAB location:"

@@ -143,10 +143,19 @@ jobs:
       run: |
         echo "Building Beta Android APKs for multiple architectures..."
         
-        # Build APKs for all supported architectures
+        # Extract version info for command-line override
+        FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
+        VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
+        VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
+        
+        echo "Using version override: $VERSION_NAME (code: $VERSION_CODE)"
+        
+        # Build APKs with explicit version override
         flutter build apk --release \
           --flavor=beta \
           --dart-define=APP_FLAVOR=beta \
+          --build-name="$VERSION_NAME" \
+          --build-number="$VERSION_CODE" \
           --split-per-abi
         
         echo "Beta Android APKs built successfully!"
@@ -159,9 +168,17 @@ jobs:
     - name: Build Android App Bundle (Beta)
       run: |
         echo "Building Beta Android App Bundle..."
+        
+        # Extract version info for command-line override
+        FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
+        VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
+        VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
+        
         flutter build appbundle --release \
           --flavor=beta \
-          --dart-define=APP_FLAVOR=beta
+          --dart-define=APP_FLAVOR=beta \
+          --build-name="$VERSION_NAME" \
+          --build-number="$VERSION_CODE"
         
         echo "Beta App Bundle built successfully!"
         echo "AAB location:"
