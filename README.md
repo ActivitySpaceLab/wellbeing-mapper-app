@@ -179,6 +179,27 @@ Planet4Health is a Horizon Europe research project focused on "Translating Scien
 
 **Funding**: This project is funded by the European Union under the Horizon Europe programme. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or the European Health and Digital Executive Agency (HADEA).
 
+## Development
+
+### Version Synchronization
+
+**Important**: Android builds use `local.properties` to override `pubspec.yaml` version information. To ensure correct versions:
+
+```bash
+# Sync local.properties with pubspec.yaml version
+./sync-version.sh
+
+# Then build with correct version
+flutter build apk --release --flavor production
+```
+
+**CI/CD Fix**: The GitHub Actions workflows now automatically regenerate `local.properties` with correct version information before builds to prevent version mismatches between releases.
+
+### Common Issues
+
+- **APK Upgrade Fails**: Ensure version codes are incrementing. Use `./sync-version.sh` to sync versions.
+- **Version Mismatch**: Android builds may use cached `local.properties`. Run `./sync-version.sh` to fix.
+
 ## License
 This repository contains the source code development version of Wellbeing Mapper, developed as part of the Planet4Health project case study on mental wellbeing in environmental & climate context.
 

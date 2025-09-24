@@ -123,6 +123,33 @@ jobs:
       run: flutter test --dart-define=FLUTTER_TEST_MODE=true
       working-directory: gauteng-wellbeing-mapper-app
 
+    - name: Generate correct local.properties with version info
+      run: |
+        echo "Regenerating local.properties with correct version information..."
+        
+        # Extract version and build number from pubspec.yaml
+        FULL_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')
+        VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
+        VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
+        
+        echo "Extracted from pubspec.yaml:"
+        echo "  Full version: $FULL_VERSION"
+        echo "  Version name: $VERSION_NAME" 
+        echo "  Version code: $VERSION_CODE"
+        
+        # Regenerate local.properties with correct version info
+        cat > android/local.properties << EOF
+        sdk.dir=/opt/android-sdk-linux
+        flutter.sdk=/opt/hostedtoolcache/flutter
+        flutter.buildMode=release
+        flutter.versionName=$VERSION_NAME
+        flutter.versionCode=$VERSION_CODE
+        EOF
+        
+        echo "Generated local.properties:"
+        cat android/local.properties
+      working-directory: gauteng-wellbeing-mapper-app
+
     # Android Builds - Production Flavor
     - name: Build Android APKs (Production) - Multiple Architectures
       run: |

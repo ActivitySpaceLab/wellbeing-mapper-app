@@ -95,6 +95,7 @@ chmod +x build-release.sh
 
 ### Pre-Release
 - [ ] **Update version** in `pubspec.yaml` (see Version Management section)
+- [ ] **Sync version info**: `./sync-version.sh` to ensure Android builds use correct version
 - [ ] **Run version check**: `./check-version.sh` to validate consistency
 - [ ] **Verify iOS entitlements**: `./ios-entitlements-check.sh` to ensure location permissions will work
 - [ ] Update changelog/release notes
@@ -128,11 +129,14 @@ Flutter uses the format: `version: major.minor.patch+buildNumber`
 
 ### Ensuring Version Consistency
 
+**Important**: Android builds use `local.properties` to override `pubspec.yaml` version information. Always sync versions before building.
+
 **Manual Process:**
 1. Update `pubspec.yaml` version first
-2. Commit the version change
-3. Create git tag matching the version
-4. Push both commit and tag
+2. **Sync Android version info**: `./sync-version.sh`
+3. Commit the version change
+4. Create git tag matching the version
+5. Push both commit and tag
 
 **Example Workflow:**
 ```bash
@@ -140,20 +144,61 @@ Flutter uses the format: `version: major.minor.patch+buildNumber`
 # Change: version: 0.1.0+1
 # To:     version: 1.0.0+1
 
-# 2. Commit version change
-git add pubspec.yaml
+# 2. Sync Android version information
+./sync-version.sh
+
+# 3. Commit version change (including updated local.properties)
+git add pubspec.yaml gauteng-wellbeing-mapper-app/android/local.properties
 git commit -m "Bump version to 1.0.0+1"
 
-# 3. Create matching tag (without build number)
+# 4. Create matching tag (without build number)
 git tag v1.0.0
 
-# 4. Push both
+# 5. Push both
 git push origin main
 git push origin v1.0.0
 ```
 
 **Automated Version Checking:**
 The GitHub Actions workflow now includes version validation to ensure consistency.
+
+### Version Synchronization Script (`sync-version.sh`)
+
+**Purpose**: Ensures Android builds use the correct version by syncing `local.properties` with `pubspec.yaml`.
+
+**When to Use:**
+- Before any local Android builds
+- After updating `pubspec.yaml` version
+- When you get APK upgrade failures due to version mismatches
+- As part of your release workflow
+
+**How it Works:**
+```bash
+# Make executable (first time only)
+chmod +x sync-version.sh
+
+# Run the sync script
+./sync-version.sh
+```
+
+**What it Does:**
+1. Reads version from `pubspec.yaml` (e.g., `1.1.1+2135`)
+2. Extracts version name (`1.1.1`) and version code (`2135`)
+3. Updates `android/local.properties` with correct Flutter SDK paths and version info
+4. Ensures Android builds use the right version instead of cached values
+
+**Sample Output:**
+```
+🔄 Syncing local.properties with pubspec.yaml version...
+📋 Version information from pubspec.yaml:
+   Full version: 1.1.1+2135
+   Version name: 1.1.1
+   Version code: 2135
+🛠️ SDK paths:
+   Flutter SDK: /Users/palmer/fvm/versions/3.27.1
+   Android SDK: /Users/palmer/Library/Android/sdk
+✅ local.properties updated successfully!
+```
 
 ### Version Checking Script
 Use the included `check-version.sh` script to validate version consistency before releases:
@@ -220,9 +265,15 @@ If you encounter code signing issues during manual builds:
 3. Use the `--no-codesign` flag for CI builds
 
 ### Android Build Issues
+- **Version Mismatch/APK Won't Upgrade**: Run `./sync-version.sh` to sync `local.properties` with `pubspec.yaml`
 - Ensure Java 17 is installed for local builds
 - Clear build cache with `flutter clean` if issues persist
 - Verify Android SDK is properly configured
+
+### Version-Related Issues
+- **APK upgrade fails**: Version codes must increment. Check that `pubspec.yaml` has higher build number, then run `./sync-version.sh`
+- **GitHub releases have same version**: This was fixed in CI/CD - re-tag and rebuild affected releases
+- **Local builds use wrong version**: Run `./sync-version.sh` before building
 
 ### GitHub Actions Failures
 - Check that the workflow file syntax is correct
@@ -241,6 +292,9 @@ If you encounter code signing issues during manual builds:
 ## Quick Reference
 
 ```bash
+# Sync Android version with pubspec.yaml
+./sync-version.sh
+
 # Check version consistency
 ./check-version.sh
 
@@ -273,10 +327,12 @@ adb logcat --regex YourAppTagOrException
 
 # Automated release (complete process)
 # 1. Update version in pubspec.yaml
-# 2. Run version check
+# 2. Sync Android version info
+./sync-version.sh
+# 3. Run version check
 ./check-version.sh
-# 3. Commit and tag
-git add pubspec.yaml
+# 4. Commit and tag
+git add pubspec.yaml gauteng-wellbeing-mapper-app/android/local.properties
 git commit -m "Bump version to 1.0.0"
 git tag v1.0.0
 git push origin main
