@@ -57,24 +57,25 @@ jobs:
         echo "Confirmed valid production release tag: $TAG"
         echo "is_production=true" >> $GITHUB_OUTPUT
 
-    - name: Validate version consistency
+    - name: Extract and verify version information
+      working-directory: gauteng-wellbeing-mapper-app
       run: |
-        # Get version from pubspec.yaml (remove build number)
-        PUBSPEC_VERSION=$(grep "version:" gauteng-wellbeing-mapper-app/pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
-        
-        # Get version from git tag (remove 'v' prefix)
-        TAG_VERSION=${GITHUB_REF#refs/tags/v}
-        
-        echo "pubspec.yaml version: $PUBSPEC_VERSION"
-        echo "Git tag version: $TAG_VERSION"
-        
-        if [ "$PUBSPEC_VERSION" = "$TAG_VERSION" ]; then
-          echo "Versions match!"
-        else
-          echo "Version mismatch between pubspec.yaml ($PUBSPEC_VERSION) and git tag ($TAG_VERSION)"
-          echo "Please update pubspec.yaml version to match the git tag"
-          exit 1
-        fi
+          # Get version from pubspec.yaml (remove build number)
+          PUBSPEC_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
+          
+          # Get version from git tag (remove 'v' prefix)
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          
+          echo "pubspec.yaml version: $PUBSPEC_VERSION"
+          echo "Git tag version: $TAG_VERSION"
+          
+          if [ "$PUBSPEC_VERSION" = "$TAG_VERSION" ]; then
+            echo "Versions match!"
+          else
+            echo "Version mismatch between pubspec.yaml ($PUBSPEC_VERSION) and git tag ($TAG_VERSION)"
+            echo "Please update pubspec.yaml version to match the git tag"
+            exit 1
+          fi
 
     - name: Get flutter dependencies
       run: flutter pub get
