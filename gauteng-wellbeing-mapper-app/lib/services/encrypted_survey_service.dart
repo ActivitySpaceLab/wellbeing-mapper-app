@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:fast_rsa/fast_rsa.dart';
@@ -100,6 +101,12 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
     try {
       print('🔐 Encrypting and syncing initial survey...');
       
+      // Process images if they exist
+      List<String>? encryptedImages;
+      if (surveyData['image_urls'] != null) {
+        encryptedImages = await _processImagesForEncryption(surveyData['image_urls'].toString());
+      }
+      
       // Create complete survey JSON
       final surveyJson = {
         'type': 'initial_survey',
@@ -107,9 +114,11 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         'survey_id': surveyData['id'],
         'timestamp': DateTime.now().toIso8601String(),
         'data': surveyData,
+        'encrypted_images': encryptedImages, // Include encrypted image data
         'metadata': {
           'app_version': '1.0.0', // TODO: Get from package info
           'submission_method': 'encrypted_proxy',
+          'has_images': encryptedImages != null && encryptedImages.isNotEmpty,
         }
       };
       
@@ -159,17 +168,25 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         }
       }
       
+      // Process images if they exist
+      List<String>? encryptedImages;
+      if (surveyData['image_urls'] != null) {
+        encryptedImages = await _processImagesForEncryption(surveyData['image_urls'].toString());
+      }
+      
       final surveyJson = {
         'type': 'biweekly_survey',
         'participant_uuid': GlobalData.userUUID,
         'survey_id': surveyData['id'],
         'timestamp': DateTime.now().toIso8601String(),
         'data': surveyData,
+        'encrypted_images': encryptedImages, // Include encrypted image data
         'location_data': locationData, // Include parsed location data directly
         'metadata': {
           'app_version': '1.0.0',
           'submission_method': 'encrypted_proxy',
           'encryption_unified': true, // Flag to indicate unified encryption approach
+          'has_images': encryptedImages != null && encryptedImages.isNotEmpty,
         }
       };
       
@@ -226,9 +243,65 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
     }
   }
   
+  /// Process images for encryption - converts local file paths to base64 data
+  static Future<List<String>?> _processImagesForEncryption(String? imageUrlsJson) async {
+    if (imageUrlsJson == null || imageUrlsJson.isEmpty) {
+      return null;
+    }
+    
+    try {
+      // Parse the JSON list of image URLs
+      final imageUrls = List<String>.from(jsonDecode(imageUrlsJson));
+      final List<String> base64Images = [];
+      
+      print('📷 Processing ${imageUrls.length} images for encryption...');
+      
+      for (final imageUrl in imageUrls) {
+        try {
+          final file = File(imageUrl);
+          if (await file.exists()) {
+            // Read the file and convert to base64
+            final bytes = await file.readAsBytes();
+            final base64Data = base64.encode(bytes);
+            
+            // Include metadata about the image
+            final imageData = {
+              'filename': file.path.split('/').last,
+              'size': bytes.length,
+              'data': base64Data,
+            };
+            
+            base64Images.add(jsonEncode(imageData));
+            print('   ✅ Processed ${file.path.split('/').last} (${bytes.length} bytes)');
+          } else {
+            print('   ⚠️ Image file not found: $imageUrl');
+          }
+        } catch (e) {
+          print('   ❌ Error processing image $imageUrl: $e');
+        }
+      }
+      
+      print('📷 Successfully processed ${base64Images.length}/${imageUrls.length} images');
+      return base64Images.isNotEmpty ? base64Images : null;
+      
+    } catch (e) {
+      print('❌ Error processing images for encryption: $e');
+      return null;
+    }
+  }
+  
   /// Encrypt survey data using hybrid AES/RSA encryption
   static Future<String> _encryptSurveyData(Map<String, dynamic> surveyJson) async {
     try {
+      // Log whether images are included
+      final hasImages = surveyJson['encrypted_images'] != null && (surveyJson['encrypted_images'] as List).isNotEmpty;
+      if (hasImages) {
+        final imageCount = (surveyJson['encrypted_images'] as List).length;
+        print('🔐 Encrypting survey with $imageCount images included');
+      } else {
+        print('🔐 Encrypting survey (no images)');
+      }
+      
       // Convert to JSON string
       final jsonString = jsonEncode(surveyJson);
       print('📄 Survey JSON size: ${jsonString.length} characters');

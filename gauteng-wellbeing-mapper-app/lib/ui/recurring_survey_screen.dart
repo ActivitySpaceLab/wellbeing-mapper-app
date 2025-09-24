@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-// import 'package:image_picker/image_picker.dart';
-// import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
-// import 'dart:io';
+import 'dart:io';
 import 'dart:convert';
 import '../models/survey_models.dart';
 import '../models/consent_models.dart';
@@ -26,13 +25,11 @@ class RecurringSurveyScreen extends StatefulWidget {
 class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
   bool _isSubmitting = false;
-  // List<File> _selectedImages = [];
+  List<File> _selectedImages = [];
   
   // Track slider values for better UX - starts with no selection
   final Map<String, double?> _sliderValues = {};
-  // List<String> _voiceNoteUrls = [];
-  // List<File> _voiceNoteFiles = [];
-  // final ImagePicker _picker = ImagePicker();
+  final ImagePicker _picker = ImagePicker();
   String _researchSite = 'gauteng'; // Default to Gauteng
   
   // Voice recording state
@@ -354,9 +351,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
             
             // First prompt as a wrapped paragraph
             Text(
-              _researchSite == 'gauteng'
-                  ? 'What environmental challenges (e.g., poor air quality, heat, extreme weather) did you experience in the past 2 weeks?'
-                  : 'What environmental challenges have you faced in the past two weeks? (e.g., extreme weather, air pollution, noise)',
+              'What environmental challenges have you experienced recently? Please share as much detail as you can. Feel free to upload up to 3 images, along with an explanation of what they mean.',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             SizedBox(height: 8),
@@ -370,25 +365,15 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
               minLines: 2,
             ),
             
+            SizedBox(height: 16),
+            
+            // Image upload section
+            _buildImageUploadSection(),
+            
             SizedBox(height: 20),
             
-            // Second prompt as a wrapped paragraph
-            Text(
-              _researchSite == 'gauteng'
-                  ? 'How stressful were these environmental challenges for you?'
-                  : 'How would you rate the stress level of these challenges? Please explain.',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            SizedBox(height: 8),
-            FormBuilderTextField(
-              name: 'challengesStressLevel',
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Please describe the stress level...',
-              ),
-              maxLines: 3,
-              minLines: 2,
-            ),
+            // Second prompt as a slider question
+            _buildRatingQuestion('challengesStressLevel', 'How stressful were these environmental challenges for you?', 1, 5),
             
             SizedBox(height: 20),
             
@@ -1615,11 +1600,11 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       opportunitiesAbilities: formData['opportunitiesAbilities']?.round(),
       enjoyCulturalTraditions: formData['enjoyCulturalTraditions']?.round(),
       environmentalChallenges: formData['environmentalChallenges'],
-      challengesStressLevel: formData['challengesStressLevel'],
+      challengesStressLevel: formData['challengesStressLevel'] != null ? formData['challengesStressLevel'].round().toString() : null,
       copingHelp: formData['copingHelp'],
-      // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
-      // voiceNoteUrls: _voiceNoteFiles.isNotEmpty ? _voiceNoteFiles.map((f) => f.path).toList() : null,
-      // imageUrls: _selectedImages.isNotEmpty ? _selectedImages.map((f) => f.path).toList() : null,
+      // TODO: MULTIMEDIA ENCRYPTION - Images are stored locally, encryption to be implemented
+      // voiceNoteUrls: null, // Voice notes not implemented yet
+      imageUrls: _selectedImages.isNotEmpty ? _selectedImages.map((f) => f.path).toList() : null,
       researchSite: _researchSite,
       submittedAt: submissionTime,
       encryptedLocationData: locationDataMap != null ? jsonEncode(locationDataMap) : null, // Store as JSON for unified encryption
@@ -1830,6 +1815,185 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
 
   String? _getParticipantUuid() {
     return GlobalData.userUUID.isEmpty ? null : GlobalData.userUUID;
+  }
+
+  /// Build the image upload section for the digital diary
+  Widget _buildImageUploadSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.photo_camera, color: Colors.green),
+            SizedBox(width: 8),
+            Text(
+              'Photos (Optional)',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+        SizedBox(height: 8),
+        Text(
+          'Upload up to 3 images related to environmental challenges you\'ve experienced.',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+        SizedBox(height: 12),
+        
+        // Display selected images
+        if (_selectedImages.isNotEmpty) ...[
+          Container(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _selectedImages.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  width: 100,
+                  margin: EdgeInsets.only(right: 8),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          _selectedImages[index],
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () => _removeImage(index),
+                          child: Container(
+                            padding: EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          SizedBox(height: 12),
+        ],
+        
+        // Add image buttons
+        Row(
+          children: [
+            if (_selectedImages.length < 3) ...[
+              ElevatedButton.icon(
+                onPressed: () => _pickImageFromCamera(),
+                icon: Icon(Icons.camera_alt),
+                label: Text('Take Photo'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+              SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: () => _pickImageFromGallery(),
+                icon: Icon(Icons.photo_library),
+                label: Text('From Gallery'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ],
+        ),
+        
+        if (_selectedImages.length >= 3)
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.orange[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange[200]!),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info, color: Colors.orange[700], size: 16),
+                SizedBox(width: 8),
+                Text(
+                  'Maximum of 3 images reached',
+                  style: TextStyle(color: Colors.orange[700], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Pick an image from the camera
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _selectedImages.add(File(image.path));
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error taking photo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Pick an image from the gallery
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _selectedImages.add(File(image.path));
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error selecting photo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Remove an image from the selected list
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
   }
 
   /*

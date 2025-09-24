@@ -18,7 +18,22 @@ Participant Data → AES-256-GCM Encryption → RSA-4096 Key Encryption → Base
 Survey Responses    Random AES Key         Encrypted with          Secure Transit
 Location Tracks     Generated Fresh        Research Team's         to Server
 Demographics        for Each Upload        Public Key              
+Images (Base64)                                                    
 ```
+
+### Image Encryption
+
+Survey images are processed and encrypted as part of the survey data:
+
+1. **Local Storage**: Images remain as files on the device (file paths stored in database)
+2. **Transmission Encryption**: During upload, images are:
+   - Read from local filesystem
+   - Converted to Base64 encoding
+   - Included in the survey JSON payload
+   - Encrypted with the rest of the survey data using AES-256-GCM
+   - Transmitted securely to the research server
+
+This ensures images are encrypted during transmission while maintaining efficient local storage.
 
 ---
 layout: default
@@ -479,6 +494,43 @@ echo "test" | openssl rsautl -encrypt -pubin -inkey public.pem | openssl rsautl 
 # Check key details
 openssl rsa -in private.pem -noout -text | grep "Private-Key"
 openssl rsa -pubin -in public.pem -noout -text | grep "Public-Key"
+```
+
+## Processing Survey Images
+
+When decrypting survey data that contains images, the `encrypted_images` field contains an array of Base64-encoded image data:
+
+```javascript
+// Example decrypted survey JSON structure with images
+{
+  "type": "biweekly_survey",
+  "participant_uuid": "123e4567-e89b-12d3-a456-426614174000",
+  "survey_id": "survey_456",
+  "data": { /* survey response data */ },
+  "encrypted_images": [
+    "{\"filename\":\"image1.jpg\",\"size\":45123,\"data\":\"base64-encoded-image-data\"}",
+    "{\"filename\":\"image2.jpg\",\"size\":62456,\"data\":\"base64-encoded-image-data\"}"
+  ],
+  "metadata": {
+    "has_images": true,
+    "submission_method": "encrypted_proxy"
+  }
+}
+
+// To extract and save images:
+const fs = require('fs');
+
+function extractImages(decryptedSurvey, outputDir) {
+  if (decryptedSurvey.encrypted_images) {
+    decryptedSurvey.encrypted_images.forEach((imageJson, index) => {
+      const imageData = JSON.parse(imageJson);
+      const imageBuffer = Buffer.from(imageData.data, 'base64');
+      const filename = `${decryptedSurvey.survey_id}_${imageData.filename}`;
+      fs.writeFileSync(`${outputDir}/${filename}`, imageBuffer);
+      console.log(`Extracted: ${filename} (${imageData.size} bytes)`);
+    });
+  }
+}
 ```
 
 ## Support

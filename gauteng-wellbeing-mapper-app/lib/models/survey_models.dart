@@ -49,9 +49,9 @@ class InitialSurveyResponse {
   final String? challengesStressLevel;
   final String? copingHelp;
   
-  // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+  // TODO: MULTIMEDIA DISABLED - Voice notes not implemented yet
   // final List<String>? voiceNoteUrls; // URLs to uploaded audio files
-  // final List<String>? imageUrls; // URLs to uploaded image files
+  final List<String>? imageUrls; // URLs to uploaded image files
   
   final String researchSite; // Currently only 'gauteng'
   final DateTime submittedAt;
@@ -97,9 +97,9 @@ class InitialSurveyResponse {
     this.environmentalChallenges,
     this.challengesStressLevel,
     this.copingHelp,
-    // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+    // TODO: MULTIMEDIA DISABLED - Voice notes not implemented yet
     // this.voiceNoteUrls,
-    // this.imageUrls,
+    this.imageUrls,
     required this.researchSite,
     required this.submittedAt,
   });
@@ -146,9 +146,9 @@ class InitialSurveyResponse {
       'environmentalChallenges': environmentalChallenges,
       'challengesStressLevel': challengesStressLevel,
       'copingHelp': copingHelp,
-      // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+      // TODO: MULTIMEDIA DISABLED - Voice notes not implemented yet
       // 'voiceNoteUrls': voiceNoteUrls,
-      // 'imageUrls': imageUrls,
+      'imageUrls': imageUrls,
       'researchSite': researchSite,
       'submittedAt': submittedAt.toIso8601String(),
     };
@@ -196,9 +196,9 @@ class InitialSurveyResponse {
       environmentalChallenges: json['environmentalChallenges'],
       challengesStressLevel: json['challengesStressLevel'],
       copingHelp: json['copingHelp'],
-      // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+      // TODO: MULTIMEDIA DISABLED - Voice notes not implemented yet
       // voiceNoteUrls: json['voiceNoteUrls'] != null ? List<String>.from(json['voiceNoteUrls']) : null,
-      // imageUrls: json['imageUrls'] != null ? List<String>.from(json['imageUrls']) : null,
+      imageUrls: json['imageUrls'] != null ? List<String>.from(json['imageUrls']) : null,
       researchSite: json['researchSite'] ?? 'barcelona',
       submittedAt: DateTime.parse(json['submittedAt']),
     );
@@ -241,9 +241,9 @@ class RecurringSurveyResponse {
   final String? environmentalChallenges;
   final String? challengesStressLevel;
   final String? copingHelp;
-  // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+  // TODO: MULTIMEDIA DISABLED - Voice notes not implemented yet
   // final List<String>? voiceNoteUrls;
-  // final List<String>? imageUrls;
+  final List<String>? imageUrls;
   
   final String researchSite; // Currently only 'gauteng'
   final DateTime submittedAt;
@@ -279,9 +279,9 @@ class RecurringSurveyResponse {
     this.environmentalChallenges,
     this.challengesStressLevel,
     this.copingHelp,
-    // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+    // TODO: MULTIMEDIA DISABLED - Voice notes not implemented yet
     // this.voiceNoteUrls,
-    // this.imageUrls,
+    this.imageUrls,
     required this.researchSite,
     required this.submittedAt,
     this.encryptedLocationData,
@@ -318,9 +318,9 @@ class RecurringSurveyResponse {
       'environmentalChallenges': environmentalChallenges,
       'challengesStressLevel': challengesStressLevel,
       'copingHelp': copingHelp,
-      // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+      // TODO: MULTIMEDIA DISABLED - Voice notes not implemented yet
       // 'voiceNoteUrls': voiceNoteUrls,
-      // 'imageUrls': imageUrls,
+      'imageUrls': imageUrls,
       'researchSite': researchSite,
       'submittedAt': submittedAt.toIso8601String(),
       'encryptedLocationData': encryptedLocationData,
@@ -358,9 +358,9 @@ class RecurringSurveyResponse {
       environmentalChallenges: json['environmentalChallenges'],
       challengesStressLevel: json['challengesStressLevel'],
       copingHelp: json['copingHelp'],
-      // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+      // TODO: MULTIMEDIA DISABLED - Voice notes not implemented yet
       // voiceNoteUrls: json['voiceNoteUrls'] != null ? List<String>.from(json['voiceNoteUrls']) : null,
-      // imageUrls: json['imageUrls'] != null ? List<String>.from(json['imageUrls']) : null,
+      imageUrls: json['imageUrls'] != null ? List<String>.from(json['imageUrls']) : null,
       researchSite: json['researchSite'] ?? 'barcelona',
       submittedAt: DateTime.parse(json['submittedAt']),
       encryptedLocationData: json['encryptedLocationData'],

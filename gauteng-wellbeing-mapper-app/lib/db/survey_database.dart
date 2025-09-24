@@ -588,9 +588,9 @@ class SurveyDatabase {
       'environmental_challenges': survey.environmentalChallenges,
       'challenges_stress_level': survey.challengesStressLevel,
       'coping_help': survey.copingHelp,
-      // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+      // TODO: MULTIMEDIA ENCRYPTION - Images are stored as local file paths, encryption to be implemented
       // 'voice_note_urls': survey.voiceNoteUrls != null ? jsonEncode(survey.voiceNoteUrls) : null,
-      // 'image_urls': survey.imageUrls != null ? jsonEncode(survey.imageUrls) : null,
+      'image_urls': survey.imageUrls != null ? jsonEncode(survey.imageUrls) : null,
       'research_site': survey.researchSite,
       'submitted_at': survey.submittedAt.toIso8601String(),
     });
@@ -646,9 +646,9 @@ class SurveyDatabase {
         environmentalChallenges: maps[i]['environmental_challenges'] as String?,
         challengesStressLevel: maps[i]['challenges_stress_level'] as String?,
         copingHelp: maps[i]['coping_help'] as String?,
-        // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+        // TODO: MULTIMEDIA ENCRYPTION - Images are stored as local file paths, encryption to be implemented
         // voiceNoteUrls: maps[i]['voice_note_urls'] != null ? List<String>.from(jsonDecode(maps[i]['voice_note_urls'] as String)) : null,
-        // imageUrls: maps[i]['image_urls'] != null ? List<String>.from(jsonDecode(maps[i]['image_urls'] as String)) : null,
+        imageUrls: maps[i]['image_urls'] != null ? List<String>.from(jsonDecode(maps[i]['image_urls'] as String)) : null,
         researchSite: maps[i]['research_site'] as String? ?? 'gauteng',
         submittedAt: DateTime.parse(maps[i]['submitted_at'] as String),
       );
@@ -687,9 +687,9 @@ class SurveyDatabase {
       'environmental_challenges': survey.environmentalChallenges,
       'challenges_stress_level': survey.challengesStressLevel,
       'coping_help': survey.copingHelp,
-      // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+      // TODO: MULTIMEDIA ENCRYPTION - Images are stored as local file paths, encryption to be implemented
       // 'voice_note_urls': survey.voiceNoteUrls != null ? jsonEncode(survey.voiceNoteUrls) : null,
-      // 'image_urls': survey.imageUrls != null ? jsonEncode(survey.imageUrls) : null,
+      'image_urls': survey.imageUrls != null ? jsonEncode(survey.imageUrls) : null,
       'submitted_at': survey.submittedAt.toIso8601String(),
       'encrypted_location_data': survey.encryptedLocationData,
     });
@@ -734,13 +734,13 @@ class SurveyDatabase {
         environmentalChallenges: maps[i]['environmental_challenges'] as String?,
         challengesStressLevel: maps[i]['challenges_stress_level'] as String?,
         copingHelp: maps[i]['coping_help'] as String?,
-        // TODO: MULTIMEDIA DISABLED - Uncomment to re-enable multimedia support
+        // TODO: MULTIMEDIA ENCRYPTION - Images are stored as local file paths, encryption to be implemented
         // voiceNoteUrls: maps[i]['voice_note_urls'] != null 
         //     ? List<String>.from(jsonDecode(maps[i]['voice_note_urls'] as String))
         //     : null,
-        // imageUrls: maps[i]['image_urls'] != null 
-        //     ? List<String>.from(jsonDecode(maps[i]['image_urls'] as String))
-        //     : null,
+        imageUrls: maps[i]['image_urls'] != null 
+            ? List<String>.from(jsonDecode(maps[i]['image_urls'] as String))
+            : null,
         researchSite: maps[i]['research_site'] as String? ?? 'gauteng',
         submittedAt: DateTime.parse(maps[i]['submitted_at'] as String),
         encryptedLocationData: maps[i]['encrypted_location_data'] as String?,
