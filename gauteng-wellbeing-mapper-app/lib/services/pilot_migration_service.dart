@@ -21,9 +21,6 @@ class FreshStartMigrationService {
   static const String _freshStartCompletedKey = 'fresh_start_migration_completed';
   static const String _preservedDataKey = 'preserved_user_data';
   
-  /// Migration identifier for this fresh start release
-  static const String freshStartMigrationId = '1.1.8_fresh_start';
-  
   /// Check if fresh start migration needs to be performed
   /// Returns true if migration is needed, false if already completed
   static Future<bool> needsFreshStartMigration() async {
@@ -163,8 +160,9 @@ class FreshStartMigrationService {
   /// Record that this migration has completed
   static Future<void> _recordMigrationCompletion() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_appVersionKey, freshStartMigrationId);
-    print('[FreshStartMigration] Recorded migration completion with ID: $freshStartMigrationId');
+    final completionDate = DateTime.now().toIso8601String();
+    await prefs.setString(_appVersionKey, 'fresh_start_completed_$completionDate');
+    print('[FreshStartMigration] Recorded migration completion at: $completionDate');
   }
   
   static Future<int> _getLocationDataCount() async {
