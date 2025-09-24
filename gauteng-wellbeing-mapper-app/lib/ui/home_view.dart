@@ -405,9 +405,9 @@ class HomeViewState extends State<HomeView>
     bg.BackgroundGeolocation.onEnabledChange(_onEnabledChange);
     bg.BackgroundGeolocation.onNotificationAction(_onNotificationAction);
 
-    // Get user's configured retention period
-    final retentionDays = await StorageSettingsService.getLocationRetentionDays();
-    final maxDaysToPersist = retentionDays == StorageSettingsService.UNLIMITED_VALUE ? 999999 : retentionDays;
+    // FBG minimal retention: only keep 1 day for real-time location collection
+    // App database is the source of truth for persistent storage
+    final maxDaysToPersist = 1;
 
     // 2.  Configure the plugin
     bg.BackgroundGeolocation.ready(bg.Config(

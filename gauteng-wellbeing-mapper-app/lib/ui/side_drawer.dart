@@ -8,6 +8,7 @@ import 'package:wellbeing_mapper/services/wellbeing_survey_service.dart';
 import 'package:wellbeing_mapper/services/initial_survey_service.dart';
 import 'package:wellbeing_mapper/services/survey_navigation_service.dart';
 import 'package:wellbeing_mapper/theme/south_african_theme.dart';
+import 'package:wellbeing_mapper/db/survey_database.dart';
 // import 'package:wellbeing_mapper/debug/ios_location_debug.dart'; // Commented out with iOS Location Debug menu (August 5, 2025)
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -16,8 +17,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
-    as bg;
 
 class WellbeingMapperSideDrawer extends StatefulWidget {
   @override
@@ -130,32 +129,32 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
         },
       );
 
-      // Get location data - skip background geolocation on web platform
-      List allLocations = [];
+      // Get location data from app database (source of truth)
       List<ShareLocation> customLocation = [];
       
       if (kIsWeb) {
-        print('[SideDrawer] Web platform detected - skipping background geolocation data export');
-        // On web, we could potentially get location data from other sources
-        // For now, export empty location list
+        print('[SideDrawer] Web platform detected - skipping location data export');
       } else {
         try {
-          allLocations = await bg.BackgroundGeolocation.locations;
-          print('[SideDrawer] Retrieved ${allLocations.length} location records');
+          // Load from app database instead of FBG to ensure consistency with map
+          final db = SurveyDatabase();
+          final locationTracks = await db.getAllLocationTracks();
+          print('[SideDrawer] 🗃️ Retrieved ${locationTracks.length} location records from app database');
           
-          // Convert to custom location format
-          for (var thisLocation in allLocations) {
-            final bgLocation = bg.Location(thisLocation);
-            ShareLocation _loc = ShareLocation(
-                bgLocation.timestamp,
-                bgLocation.coords.latitude,
-                bgLocation.coords.longitude,
-                bgLocation.coords.accuracy,
+          // Convert LocationTrack objects to ShareLocation format
+          for (var track in locationTracks) {
+            ShareLocation shareLocation = ShareLocation(
+                track.timestamp.toIso8601String(),
+                track.latitude,
+                track.longitude,
+                track.accuracy ?? 0.0,
                 GlobalData.userUUID);
-            customLocation.add(_loc);
+            customLocation.add(shareLocation);
           }
+          
+          print('[SideDrawer] ✅ Converted ${customLocation.length} location tracks for export');
         } catch (e) {
-          print('[SideDrawer] Error getting location data: $e');
+          print('[SideDrawer] ❌ Error getting location data from database: $e');
           // Continue with empty location list
         }
       }

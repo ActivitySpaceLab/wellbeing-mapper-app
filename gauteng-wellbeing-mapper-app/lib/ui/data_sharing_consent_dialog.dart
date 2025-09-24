@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 import '../models/data_sharing_consent.dart';
 import '../models/survey_models.dart';
 import '../db/survey_database.dart';
@@ -45,59 +44,24 @@ class _DataSharingConsentDialogState extends State<DataSharingConsentDialog> {
         _isLoading = true;
       });
 
-      // Debug: Check what's in the database directly
-      final db = SurveyDatabase();
-      final allLocationTracks = await db.getAllLocationTracks();
-      print('[DataSharingConsentDialog] Found ${allLocationTracks.length} total location tracks in database');
-
-      // Get location data from background geolocation plugin (same as map uses)
+      // Get location data from app database (same source as map)
       List<LocationTrack> locationTracks = [];
+      final db = SurveyDatabase();
       
       if (!kIsWeb) {
         try {
-          // Get location data from background geolocation plugin
-          final bgLocations = await bg.BackgroundGeolocation.locations;
-          print('[DataSharingConsentDialog] Found ${bgLocations.length} background geolocation records');
+          final allLocationTracks = await db.getAllLocationTracks();
+          print('[DataSharingConsentDialog] 🗃️ Found ${allLocationTracks.length} total location tracks in app database');
           
-          // Convert to LocationTrack objects and filter for last 2 weeks
+          // Filter for last 2 weeks for data sharing display
           final twoWeeksAgo = DateTime.now().subtract(Duration(days: 14));
-          for (var bgLocation in bgLocations) {
-            try {
-              final locationMap = bgLocation as Map<Object?, Object?>;
-              
-              // Handle timestamp - could be int or string
-              DateTime locationTime;
-              final timestamp = locationMap['timestamp'];
-              if (timestamp is int) {
-                locationTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-              } else if (timestamp is String) {
-                locationTime = DateTime.parse(timestamp);
-              } else {
-                print('[DataSharingConsentDialog] Unknown timestamp format: ${timestamp.runtimeType}');
-                continue;
-              }
-              
-              if (locationTime.isAfter(twoWeeksAgo)) {
-                final coords = locationMap['coords'] as Map<Object?, Object?>?;
-                if (coords != null) {
-                  locationTracks.add(LocationTrack(
-                    timestamp: locationTime,
-                    latitude: coords['latitude'] as double,
-                    longitude: coords['longitude'] as double,
-                    accuracy: coords['accuracy'] as double?,
-                    altitude: coords['altitude'] as double?,
-                    speed: coords['speed'] as double?,
-                    activity: (locationMap['activity'] as Map<Object?, Object?>?)?['type'] as String?,
-                  ));
-                }
-              }
-            } catch (e) {
-              print('[DataSharingConsentDialog] Error processing location record: $e');
-              continue;
-            }
-          }
+          locationTracks = allLocationTracks.where((track) {
+            return track.timestamp.isAfter(twoWeeksAgo);
+          }).toList();
+          
+          print('[DataSharingConsentDialog] 📍 Filtered to ${locationTracks.length} recent location tracks (last 2 weeks)');
         } catch (e) {
-          print('[DataSharingConsentDialog] Error getting background locations: $e');
+          print('[DataSharingConsentDialog] ❌ Error getting location data from app database: $e');
         }
       }
       

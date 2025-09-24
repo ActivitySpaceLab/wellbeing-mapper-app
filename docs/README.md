@@ -248,7 +248,6 @@ fvm flutter run
 
 ### 📱 User Experience
 - **Interactive map**: Real-time location visualization
-- **Location history**: Chronological list with details
 - **Multi-language**: Internationalization support
 - **Offline capability**: Works without constant internet connection
 
@@ -268,17 +267,21 @@ fvm flutter run
 // Example: Processing new location data
 class LocationService {
   static Future<void> handleNewLocation(bg.Location rawLocation) async {
-    // 1. Create CustomLocation object
-    CustomLocation location = await CustomLocation.createCustomLocation(rawLocation);
+    // 1. Create LocationTrack object from background geolocation
+    final locationData = {
+      'timestamp': rawLocation.timestamp.toIso8601String(),
+      'latitude': rawLocation.coords.latitude,
+      'longitude': rawLocation.coords.longitude,
+      'accuracy': rawLocation.coords.accuracy,
+      'activity': rawLocation.activity.type,
+    };
     
-    // 2. Store in database
-    await CustomLocationsManager.storeLocation(location);
+    // 2. Store in app database
+    final db = SurveyDatabase();
+    await db.insertLocationTrack(locationData);
     
-    // 3. Update UI
-    EventBus.fire('location_updated', location);
-    
-    // 4. Check project requirements
-    await ProjectManager.checkLocationSharing(location);
+    // 3. Update UI (map automatically uses database)
+    // Map refreshes from database source of truth
   }
 }
 ```

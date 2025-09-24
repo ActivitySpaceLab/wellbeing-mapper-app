@@ -328,16 +328,15 @@ Multiple SQLite databases handle different data types:
 - Retry mechanism for failed uploads
 - Data structure: `LocationToPush` model
 
-### 5. Location Management (`models/custom_locations.dart`)
-- **Purpose**: Manages location data and geocoding
+### 5. Location Management (Database-based)
+- **Purpose**: Manages persistent location data through SQLite database
 - **Key Classes**:
-  - `CustomLocation`: Represents a single location with metadata
-  - `CustomLocationsManager`: Manages collections of locations
-  - `ShareLocation`: Simplified location data for sharing
+  - `LocationTrack`: Represents location data in surveys and database
+  - `SurveyDatabase`: Manages location storage and retrieval
 - **Key Functions**:
-  - `createCustomLocation()`: Creates location from background geolocation data
-  - `getLocationData()`: Reverse geocoding for addresses
-  - `deleteThisLocation()`: Removes location from storage
+  - `insertLocationTrack()`: Saves location data to database
+  - `getAllLocationTracks()`: Retrieves all stored locations
+  - `cleanupOldLocationData()`: Removes old location data based on retention settings
 
 ### 6. Data Sharing Consent System (`models/data_sharing_consent.dart`, `ui/data_sharing_consent_dialog.dart`)
 - **Purpose**: Advanced user consent management for research data sharing
@@ -499,7 +498,6 @@ gauteng-wellbeing-mapper-app/lib/
 │   ├── help_screen.dart        # In-app help system
 │   ├── home_view.dart         # Main screen
 │   ├── initial_survey_screen.dart # Initial user survey
-│   ├── list_view.dart         # Location history list
 │   ├── map_view.dart          # Interactive map
 │   ├── notification_settings_view.dart # Notification preferences
 │   ├── participation_selection_screen.dart # Research participation
@@ -542,7 +540,6 @@ gauteng-wellbeing-mapper-app/lib/
 
 ### 4. User Interface
 - **Interactive map**: Real-time location visualization
-- **Location history**: Chronological list of visits
 - **App mode management**: Easy switching between usage modes
 - **Multi-language**: Support for multiple languages
 

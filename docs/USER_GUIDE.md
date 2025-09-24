@@ -58,10 +58,6 @@ The hamburger menu (three lines) in the top-left:
 
 ### Available to Everyone
 
-**Locations History**
-- View a list of all recorded locations with timestamps and coordinates
-- You can delete individual entries by swiping left
-
 **Export Data**
 - Export all your location and survey data as a JSON file
 - This creates a backup you can save or share

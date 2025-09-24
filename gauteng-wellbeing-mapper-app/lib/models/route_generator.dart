@@ -3,7 +3,6 @@ import 'package:wellbeing_mapper/ui/storage_settings_view.dart';
 import 'package:flutter/material.dart';
 
 import '../ui/home_view.dart';
-import '../ui/list_view.dart';
 import '../ui/report_issues.dart';
 import '../ui/web_view.dart';
 import '../ui/initial_survey_screen.dart';
@@ -51,8 +50,6 @@ class RouteGenerator {
             );
           }
         });
-      case '/locations_history':
-        return MaterialPageRoute(builder: (_) => STOListView());
       case '/report_an_issue':
         return MaterialPageRoute(builder: (_) => ReportAnIssue());
 //      case '/my_statistics':

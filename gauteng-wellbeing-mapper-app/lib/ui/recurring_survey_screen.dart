@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 import 'dart:io';
 import 'dart:convert';
 import '../models/survey_models.dart';
@@ -1007,46 +1006,20 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       
       if (!kIsWeb) {
         try {
-          // Get location data from background geolocation plugin
-          final bgLocations = await bg.BackgroundGeolocation.locations;
+          // Get location data from app database (same source as map)
+          final db = SurveyDatabase();
+          final allLocationTracks = await db.getAllLocationTracks();
+          print('[RecurringSurvey] 🗃️ Found ${allLocationTracks.length} total location tracks in app database');
           
-          // Convert to LocationTrack objects and filter for last 2 weeks
+          // Filter for last 2 weeks for survey interaction
           final twoWeeksAgo = DateTime.now().subtract(Duration(days: 14));
-          for (var bgLocation in bgLocations) {
-            try {
-              final locationMap = bgLocation as Map<Object?, Object?>;
-              
-              // Handle timestamp - could be int or string
-              DateTime locationTime;
-              final timestamp = locationMap['timestamp'];
-              if (timestamp is int) {
-                locationTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-              } else if (timestamp is String) {
-                locationTime = DateTime.parse(timestamp);
-              } else {
-                continue;
-              }
-              
-              if (locationTime.isAfter(twoWeeksAgo)) {
-                final coords = locationMap['coords'] as Map<Object?, Object?>?;
-                if (coords != null) {
-                  locationTracks.add(LocationTrack(
-                    timestamp: locationTime,
-                    latitude: coords['latitude'] as double,
-                    longitude: coords['longitude'] as double,
-                    accuracy: coords['accuracy'] as double?,
-                    altitude: coords['altitude'] as double?,
-                    speed: coords['speed'] as double?,
-                    activity: (locationMap['activity'] as Map<Object?, Object?>?)?['type'] as String?,
-                  ));
-                }
-              }
-            } catch (e) {
-              continue;
-            }
-          }
+          locationTracks = allLocationTracks.where((track) {
+            return track.timestamp.isAfter(twoWeeksAgo);
+          }).toList();
+          
+          print('[RecurringSurvey] 📍 Filtered to ${locationTracks.length} recent location tracks (last 2 weeks)');
         } catch (e) {
-          print('Error getting background locations: $e');
+          print('[RecurringSurvey] ❌ Error getting location data from app database: $e');
         }
       }
       
@@ -1055,7 +1028,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         _totalLocationCount = locationTracks.length;
       });
     } catch (e) {
-      print('Error loading location data: $e');
+      print('[RecurringSurvey] ❌ Error loading location data: $e');
     }
   }
 

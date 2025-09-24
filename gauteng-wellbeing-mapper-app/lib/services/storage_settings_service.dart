@@ -167,37 +167,19 @@ class StorageSettingsService {
     print('[StorageSettingsService] Performing cleanup - removing data older than $retentionDays days (cutoff: ${cutoffDate.toIso8601String()})');
     
     try {
-      // Clean up background geolocation plugin data
-      if (!kIsWeb) {
-        final allLocations = await bg.BackgroundGeolocation.locations;
-        int removedCount = 0;
-        
-        print('[StorageSettingsService] Found ${allLocations.length} total location records to check');
-        
-        for (var location in allLocations) {
-          // FIXED: location['timestamp'] is an ISO string, not milliseconds
-          final locationDate = DateTime.parse(location['timestamp']);
-          
-          if (locationDate.isBefore(cutoffDate)) {
-            print('[StorageSettingsService] Removing old location: ${location['timestamp']} (${locationDate.toIso8601String()})');
-            await bg.BackgroundGeolocation.destroyLocation(location['uuid']);
-            removedCount++;
-          }
-        }
-        
-        print('[StorageSettingsService] Removed $removedCount old location records from plugin storage');
-      }
-      
-      // Clean up database location data
+      // Clean up app database location data (FBG handles its own minimal 1-day retention)
       final database = SurveyDatabase();
       await database.cleanupOldLocationData(cutoffDate);
       
+      print('[StorageSettingsService] ✅ App database cleanup completed');
+      
     } catch (e) {
-      print('[StorageSettingsService] Error during cleanup: $e');
+      print('[StorageSettingsService] ❌ Error during cleanup: $e');
     }
   }
 
   /// Get filtered location data for map display
+  /// Now loads from app database instead of FBG internal storage to prevent auto-purge issues
   static Future<List<dynamic>> getFilteredLocationDataForMap() async {
     if (kIsWeb) return [];
     
@@ -208,13 +190,32 @@ class StorageSettingsService {
     print('[StorageSettingsService] Map filtering - Display days: $displayDays, Retention days: $retentionDays, Max markers: $maxMarkers');
     
     try {
-      final allLocations = await bg.BackgroundGeolocation.locations;
+      // FIXED: Load from app's database instead of FBG's internal storage that auto-purges
+      final db = SurveyDatabase();
+      final locationTracks = await db.getAllLocationTracks();
+      
+      print('[StorageSettingsService] 🗃️ Loaded ${locationTracks.length} location tracks from app database');
+      
+      // Convert LocationTrack objects to FBG-compatible format for map
+      List<Map<String, dynamic>> allLocations = locationTracks.map((track) {
+        return {
+          'timestamp': track.timestamp.toIso8601String(),
+          'coords': {
+            'latitude': track.latitude,
+            'longitude': track.longitude,
+            'accuracy': track.accuracy ?? 0.0,
+            'altitude': track.altitude ?? 0.0,
+            'speed': track.speed ?? 0.0,
+          },
+          'activity': {
+            'type': track.activity ?? 'unknown',
+          },
+        };
+      }).toList();
       
       // If unlimited display, just limit by max markers
       if (displayDays == UNLIMITED_VALUE) {
-        // Sort by timestamp (newest first)
-        allLocations.sort((a, b) => 
-          (b['timestamp'] as num).compareTo(a['timestamp'] as num));
+        // Sort by timestamp (newest first) - already sorted by DB query
         
         // Limit to max markers
         if (allLocations.length > maxMarkers) {
@@ -227,24 +228,23 @@ class StorageSettingsService {
       // Filter by date
       final cutoffDate = DateTime.now().subtract(Duration(days: displayDays));
       final recentLocations = allLocations.where((location) {
-        // FIXED: location['timestamp'] is an ISO string, not milliseconds
         final locationDate = DateTime.parse(location['timestamp']);
         return locationDate.isAfter(cutoffDate);
       }).toList();
       
-      // Sort by timestamp (newest first)
-      recentLocations.sort((a, b) => 
-        (b['timestamp'] as num).compareTo(a['timestamp'] as num));
+      print('[StorageSettingsService] 📍 Filtered to ${recentLocations.length} recent locations (last $displayDays days)');
       
       // Limit to max markers
       if (recentLocations.length > maxMarkers) {
-        return recentLocations.take(maxMarkers).toList();
+        final limited = recentLocations.take(maxMarkers).toList();
+        print('[StorageSettingsService] 🎯 Limited to ${limited.length} markers for performance');
+        return limited;
       }
       
       return recentLocations;
       
     } catch (e) {
-      print('[StorageSettingsService] Error getting filtered location data: $e');
+      print('[StorageSettingsService] ❌ Error getting filtered location data from database: $e');
       return [];
     }
   }

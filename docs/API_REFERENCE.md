@@ -528,26 +528,6 @@ String getFormattedInformation(BuildContext context)
 Future<void> deleteThisLocation()
 ```
 
-### CustomLocationsManager
-
-Static class for managing collections of CustomLocation objects.
-
-```dart
-class CustomLocationsManager {
-  static List<CustomLocation> customLocations = [];
-}
-```
-
-#### Static Methods
-
-```dart
-// Retrieve recent locations from background geolocation storage
-static Future<List<CustomLocation>> getLocations(int maxElements)
-
-// Remove all stored locations
-static Future<void> removeAllCustomLocations()
-```
-
 ### Project
 
 Core class representing research projects.
@@ -1097,7 +1077,6 @@ class RouteGenerator {
 '/'                           // HomeView (main screen)
 '/participate_in_a_project'   // Available projects list
 '/active_projects'            // Active projects list  
-'/locations_history'          // Location history list
 '/report_an_issue'            // Issue reporting form
 '/navigation_to_webview'      // Project survey webview
 '/new_project'                // Project creation/QR scan
