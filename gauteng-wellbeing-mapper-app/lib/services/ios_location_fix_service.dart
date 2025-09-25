@@ -108,6 +108,10 @@ class IosLocationFixService {
           startOnBoot: true,
           debug: false,
           logLevel: bg.Config.LOG_LEVEL_OFF,
+          // iOS-specific fixes for pocket/background tracking
+          pausesLocationUpdatesAutomatically: false,
+          allowIdenticalLocations: true,
+          showsBackgroundLocationIndicator: false,
         ));
         print('[IosLocationFixService] Background geolocation ready');
         

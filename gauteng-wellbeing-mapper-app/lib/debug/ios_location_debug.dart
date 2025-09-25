@@ -327,6 +327,10 @@ class _IosLocationDebugScreenState extends State<IosLocationDebugScreen> {
                     enableHeadless: true,
                     debug: true,
                     logLevel: bg.Config.LOG_LEVEL_VERBOSE,
+                    // iOS-specific fixes for pocket/background tracking
+                    pausesLocationUpdatesAutomatically: false,
+                    allowIdenticalLocations: true,
+                    showsBackgroundLocationIndicator: false,
                   )).then((bg.State state) {
                     _log('BackgroundGeolocation ready. State: ${state.toMap()}');
                     _log('Enabled: ${state.enabled}');

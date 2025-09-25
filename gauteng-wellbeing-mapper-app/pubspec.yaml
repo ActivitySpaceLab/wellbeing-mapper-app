@@ -54,9 +54,7 @@ dependencies:
   fl_chart: ^0.69.2
   intl: ^0.19.0
   
-  # WebView and Payment Dependencies (Testing next batch)
-  webview_flutter: ^4.10.0
-  iamport_webview_flutter: ^3.1.0  # RISKY PLUGINS - Adding carefully one by one (THESE CAUSED ORIGINAL CRASHES)
+
   # Testing permission_handler first ✅ WORKING!
   permission_handler: ^11.0.1
   

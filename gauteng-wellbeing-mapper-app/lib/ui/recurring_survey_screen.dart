@@ -1684,7 +1684,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              _uploadDataToResearchServer(); // Upload data after closing dialog
+              Navigator.of(context).popUntil((route) => route.isFirst); // Go back to main screen
+              _uploadDataToResearchServer(); // Upload data in background
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             child: Text('OK', style: TextStyle(color: Colors.white)),
@@ -1715,64 +1716,54 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       final participantUuid = _getParticipantUuid();
       
       if (participantUuid == null || participantUuid.isEmpty) {
-        // Show error and navigate back
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Missing participant information - data saved locally only'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // Show error - user already navigated back so show in context of main app
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Missing participant information - data saved locally only'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
         return;
       }
 
-      // Show uploading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text('Uploading to research server...'),
-            ],
-          ),
-        ),
-      );
-
+      // Try to upload in background - user already navigated away
       try {
         // Use the same encrypted survey service as consent and initial surveys
         await EncryptedSurveyService.syncPendingSurveys();
         
-        Navigator.of(context).pop(); // Close uploading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Data uploaded successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // Show success if still mounted (user might be on main screen)
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Research data uploaded successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
         
       } catch (uploadError) {
-        Navigator.of(context).pop(); // Close uploading dialog
+        // Show error if still mounted
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Upload failed: $uploadError - data saved locally'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Show error if still mounted
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Upload failed: $uploadError - data saved locally'),
+            content: Text('Upload error: $e - data saved locally'),
             backgroundColor: Colors.red,
           ),
         );
-        Navigator.of(context).popUntil((route) => route.isFirst);
       }
-    } catch (e) {
-      Navigator.of(context).pop(); // Close any open dialogs
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Upload error: $e - data saved locally'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 

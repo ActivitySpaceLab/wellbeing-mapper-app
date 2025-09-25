@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../ui/home_view.dart';
 import '../ui/report_issues.dart';
-import '../ui/web_view.dart';
+
 import '../ui/initial_survey_screen.dart';
 import '../ui/recurring_survey_screen.dart';
 import '../ui/survey_list_screen.dart';
@@ -18,12 +18,7 @@ import '../ui/change_mode_screen.dart';
 import '../ui/help_screen.dart';
 import '../ui/participant_code_entry_screen.dart';
 
-// Survey URLs for direct access
-class SurveyUrls {
-  static const String initialSurvey = 'https://pretoria.eu.qualtrics.com/jfe/form/SV_bsb8iq0UiATXRJQ';
-  static const String biweeklySurvey = 'https://pretoria.eu.qualtrics.com/jfe/form/SV_eUJstaSWQeKykBM';
-  static const String consentSurvey = 'https://pretoria.eu.qualtrics.com/jfe/form/SV_4I7j91aabspz5YO';
-}
+
 
 class GlobalRouteData {
   static String? user_route = "brown";
@@ -54,16 +49,7 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => ReportAnIssue());
 //      case '/my_statistics':
       //       return MaterialPageRoute(builder: (_) => MyStatistics());
-      case '/navigation_to_webview':
-        if (args is Map<String, String>) {
-          return MaterialPageRoute(
-              builder: (_) => MyWebView(
-                  args['selectedUrl'] ?? '',
-                  args['locationHistoryJSON'] ?? '',
-                  args['locationSharingMethod'] ?? '',
-                  args['surveyElementCode'] ?? ''));
-        }
-        return _errorRoute();
+
       case '/notification_settings':
         return MaterialPageRoute(builder: (_) => NotificationSettingsView());
       case '/storage_settings':
@@ -72,48 +58,7 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => InitialSurveyScreen());
       case '/recurring_survey':
         return MaterialPageRoute(builder: (_) => RecurringSurveyScreen());
-      case '/qualtrics_initial_survey':
-        if (args is Map<String, String>) {
-          return MaterialPageRoute(
-            builder: (_) => MyWebView(
-              SurveyUrls.initialSurvey,
-              args['locationHistoryJSON'] ?? '',
-              args['locationSharingMethod'] ?? '',
-              '', // surveyElementCode not used for Qualtrics
-              surveyType: SurveyType.initial,
-              isQualtricsSurvey: true,
-            ),
-          );
-        }
-        return MaterialPageRoute(
-          builder: (_) => MyWebView(
-            SurveyUrls.initialSurvey,
-            '', '', '',
-            surveyType: SurveyType.initial,
-            isQualtricsSurvey: true,
-          ),
-        );
-      case '/qualtrics_biweekly_survey':
-        if (args is Map<String, String>) {
-          return MaterialPageRoute(
-            builder: (_) => MyWebView(
-              SurveyUrls.biweeklySurvey,
-              args['locationHistoryJSON'] ?? '',
-              args['locationSharingMethod'] ?? '',
-              '', // surveyElementCode not used for Qualtrics
-              surveyType: SurveyType.biweekly,
-              isQualtricsSurvey: true,
-            ),
-          );
-        }
-        return MaterialPageRoute(
-          builder: (_) => MyWebView(
-            SurveyUrls.biweeklySurvey,
-            '', '', '',
-            surveyType: SurveyType.biweekly,
-            isQualtricsSurvey: true,
-          ),
-        );
+
       case '/survey_list':
         return MaterialPageRoute(builder: (_) => SurveyListScreen());
       case '/participation_selection':

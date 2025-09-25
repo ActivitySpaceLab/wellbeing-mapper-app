@@ -437,7 +437,21 @@ class HomeViewState extends State<HomeView>
             // DIAGNOSTIC FIX: Reduce heartbeat interval for better background tracking
             heartbeatInterval: 30, // Reduced from 60 to 30 seconds
             // DIAGNOSTIC FIX: Add preventSuspend for iOS background tracking
-            preventSuspend: true))
+            preventSuspend: true,
+            // iOS-specific fixes for pocket/background tracking
+            pausesLocationUpdatesAutomatically: false, // Prevent iOS from pausing location updates
+            allowIdenticalLocations: true, // Allow same location to be recorded multiple times
+            showsBackgroundLocationIndicator: false,
+            // Android-specific fixes for pocket/background tracking
+            enableTimestampMeta: true, // Add timestamp metadata for better tracking
+            geofenceProximityRadius: 1000, // 1km radius for geofence detection
+            // Android battery optimization bypass
+            disableElasticity: true, // Disable location elasticity to maintain consistent tracking
+            elasticityMultiplier: 1, // No elasticity multiplier
+            // Enhanced motion detection for Android
+            disableMotionActivityUpdates: false, // Keep motion detection active
+            disableLocationAuthorizationAlert: false // Show location permission alerts
+            ))
         .then((bg.State state) {
       print('[ready] Background geolocation ready with state: ${state.toMap()}');
       print('[ready] Plugin enabled: ${state.enabled}');
