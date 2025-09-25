@@ -53,6 +53,9 @@ class HomeViewState extends State<HomeView>
   // Static flag to prevent multiple background geolocation configurations
   static bool _backgroundGeoConfigured = false;
   
+  // Key to access MapView state for refreshing
+  final GlobalKey<MapViewState> _mapViewKey = GlobalKey<MapViewState>();
+  
   //late TabController _tabController;
 
   late String appName;
@@ -295,9 +298,13 @@ class HomeViewState extends State<HomeView>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     print("[home_view didChangeAppLifecycleState] : $state");
-    //TODO: The interior of these 'if statements' is empty
     if (state == AppLifecycleState.paused) {
-    } else if (state == AppLifecycleState.resumed) {}
+      // App is going to background
+    } else if (state == AppLifecycleState.resumed) {
+      // App is coming back to foreground - refresh map in case new data was collected
+      print("[home_view] 🔄 App resumed - refreshing map data");
+      _refreshMapAfterSurvey();
+    }
   }
 
   void initPlatformState() async {
@@ -1067,10 +1074,15 @@ class HomeViewState extends State<HomeView>
       ),
       //body: body,
       drawer: new WellbeingMapperSideDrawer(),
-      body: MapView(),
+      body: MapView(key: _mapViewKey),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).pushNamed('/wellbeing_survey');
+        onPressed: () async {
+          // Navigate to survey and refresh map when returning
+          await Navigator.of(context).pushNamed('/wellbeing_survey');
+          
+          // Refresh map data when returning from survey
+          print('[home_view] 🔄 Returned from survey - refreshing map data');
+          _refreshMapAfterSurvey();
         },
         backgroundColor: SouthAfricanTheme.primaryBlue,
         foregroundColor: SouthAfricanTheme.pureWhite,
@@ -1079,6 +1091,21 @@ class HomeViewState extends State<HomeView>
         tooltip: 'Take wellbeing survey - share how you feel in this location',
       ),
     );
+  }
+
+  // Method to refresh map data after returning from survey
+  void _refreshMapAfterSurvey() {
+    try {
+      final mapViewState = _mapViewKey.currentState;
+      if (mapViewState != null) {
+        print('[home_view] 📍 Calling map refresh after survey completion');
+        mapViewState.refreshMapData();
+      } else {
+        print('[home_view] ⚠️ MapView state not available for refresh');
+      }
+    } catch (e) {
+      print('[home_view] ❌ Error refreshing map after survey: $e');
+    }
   }
 
   @override

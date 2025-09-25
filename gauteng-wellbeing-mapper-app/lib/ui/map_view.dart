@@ -9,6 +9,8 @@ import 'package:wellbeing_mapper/services/test_service.dart';
 import '../services/storage_settings_service.dart';
 
 class MapView extends StatefulWidget {
+  const MapView({Key? key}) : super(key: key);
+  
   @override
   State createState() => MapViewState();
 }
@@ -29,7 +31,7 @@ class MapViewState extends State<MapView>
   List<Polyline> _motionChangePolylines = [];
   List<CircleMarker> _stationaryMarker = [];
 
-  LatLng _center = new LatLng(51.5, -0.09);
+  LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
   late MapController _mapController;
   late MapOptions _mapOptions;
   
@@ -40,6 +42,7 @@ class MapViewState extends State<MapView>
   @override
   void initState() {
     super.initState();
+    print('[map_view] 📍 MapView initState called');
     _mapOptions = new MapOptions(
       onMapEvent: _onPositionChanged, // Changed from onPositionChanged
       initialCenter: _center, // Changed from center
@@ -58,8 +61,49 @@ class MapViewState extends State<MapView>
 
     // Replace onReady with a different initialization approach
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('[map_view] 📍 PostFrameCallback - Loading initial stored locations');
       _displayStoredLocations();
     });
+    
+    // Additional delayed load to ensure map is fully ready
+    Future.delayed(Duration(milliseconds: 500), () {
+      print('[map_view] 📍 Delayed callback - Loading stored locations after 500ms');
+      _displayStoredLocations();
+    });
+  }
+
+  @override
+  void didUpdateWidget(MapView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    print('[map_view] 📍 MapView didUpdateWidget called - refreshing stored locations');
+    
+    // Refresh stored locations when widget updates (e.g., coming back from survey)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _displayStoredLocations();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print('[map_view] 📍 MapView didChangeDependencies called - refreshing stored locations');
+    
+    // Refresh stored locations when dependencies change (e.g., navigation)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _displayStoredLocations();
+    });
+  }
+
+  // Add method to refresh map when coming back into view
+  void refreshMapData() {
+    print('[map_view] 📍 MapView refreshMapData called');
+    _displayStoredLocations();
+  }
+  
+  // Public method to refresh stored locations (called externally)
+  void refreshStoredLocations() {
+    print('[map_view] 📍 MapView refreshStoredLocations called externally');
+    _displayStoredLocations();
   }
 
   void _displayStoredLocations() async {
@@ -70,27 +114,70 @@ class MapViewState extends State<MapView>
     }
     
     try {
+      print('[map_view] 🔄 Starting _displayStoredLocations - Current markers: ${_locations.length}, polyline points: ${_polyline.length}');
+      
+      // Clear existing markers before reloading to prevent duplicates
+      print('[map_view] 🗑️ Clearing existing markers before reload');
+      _locations.clear();
+      _polyline.clear();
+      _stopLocations.clear();
+      _motionChangePolylines.clear();
+      
+      // Force a setState to clear the map
+      setState(() {});
+      
+      // Add a small delay to ensure clearing is visible
+      await Future.delayed(Duration(milliseconds: 100));
+      
       // Use filtered location data to improve performance
       List filteredLocations = await StorageSettingsService.getFilteredLocationDataForMap();
       print('[map_view] ✅ Found ${filteredLocations.length} filtered location points to display');
       
       if (filteredLocations.isEmpty) {
         print('[map_view] ⚠️ No location data found - user may not have tracking enabled or no movement yet');
+        setState(() {
+          // Trigger rebuild even with empty data to show clean map
+        });
         return;
       }
       
       int displayedCount = 0;
+      LatLng? firstLocation;
+      LatLng? lastLocation;
+      
       for (var thisLocation in filteredLocations) {
-        _onLocation(bg.Location(thisLocation));
+        bg.Location bgLocation = bg.Location(thisLocation);
+        LatLng currentPoint = LatLng(bgLocation.coords.latitude, bgLocation.coords.longitude);
+        
+        // Track first and last locations for map centering
+        if (firstLocation == null) {
+          firstLocation = currentPoint;
+        }
+        lastLocation = currentPoint;
+        
+        _onLocation(bgLocation);
         displayedCount++;
       }
       
       print('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
       
+      // Center map on the most recent location if available
+      if (lastLocation != null && _autoCenter) {
+        print('[map_view] 📍 Centering map on most recent location: ${lastLocation.latitude}, ${lastLocation.longitude}');
+        _mapController.move(lastLocation, _mapOptions.initialZoom);
+        _currentLocation = lastLocation;
+      } else if (firstLocation != null) {
+        print('[map_view] 📍 Centering map on first available location: ${firstLocation.latitude}, ${firstLocation.longitude}');
+        _mapController.move(firstLocation, _mapOptions.initialZoom);
+        _currentLocation = firstLocation;
+      }
+      
       // Force a map refresh to ensure polylines and markers are visible
       setState(() {
         // Trigger rebuild to ensure map elements are displayed
       });
+      
+      print('[map_view] 🎯 Map refresh complete with ${_locations.length} location markers and ${_polyline.length} polyline points');
       
     } catch (error) {
       print('[map_view] ❌ Error loading stored locations: $error');
