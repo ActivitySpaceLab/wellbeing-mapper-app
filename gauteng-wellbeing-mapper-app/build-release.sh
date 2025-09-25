@@ -24,11 +24,11 @@ fvm flutter pub get
 
 # Build Android App Bundle (recommended for Play Store)
 echo "🤖 Building Android App Bundle..."
-fvm flutter build appbundle
+fvm flutter build appbundle --flavor production
 
 # Build Android APKs (alternative distribution)
 echo "🤖 Building Android APKs..."
-fvm flutter build apk --split-per-abi
+fvm flutter build apk --split-per-abi --flavor production
 
 # Install iOS dependencies
 echo "🍎 Installing iOS dependencies..."
@@ -45,8 +45,8 @@ fvm flutter build ipa
 echo "✅ Build complete!"
 echo ""
 echo "📁 Output files:"
-echo "  Android App Bundle: build/app/outputs/bundle/release/app-release.aab"
-echo "  Android APKs: build/app/outputs/flutter-apk/"
+echo "  Android App Bundle: build/app/outputs/bundle/production/release/app-production-release.aab"
+echo "  Android APKs: build/app/outputs/flutter-apk/ (app-*-production-release.apk)"
 echo "  iOS App: build/ios/iphoneos/Runner.app"
 echo "  iOS IPA: build/ios/ipa/gauteng_wellbeing_mapper_app.ipa"
 echo ""
