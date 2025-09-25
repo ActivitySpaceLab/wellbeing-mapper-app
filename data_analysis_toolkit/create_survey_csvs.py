@@ -420,30 +420,70 @@ class SurveyCSVCreator:
         image_paths = []
         
         try:
-            # Parse encrypted image data (assuming base64 encoded)
-            image_data = json.loads(encrypted_data) if encrypted_data.startswith('{') else encrypted_data
-            
-            if isinstance(image_data, dict):
-                for idx, (key, value) in enumerate(image_data.items()):
-                    if isinstance(value, str) and len(value) > 100:  # Likely base64 image
-                        filename = f"{response_id}_{survey_type}_image_{idx}.jpg"
-                        filepath = self.images_dir / filename
+            # Handle NaN/None values
+            if pd.isna(encrypted_data) or encrypted_data is None:
+                return image_paths
+                
+            # Parse encrypted image array - handle both JSON and Python string formats
+            if str(encrypted_data).startswith('['):
+                try:
+                    # Try JSON parsing first
+                    image_list = json.loads(encrypted_data)
+                except json.JSONDecodeError:
+                    # If JSON fails, try Python literal_eval for string representation
+                    import ast
+                    image_list = ast.literal_eval(encrypted_data)
+                    
+                print(f"� Processing {len(image_list)} encrypted images for {response_id}")
+                
+                for idx, image_json in enumerate(image_list):
+                    try:
+                        # Each item is a JSON string containing image metadata + base64 data
+                        if isinstance(image_json, str):
+                            image_obj = json.loads(image_json)
+                        else:
+                            image_obj = image_json
                         
-                        # Decode and save image
-                        try:
-                            image_binary = base64.b64decode(value)
-                            with open(filepath, 'wb') as f:
-                                f.write(image_binary)
-                            image_paths.append(str(filepath.relative_to(self.output_dir)))
-                        except:
-                            # If base64 decode fails, save as text file for inspection
-                            text_file = filepath.with_suffix('.txt')
-                            with open(text_file, 'w') as f:
-                                f.write(value)
-                            image_paths.append(str(text_file.relative_to(self.output_dir)))
+                        # Extract image metadata
+                        original_filename = image_obj.get('filename', f'image_{idx}')
+                        image_size = image_obj.get('size', 0)
+                        base64_data = image_obj.get('data', '')
+                        
+                        if base64_data:
+                            # Create filename preserving original name but prefixed with response info
+                            name, ext = os.path.splitext(original_filename)
+                            if not ext:
+                                ext = '.jpg'  # Default extension
+                            filename = f"{response_id}_{survey_type}_{name}{ext}"
+                            filepath = self.images_dir / filename
+                            
+                            # Decode and save image
+                            try:
+                                image_binary = base64.b64decode(base64_data)
+                                with open(filepath, 'wb') as f:
+                                    f.write(image_binary)
+                                
+                                image_paths.append(str(filepath.relative_to(self.output_dir)))
+                                print(f"   ✅ Extracted image: {filename} ({image_size} bytes)")
+                                
+                            except Exception as decode_error:
+                                print(f"   ⚠️ Failed to decode image {original_filename}: {decode_error}")
+                                # Save metadata for debugging
+                                debug_file = (self.images_dir / f"{response_id}_{survey_type}_{name}_debug.json")
+                                with open(debug_file, 'w') as f:
+                                    json.dump(image_obj, f, indent=2)
+                                
+                    except Exception as item_error:
+                        print(f"   ⚠️ Failed to process image {idx}: {item_error}")
+            else:
+                print(f"   ⚠️ Unexpected encrypted image format for {response_id}: {encrypted_data[:100]}...")
             
         except Exception as e:
-            print(f"   ⚠️ Failed to extract encrypted images: {e}")
+            print(f"   ❌ Failed to extract encrypted images for {response_id}: {e}")
+            # Save raw data for debugging
+            debug_file = self.images_dir / f"{response_id}_{survey_type}_raw_debug.txt"
+            with open(debug_file, 'w') as f:
+                f.write(encrypted_data)
         
         return image_paths
     

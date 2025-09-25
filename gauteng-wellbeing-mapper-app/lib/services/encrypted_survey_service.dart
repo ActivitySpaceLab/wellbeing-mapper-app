@@ -245,7 +245,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
   
   /// Process images for encryption - converts local file paths to base64 data
   static Future<List<String>?> _processImagesForEncryption(String? imageUrlsJson) async {
+    print('🐛 DEBUG: _processImagesForEncryption called with: "$imageUrlsJson"');
     if (imageUrlsJson == null || imageUrlsJson.isEmpty) {
+      print('🐛 DEBUG: imageUrlsJson is null or empty, returning null');
       return null;
     }
     

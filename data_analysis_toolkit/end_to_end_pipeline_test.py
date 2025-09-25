@@ -143,12 +143,13 @@ class PipelineTestRunner:
             elif days:
                 cmd.extend(["--days", str(days)])
             else:
-                cmd.extend(["--days", "7"])  # Default to 7 days
+                cmd.append("--all")  # Default to all data to ensure we get results
             
             print(f"   Running: {' '.join(cmd)}")
             
-            # Run the download
-            result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(self.qualtrics_dir))
+            # Run the download with explicit environment variables
+            env = os.environ.copy()  # Copy current environment
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(self.base_dir), env=env)
             
             step_info['end_time'] = datetime.now()
             
@@ -156,14 +157,22 @@ class PipelineTestRunner:
                 step_info['status'] = 'success'
                 print("   ✅ Download completed successfully")
                 
-                # Count downloaded files
-                downloaded_files = list(self.output_dirs['qualtrics_data'].glob("*.csv"))
+                # Debug: show actual stdout/stderr
+                if result.stdout:
+                    print(f"   📝 Download output: {result.stdout[-200:]}")  # Last 200 chars
+                if result.stderr:
+                    print(f"   ⚠️ Download stderr: {result.stderr}")
+                
+                # Count downloaded files (check both .csv and other files)
+                downloaded_files = list(self.output_dirs['qualtrics_data'].glob("*"))
+                csv_files = [f for f in downloaded_files if f.suffix == '.csv']
                 step_info['details']['files_downloaded'] = len(downloaded_files)
+                step_info['details']['csv_files'] = len(csv_files)
                 step_info['details']['file_list'] = [f.name for f in downloaded_files]
                 
-                print(f"   📄 Downloaded {len(downloaded_files)} files:")
+                print(f"   📄 Downloaded {len(downloaded_files)} files ({len(csv_files)} CSV files):")
                 for file in downloaded_files:
-                    print(f"      - {file.name}")
+                    print(f"      - {file.name} ({file.stat().st_size} bytes)")
                     
             else:
                 step_info['status'] = 'failed'
@@ -192,20 +201,22 @@ class PipelineTestRunner:
                 sys.executable,
                 str(self.decryption_dir / "automated_decryption_pipeline.py"),
                 "--input", str(self.output_dirs['qualtrics_data']),
-                "--output", str(self.output_dirs['decrypted_data'])
+                "--output", str(self.output_dirs['decrypted_data']),
+                "--private-key", "../untracked/private_key.pem"
             ]
             
             # Add password if provided via environment variable
             private_key_password = os.environ.get('PRIVATE_KEY_PASSWORD', '')
             if private_key_password:
                 cmd.extend(["--password", private_key_password])
-                print(f"   Running: {' '.join(cmd[:-1])} --password [HIDDEN]")
+                print(f"   Running: {' '.join(cmd[:-2])} --password [HIDDEN]")
             else:
                 print(f"   Running: {' '.join(cmd)}")
-                print("   Note: If prompted for password, set PRIVATE_KEY_PASSWORD environment variable")
+                print("   ⚠️  No PRIVATE_KEY_PASSWORD environment variable - decryption will likely fail")
             
-            # Run the decryption
-            result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(self.decryption_dir))
+            # Run the decryption with explicit environment
+            env = os.environ.copy()  # Ensure environment variables are passed through
+            result = subprocess.run(cmd, capture_output=True, text=True, env=env, cwd=str(self.base_dir))
             
             step_info['end_time'] = datetime.now()
             
@@ -250,6 +261,7 @@ class PipelineTestRunner:
                 str(self.base_dir / "create_survey_csvs.py"),
                 "--input", str(self.output_dirs['decrypted_data']),
                 "--output", str(self.output_dirs['structured_data']),
+                "--download-images",  # Enable image extraction by default
                 "--report", "--validate"
             ]
             
@@ -264,16 +276,21 @@ class PipelineTestRunner:
                 step_info['status'] = 'success'
                 print("   ✅ CSV creation completed successfully")
                 
-                # Count CSV files
+                # Count output files
                 csv_files = list(self.output_dirs['structured_data'].glob("*.csv"))
                 json_files = list(self.output_dirs['structured_data'].glob("*.json"))
+                image_files = list(self.output_dirs['structured_data'].glob("images/*.jpg"))
                 step_info['details']['csv_files'] = len(csv_files)
                 step_info['details']['json_files'] = len(json_files)
+                step_info['details']['image_files'] = len(image_files)
                 step_info['details']['file_list'] = [f.name for f in csv_files + json_files]
                 
                 print(f"   📄 Created {len(csv_files)} CSV files:")
                 for file in csv_files:
                     print(f"      - {file.name}")
+                
+                if image_files:
+                    print(f"   📷 Extracted {len(image_files)} images to images/ directory")
                     
             else:
                 step_info['status'] = 'failed'
@@ -324,6 +341,8 @@ class PipelineTestRunner:
                 print(f"      Files: {step_info['details']['files_decrypted']} decrypted")
             elif step_info['status'] == 'success' and 'csv_files' in step_info['details']:
                 print(f"      Files: {step_info['details']['csv_files']} CSV files created")
+                if 'image_files' in step_info['details'] and step_info['details']['image_files'] > 0:
+                    print(f"      Images: {step_info['details']['image_files']} images extracted")
         
         return summary
     
@@ -371,9 +390,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s                          Run test with last 7 days of data
+  %(prog)s                          Run test with all available data (default)
+  %(prog)s --days 7                 Test with last 7 days only
   %(prog)s --days 30                Test with last 30 days 
-  %(prog)s --all-data               Test with all available data
   %(prog)s --clean                  Clean previous data before testing
   %(prog)s --clean --days 30        Clean run with 30 days of data
 
@@ -384,11 +403,11 @@ Environment Variables Required:
     )
     
     # Data selection
-    parser.add_argument('--days', type=int, default=7,
-                       help='Number of days of data to download for testing (default: 7)')
+    parser.add_argument('--days', type=int, 
+                       help='Number of days of data to download for testing')
     
-    parser.add_argument('--all-data', action='store_true',
-                       help='Download all available data instead of limited date range')
+    parser.add_argument('--all-data', action='store_true', default=True,
+                       help='Download all available data (default behavior)')
     
     # Test options
     parser.add_argument('--clean', action='store_true',
@@ -409,9 +428,11 @@ Environment Variables Required:
     # Run the test
     try:
         runner = PipelineTestRunner(base_dir=args.base_dir)
+        # If days is specified, use that; otherwise use all_data (default True)
+        use_all_data = args.all_data if args.days is None else False
         success = runner.run_full_pipeline(
-            days=args.days if not args.all_data else None,
-            all_data=args.all_data,
+            days=args.days,
+            all_data=use_all_data,
             clean=args.clean
         )
         
