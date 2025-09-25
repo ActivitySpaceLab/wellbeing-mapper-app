@@ -54,6 +54,39 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   bool _repositoryConsent = false;
   bool _followUpConsent = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _checkExistingConsent();
+  }
+
+  /// Check if user has already consented and bypass the form if they have
+  Future<void> _checkExistingConsent() async {
+    print('[ConsentForm] Checking for existing consent...');
+    
+    // Check if consent has already been completed
+    final hasConsent = await ConsentTrackingService.hasCompletedCurrentConsent();
+    
+    if (hasConsent) {
+      print('[ConsentForm] User has already completed consent - bypassing form');
+      
+      // User has already consented, navigate them past the consent form
+      if (mounted) {
+        // Navigate to the initial survey or main app depending on context
+        if (widget.isTestingMode) {
+          // For testing mode, go to home
+          Navigator.of(context).pushReplacementNamed('/');
+        } else {
+          // For research mode, go to initial survey
+          Navigator.of(context).pushReplacementNamed('/initial_survey');
+        }
+      }
+      return;
+    }
+    
+    print('[ConsentForm] No existing consent found - showing consent form');
+  }
+
   // Site-specific content getters
   String get _siteTitle {
     if (widget.researchSite == 'gauteng') {

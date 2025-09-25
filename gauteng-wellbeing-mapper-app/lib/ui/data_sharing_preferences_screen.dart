@@ -18,7 +18,35 @@ class _DataSharingPreferencesScreenState extends State<DataSharingPreferencesScr
   @override
   void initState() {
     super.initState();
-    _loadConsentData();
+    _checkConsentAndLoad();
+  }
+
+  /// Check if user has consent before showing preferences, redirect if no consent
+  Future<void> _checkConsentAndLoad() async {
+    print('[DataSharingPreferences] Checking for existing consent...');
+    
+    // Import the consent tracking service
+    try {
+      final db = SurveyDatabase();
+      final consent = await db.getConsent();
+      
+      if (consent == null) {
+        print('[DataSharingPreferences] No consent found - redirecting to participation selection');
+        
+        if (mounted) {
+          // No consent exists, redirect to participation selection
+          Navigator.of(context).pushReplacementNamed('/participation_selection');
+        }
+        return;
+      }
+      
+      print('[DataSharingPreferences] Consent found - loading data');
+      await _loadConsentData();
+    } catch (e) {
+      print('[DataSharingPreferences] Error checking consent: $e');
+      // If there's an error, still try to load data
+      await _loadConsentData();
+    }
   }
 
   Future<void> _loadConsentData() async {

@@ -11,6 +11,7 @@ import '../services/ios_location_fix_service.dart';
 
 import '../theme/south_african_theme.dart';
 import '../services/participant_validation_service.dart';
+import '../services/consent_tracking_service.dart';
 
 class ParticipationSelectionScreen extends StatefulWidget {
   @override
@@ -414,26 +415,36 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
         }
         // If consent was cancelled or failed, do nothing (stay on current screen)
       } else if (selectedAppMode == AppMode.research) {
-        // Research participation flow - check if already validated
+        // Research participation flow - check if already validated and consented
         await AppModeService.setCurrentMode(AppMode.research);
         
         // Check if participant is already validated
         final isValidated = await ParticipantValidationService.isParticipantValidated();
         
         if (isValidated) {
-          // Already validated - go directly to consent form
-          final participantCode = await ParticipantValidationService.getValidatedParticipantCode();
-          final result = await Navigator.of(context).pushNamed(
-            '/consent_form',
-            arguments: {
-              'participantCode': participantCode ?? '',
-              'researchSite': 'gauteng',
-              'isTestingMode': false,
-            },
-          );
-
-          if (result == true) {
+          // Already validated - check if consent is also completed
+          final hasConsent = await ConsentTrackingService.hasCompletedCurrentConsent();
+          
+          if (hasConsent) {
+            // Both validation and consent completed - go directly to main app
+            print('[ParticipationSelection] User already validated and consented - bypassing consent form');
             _navigateToMainApp();
+          } else {
+            // Validated but no consent - go to consent form
+            print('[ParticipationSelection] User validated but needs consent');
+            final participantCode = await ParticipantValidationService.getValidatedParticipantCode();
+            final result = await Navigator.of(context).pushNamed(
+              '/consent_form',
+              arguments: {
+                'participantCode': participantCode ?? '',
+                'researchSite': 'gauteng',
+                'isTestingMode': false,
+              },
+            );
+
+            if (result == true) {
+              _navigateToMainApp();
+            }
           }
         } else {
           // Not validated - go to participant code entry screen
