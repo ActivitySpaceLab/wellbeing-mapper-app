@@ -802,7 +802,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         ? _healthConsent && _sexualOrientationConsent && _locationConsent && 
           _healthConsent2 && _sexualOrientationConsent2 && _locationConsent2 && 
           _dataTransferConsent2 && _publicReportingConsent && _dataShareConsent && 
-          _futureResearchConsent && _repositoryConsent && _followUpConsent
+          _futureResearchConsent && _repositoryConsent
+          // Note: _followUpConsent is now optional as requested
         : _voluntaryParticipation && _generalConsent && _raceEthnicityConsent && 
           _healthConsent && _sexualOrientationConsent && _locationConsent && 
           _dataTransferConsent;
