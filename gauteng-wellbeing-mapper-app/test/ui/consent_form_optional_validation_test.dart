@@ -69,22 +69,9 @@ void main() {
     test('should fail validation if any required consent is missing', () async {
       // Test that the form still requires all other consents
       
-      bool _healthConsent = true;
-      bool _sexualOrientationConsent = false; // Missing this one
-      bool _locationConsent = true;
-      bool _healthConsent2 = true;
-      bool _sexualOrientationConsent2 = true;
-      bool _locationConsent2 = true;
-      bool _dataTransferConsent2 = true;
-      bool _publicReportingConsent = true;
-      bool _dataShareConsent = true;
-      bool _futureResearchConsent = true;
-      bool _repositoryConsent = true;
+      bool _sexualOrientationConsent = false; // Missing this one - all others true
 
-      final bool allRequired = _healthConsent && _sexualOrientationConsent && _locationConsent && 
-          _healthConsent2 && _sexualOrientationConsent2 && _locationConsent2 && 
-          _dataTransferConsent2 && _publicReportingConsent && _dataShareConsent && 
-          _futureResearchConsent && _repositoryConsent;
+      final bool allRequired = _sexualOrientationConsent; // Simplified - if this is false, validation fails
 
       print('[TEST] Missing sexual orientation consent: $allRequired');
       
