@@ -37,7 +37,19 @@ class FreshStartMigrationService {
       return false;
     }
     
-    // Migration needed - either fresh install or existing user
+    // IMPORTANT: Don't run migration if user is currently in active research mode
+    // This prevents clearing their state if the app crashes and restarts
+    final currentAppMode = prefs.getString('app_mode');
+    final consentCompleted = prefs.getBool('consent_completed') ?? false;
+    
+    if (currentAppMode == 'research' && consentCompleted) {
+      print('[FreshStartMigration] User is actively using research mode - marking migration as complete to preserve state');
+      // Mark migration as completed to prevent future runs
+      await prefs.setBool(_freshStartCompletedKey, true);
+      return false;
+    }
+    
+    // Migration needed - either fresh install or existing user who hasn't set up research mode
     final previousVersion = prefs.getString(_appVersionKey);
     if (previousVersion == null) {
       print('[FreshStartMigration] Fresh install - will perform fresh start setup');
@@ -129,14 +141,24 @@ class FreshStartMigrationService {
     await prefs.remove('participant_code');
     await prefs.remove('researcher_contact');
     
-    // Clear app mode (will default to private until user chooses research participation)
-    await prefs.remove('app_mode');
+    // PRESERVE app_mode if user has already successfully set up research mode
+    // Only clear app_mode for users who haven't properly configured research participation
+    final currentAppMode = prefs.getString('app_mode');
+    final consentCompleted = prefs.getBool('consent_completed') ?? false;
+    
+    if (currentAppMode != 'research' || !consentCompleted) {
+      // Clear app mode only if user hasn't successfully set up research mode
+      await prefs.remove('app_mode');
+      print('[FreshStartMigration] Cleared app_mode (user had not completed research setup)');
+    } else {
+      print('[FreshStartMigration] Preserved app_mode (user had completed research setup)');
+    }
     
     // Clear ALL survey responses from database
     final db = SurveyDatabase();
     await db._clearAllSurveyData();
     
-    print('[FreshStartMigration] Cleared ALL research participation data and surveys');
+    print('[FreshStartMigration] Cleared research participation data and surveys');
   }
   
   /// Reset ALL onboarding flags to force complete re-onboarding

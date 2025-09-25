@@ -1192,14 +1192,25 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
         setState(() {
           _selectedImages.add(File(image.path));
         });
+        print('[Camera] Successfully captured image: ${image.path}');
+      } else {
+        print('[Camera] User cancelled camera operation');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error taking photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('[Camera] Error taking photo: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error taking photo. Please try again or use gallery instead.'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Gallery',
+              textColor: Colors.white,
+              onPressed: () => _pickImageFromGallery(),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -1217,14 +1228,20 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
         setState(() {
           _selectedImages.add(File(image.path));
         });
+        print('[Gallery] Successfully selected image: ${image.path}');
+      } else {
+        print('[Gallery] User cancelled gallery selection');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error selecting photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('[Gallery] Error selecting photo: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error selecting photo. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

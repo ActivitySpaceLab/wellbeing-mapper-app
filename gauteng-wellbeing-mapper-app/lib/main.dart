@@ -1,7 +1,7 @@
 import 'package:wellbeing_mapper/models/route_generator.dart';
 import 'package:wellbeing_mapper/util/env.dart';
 import 'package:wellbeing_mapper/services/notification_service.dart';
-import 'package:wellbeing_mapper/services/pilot_migration_service.dart';
+
 import 'package:wellbeing_mapper/ui/home_view.dart';
 import 'package:wellbeing_mapper/theme/south_african_theme.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +14,7 @@ import 'package:background_fetch/background_fetch.dart';
 
 import 'models/app_localizations.dart';
 import 'package:uuid/uuid.dart';
+import 'services/consent_tracking_service.dart';
 
 /// GlobalData holds global user-related state for the app.
 class GlobalData {
@@ -215,22 +216,7 @@ void main() {
     print('[main.dart] userUUID: $userUUID');
     print('[main.dart] sampleId: $sampleId');
 
-    // Check for fresh start migration (universal for ALL users)
-    try {
-      print('[main.dart] Checking fresh start migration status...');
-      final needsMigration = await FreshStartMigrationService.needsFreshStartMigration();
-      
-      if (needsMigration) {
-        print('[main.dart] Fresh start migration needed - executing universal migration...');
-        await FreshStartMigrationService.executeFreshStartMigration();
-        print('[main.dart] ✅ Fresh start migration completed - all users will go through new consent');
-      } else {
-        print('[main.dart] Fresh start migration already completed');
-      }
-    } catch (error) {
-      print('[main.dart] Error during fresh start migration check (non-fatal): $error');
-      // Continue app startup even if migration fails
-    }
+
 
     // Initialize notification service
     try {
@@ -365,11 +351,15 @@ class InitialRouteDecider extends StatelessWidget {
       String? participationSettings = prefs.getString('participation_settings');
       print('[InitialRouteDecider] Participation settings: $participationSettings');
       
-      if (participationSettings != null && participationSettings.isNotEmpty) {
+      // Check if user needs to complete current consent
+      bool needsConsent = await ConsentTrackingService.needsConsent();
+      print('[InitialRouteDecider] Needs consent: $needsConsent');
+      
+      if (participationSettings != null && participationSettings.isNotEmpty && !needsConsent) {
         print('[InitialRouteDecider] Going to home route');
         return '/'; // Go to home
       } else {
-        print('[InitialRouteDecider] Going to participation selection');
+        print('[InitialRouteDecider] Going to participation selection (${needsConsent ? 'needs consent' : 'no settings'})');
         return '/participation_selection'; // Go to participation selection
       }
     } catch (error) {

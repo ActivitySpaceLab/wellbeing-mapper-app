@@ -1926,14 +1926,25 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         setState(() {
           _selectedImages.add(File(image.path));
         });
+        print('[Camera] Successfully captured image: ${image.path}');
+      } else {
+        print('[Camera] User cancelled camera operation');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error taking photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('[Camera] Error taking photo: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error taking photo. Please try again or use gallery instead.'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Gallery',
+              textColor: Colors.white,
+              onPressed: () => _pickImageFromGallery(),
+            ),
+          ),
+        );
+      }
     }
   }
 

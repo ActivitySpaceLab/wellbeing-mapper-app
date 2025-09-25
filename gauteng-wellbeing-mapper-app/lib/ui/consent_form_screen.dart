@@ -10,6 +10,7 @@ import '../models/app_mode.dart';
 import '../services/participant_validation_service.dart';
 import '../services/encrypted_survey_service.dart';
 import '../main.dart'; // For GlobalData
+import '../services/consent_tracking_service.dart';
 
 class ConsentFormScreen extends StatefulWidget {
   final String participantCode;
@@ -628,7 +629,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
               _buildCheckbox(_repositoryConsent, (value) => setState(() => _repositoryConsent = value!),
                 'to what I contribute being placed in a public repository in a deidentified or anonymised form once the project is complete'),
               _buildCheckbox(_followUpConsent, (value) => setState(() => _followUpConsent = value!),
-                'to being contacted about participation in possible follow-up studies'),
+                'to being contacted about participation in possible follow-up studies',
+                isRequired: false),
             ]),
           ] else ...[
             _buildConsentSection('I UNDERSTAND that:', [
@@ -954,9 +956,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         print('[ConsentForm] Set app mode to research after consent completion');
       }
       
-      // Set flag to indicate fresh consent completion for initial survey prompt
-      await prefs.setBool('fresh_consent_completion', true);
-      print('[ConsentForm] Set fresh_consent_completion flag for main screen survey prompt');
+      // Mark consent as completed using new tracking service (also sets fresh_consent_completion flag)
+      await ConsentTrackingService.markConsentCompleted();
+      print('[ConsentForm] Marked consent as completed using ConsentTrackingService');
 
       // Show success and navigate
       _showSuccessDialog(uuid);

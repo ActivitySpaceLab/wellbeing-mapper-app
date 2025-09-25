@@ -26,6 +26,7 @@ import '../services/ios_location_fix_service.dart';
 import '../db/survey_database.dart';
 
 import '../util/dialog.dart' as util;
+import '../services/consent_tracking_service.dart';
 
 // For pretty-printing location JSON
 JsonEncoder encoder = new JsonEncoder.withIndent("     ");
@@ -134,13 +135,12 @@ class HomeViewState extends State<HomeView>
         if (needsInitialSurvey && mounted) {
           
           // Check if this is a fresh consent completion (user just came from consent form)
-          final prefs = await SharedPreferences.getInstance();
-          bool isFirstTime = prefs.getBool('fresh_consent_completion') ?? false;
-          print('[HomeView] isFirstTime (fresh_consent_completion): $isFirstTime');
+          bool isFirstTime = await ConsentTrackingService.hasJustCompletedConsent();
+          print('[HomeView] isFirstTime (hasJustCompletedConsent): $isFirstTime');
           
           if (isFirstTime) {
             // Clear the flag and show immediate survey popup
-            await prefs.remove('fresh_consent_completion');
+            await ConsentTrackingService.clearJustCompletedFlag();
             print('[HomeView] Showing immediate initial survey offering');
             _showInitialSurveyOffering();
           } else {
