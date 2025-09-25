@@ -417,8 +417,9 @@ class HomeViewState extends State<HomeView>
             debug: false, // Disable debug sounds in production
             logLevel: bg.Config.LOG_LEVEL_OFF,
             // Geolocation options
-            desiredAccuracy: bg.Config.DESIRED_ACCURACY_NAVIGATION,
-            distanceFilter: 10.0,
+            desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH, // Changed from NAVIGATION to HIGH for better battery life
+            // DIAGNOSTIC FIX: Reduce distance filter for more sensitive tracking
+            distanceFilter: 5.0, // Reduced from 10.0 to 5.0 meters
             stopTimeout: 5, // Wait 5 minutes before considering device stationary (was 1)
             // Motion Detection Settings (critical for production mode)
             stationaryRadius: 25, // meters - detect stationary within 25m radius
@@ -433,7 +434,10 @@ class HomeViewState extends State<HomeView>
             stopOnTerminate: false,
             startOnBoot: true,
             enableHeadless: true,
-            heartbeatInterval: 60))
+            // DIAGNOSTIC FIX: Reduce heartbeat interval for better background tracking
+            heartbeatInterval: 30, // Reduced from 60 to 30 seconds
+            // DIAGNOSTIC FIX: Add preventSuspend for iOS background tracking
+            preventSuspend: true))
         .then((bg.State state) {
       print('[ready] Background geolocation ready with state: ${state.toMap()}');
       print('[ready] Plugin enabled: ${state.enabled}');
