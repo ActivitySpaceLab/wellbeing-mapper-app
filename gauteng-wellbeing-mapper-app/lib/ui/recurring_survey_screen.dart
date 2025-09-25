@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'dart:convert';
 import '../models/survey_models.dart';
@@ -1915,6 +1916,26 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   /// Pick an image from the camera
   Future<void> _pickImageFromCamera() async {
     try {
+      // Request camera permission first - FIX CRITICAL BUG
+      PermissionStatus cameraStatus = await Permission.camera.request();
+      
+      if (cameraStatus != PermissionStatus.granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Camera permission is required to take photos. Please grant camera permission in your device settings.'),
+              backgroundColor: Colors.red,
+              action: SnackBarAction(
+                label: 'Settings',
+                textColor: Colors.white,
+                onPressed: () => openAppSettings(),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
         maxWidth: 1920,

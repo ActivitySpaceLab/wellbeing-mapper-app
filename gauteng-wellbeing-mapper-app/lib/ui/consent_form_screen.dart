@@ -874,14 +874,14 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         dataProcessing: widget.researchSite == 'gauteng' ? 
           true : // All Gauteng checkboxes must be checked to reach this point
           _generalConsent,
-        locationData: _locationConsent,
-        surveyData: _generalConsent,
-        dataRetention: _generalConsent,
-        dataSharing: _dataTransferConsent,
-        voluntaryParticipation: _voluntaryParticipation,
+        locationData: widget.researchSite == 'gauteng' ? _locationConsent2 : _locationConsent,
+        surveyData: widget.researchSite == 'gauteng' ? true : _generalConsent,
+        dataRetention: widget.researchSite == 'gauteng' ? true : _generalConsent,
+        dataSharing: widget.researchSite == 'gauteng' ? _dataShareConsent : _dataTransferConsent,
+        voluntaryParticipation: widget.researchSite == 'gauteng' ? true : _voluntaryParticipation,
         consentedAt: DateTime.now(),
         participantSignature: widget.participantCode, // Using participant code as signature
-        // Map Gauteng-specific consent questions correctly
+        // Map Gauteng-specific consent questions correctly - FIX CRITICAL BUG
         consentParticipate: widget.researchSite == 'gauteng' ? _healthConsent : _generalConsent,
         consentQualtricsData: widget.researchSite == 'gauteng' ? _sexualOrientationConsent : _generalConsent,
         consentRaceEthnicity: widget.researchSite == 'gauteng' ? _locationConsent : _raceEthnicityConsent,

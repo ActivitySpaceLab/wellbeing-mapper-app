@@ -721,6 +721,17 @@ class HomeViewState extends State<HomeView>
           // Give iOS time to propagate the permission
           await Future.delayed(Duration(milliseconds: 500));
         }
+
+        // Request activity recognition permission for Android (critical for motion detection)
+        try {
+          if (Theme.of(context).platform == TargetPlatform.android) {
+            print('[_onClickEnable] Requesting Android activity recognition permission...');
+            final activityStatus = await Permission.activityRecognition.request();
+            print('[_onClickEnable] Activity recognition permission: $activityStatus');
+          }
+        } catch (e) {
+          print('[_onClickEnable] Activity recognition permission error (non-critical): $e');
+        }
         
         print('[_onClickEnable] ✅ All required permissions ready, starting background geolocation...');
         
