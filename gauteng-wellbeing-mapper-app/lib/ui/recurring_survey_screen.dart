@@ -1630,7 +1630,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).popUntil((route) => route.isFirst); // Go back to main screen
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Go directly to home screen
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
             child: Text('OK', style: TextStyle(color: Colors.white)),
@@ -1684,7 +1684,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).popUntil((route) => route.isFirst); // Go back to main screen
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Go directly to home screen
               _uploadDataToResearchServer(); // Upload data in background
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
@@ -1707,8 +1707,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       ),
     );
     
-    // Navigate back to main screen
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    // Navigate directly to home screen
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
   }
 
   Future<void> _uploadDataToResearchServer() async {
