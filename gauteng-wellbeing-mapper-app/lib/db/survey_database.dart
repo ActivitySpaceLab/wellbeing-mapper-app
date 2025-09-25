@@ -839,6 +839,7 @@ class SurveyDatabase {
           'consent_public_repository': consent.consentPublicRepository ? 1 : 0,
           'consent_followup_contact': consent.consentFollowupContact ? 1 : 0,
         },
+        conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } catch (e) {
       print('[Database] Error inserting consent, attempting to fix schema: $e');
@@ -877,6 +878,7 @@ class SurveyDatabase {
             'consent_public_repository': consent.consentPublicRepository ? 1 : 0,
             'consent_followup_contact': consent.consentFollowupContact ? 1 : 0,
           },
+          conflictAlgorithm: ConflictAlgorithm.replace,
         );
       } else {
         // Re-throw the error if it's not schema-related

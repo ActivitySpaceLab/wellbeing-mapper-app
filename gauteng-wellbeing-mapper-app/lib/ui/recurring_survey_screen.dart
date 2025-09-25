@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'dart:convert';
 import '../models/survey_models.dart';
@@ -728,19 +727,9 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         Row(
           children: [
             ElevatedButton.icon(
-              onPressed: _selectedImages.length >= 5 ? null : _takePhoto,
-              icon: Icon(Icons.camera_alt),
-              label: Text('Take Photo'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
-            ),
-            SizedBox(width: 12),
-            ElevatedButton.icon(
               onPressed: _selectedImages.length >= 5 ? null : _selectFromGallery,
               icon: Icon(Icons.photo_library),
-              label: Text('Gallery'),
+              label: Text('Add Photo'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
@@ -1868,19 +1857,9 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           children: [
             if (_selectedImages.length < 3) ...[
               ElevatedButton.icon(
-                onPressed: () => _pickImageFromCamera(),
-                icon: Icon(Icons.camera_alt),
-                label: Text('Take Photo'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-              SizedBox(width: 8),
-              ElevatedButton.icon(
                 onPressed: () => _pickImageFromGallery(),
                 icon: Icon(Icons.photo_library),
-                label: Text('From Gallery'),
+                label: Text('Add Photo'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
@@ -1911,62 +1890,6 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           ),
       ],
     );
-  }
-
-  /// Pick an image from the camera
-  Future<void> _pickImageFromCamera() async {
-    try {
-      // Request camera permission first - FIX CRITICAL BUG
-      PermissionStatus cameraStatus = await Permission.camera.request();
-      
-      if (cameraStatus != PermissionStatus.granted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Camera permission is required to take photos. Please grant camera permission in your device settings.'),
-              backgroundColor: Colors.red,
-              action: SnackBarAction(
-                label: 'Settings',
-                textColor: Colors.white,
-                onPressed: () => openAppSettings(),
-              ),
-            ),
-          );
-        }
-        return;
-      }
-
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,
-        maxWidth: 1920,
-        maxHeight: 1920,
-        imageQuality: 85,
-      );
-      
-      if (image != null) {
-        setState(() {
-          _selectedImages.add(File(image.path));
-        });
-        print('[Camera] Successfully captured image: ${image.path}');
-      } else {
-        print('[Camera] User cancelled camera operation');
-      }
-    } catch (e) {
-      print('[Camera] Error taking photo: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error taking photo. Please try again or use gallery instead.'),
-            backgroundColor: Colors.red,
-            action: SnackBarAction(
-              label: 'Gallery',
-              textColor: Colors.white,
-              onPressed: () => _pickImageFromGallery(),
-            ),
-          ),
-        );
-      }
-    }
   }
 
   /// Pick an image from the gallery
