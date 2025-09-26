@@ -49,6 +49,7 @@ dependencies:
   flutter_map: ^8.1.0
   latlong2: ^0.9.1
   geocoding: ^3.0.0
+  flutter_map_cache: ^2.0.0+1
   
   # Chart dependencies for timeline visualization
   fl_chart: ^0.69.2

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+
 import 'package:latlong2/latlong.dart';
 import '../theme/south_african_theme.dart';
 import '../models/data_sharing_consent.dart';
@@ -295,6 +296,7 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
                         urlTemplate: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
                         subdomains: const ['a', 'b', 'c', 'd'],
                         userAgentPackageName: 'com.example.app',
+
                       ),
                       
                       // Location points

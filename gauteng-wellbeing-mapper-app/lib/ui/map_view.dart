@@ -4,6 +4,7 @@ import 'package:flutter_background_geolocation/flutter_background_geolocation.da
     as bg;
 import 'package:flutter_map/flutter_map.dart';
 //import 'package:flutter_map/plugin_api.dart';
+
 import 'package:latlong2/latlong.dart';
 import 'package:wellbeing_mapper/services/test_service.dart';
 import '../services/storage_settings_service.dart';
@@ -431,6 +432,7 @@ class MapViewState extends State<MapView>
                 userAgentPackageName: 'com.github.activityspacelab.wellbeingmapper.gauteng',
                 maxZoom: 20,
                 retinaMode: RetinaMode.isHighDensity(context),
+
               ),
             if (TestService.isTestMode)
               Container(
