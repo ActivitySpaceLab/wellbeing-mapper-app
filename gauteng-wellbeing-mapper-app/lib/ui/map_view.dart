@@ -23,14 +23,11 @@ class MapViewState extends State<MapView>
     return true;
   }
 
-  late bg.Location _stationaryLocation;
-
   List<CircleMarker> _currentPosition = [];
   List<LatLng> _polyline = [];
   List<CircleMarker> _locations = [];
   List<CircleMarker> _stopLocations = [];
   List<Polyline> _motionChangePolylines = [];
-  List<CircleMarker> _stationaryMarker = [];
 
   LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
   late MapController _mapController;
@@ -362,13 +359,7 @@ class MapViewState extends State<MapView>
     }
   }
 
-  /// Update Big Blue current position dot.
-  void _updateCurrentPositionMarker(LatLng ll) {
-    // TEMPORARY: Disable current position markers to isolate error
-    print('[MapView] Would update current position marker at: ${ll.latitude}, ${ll.longitude}');
-    _currentPosition.clear();
-    // All CircleMarker creation disabled
-  }
+
 
   /*CircleMarker _buildStationaryCircleMarker(
       bg.Location location, bg.State state) {
@@ -381,21 +372,7 @@ class MapViewState extends State<MapView>
             : (state.geofenceProximityRadius! / 2));
   }*/
 
-  Polyline _buildMotionChangePolyline(bg.Location from, bg.Location to) {
-    return new Polyline(points: [
-      LatLng(from.coords.latitude, from.coords.longitude),
-      LatLng(to.coords.latitude, to.coords.longitude)
-    ], strokeWidth: 10.0, color: Color.fromRGBO(22, 190, 66, 0.7));
-  }
 
-  CircleMarker _buildStopCircleMarker(bg.Location location) {
-    // TEMPORARY: Return a dummy marker to avoid null errors
-    return CircleMarker(
-        point: LatLng(0, 0), // Dummy coordinates  
-        color: Colors.transparent, 
-        useRadiusInMeter: false,
-        radius: 0.0); // Zero radius
-  }
 
   //void _onPositionChanged(MapPosition pos, bool hasGesture) {
   //   _mapOptions.crs.scale(_mapController.zoom);
