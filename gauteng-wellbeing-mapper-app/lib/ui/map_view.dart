@@ -146,30 +146,65 @@ class MapViewState extends State<MapView>
       LatLng? lastLocation;
       
       for (var thisLocation in filteredLocations) {
-        bg.Location bgLocation = bg.Location(thisLocation);
-        LatLng currentPoint = LatLng(bgLocation.coords.latitude, bgLocation.coords.longitude);
-        
-        // Track first and last locations for map centering
-        if (firstLocation == null) {
-          firstLocation = currentPoint;
+        try {
+          // Add null safety checks
+          if (thisLocation == null) {
+            print('[map_view] ⚠️ Skipping null location data');
+            continue;
+          }
+          
+          print('[map_view] 🔍 Processing location data: ${thisLocation.toString().substring(0, 100)}...');
+          
+          bg.Location bgLocation = bg.Location(thisLocation);
+          
+          // Validate coordinate values
+          double lat = bgLocation.coords.latitude;
+          double lon = bgLocation.coords.longitude;
+          
+          if (lat.isNaN || lon.isNaN || lat.isInfinite || lon.isInfinite) {
+            print('[map_view] ⚠️ Skipping location with invalid coordinates: lat=$lat, lon=$lon');
+            continue;
+          }
+          
+          LatLng currentPoint = LatLng(lat, lon);
+          
+          // Track first and last locations for map centering
+          if (firstLocation == null) {
+            firstLocation = currentPoint;
+          }
+          lastLocation = currentPoint;
+          
+          _onLocation(bgLocation);
+          displayedCount++;
+          
+        } catch (e) {
+          print('[map_view] ❌ Error processing individual location: $e');
+          print('[map_view] 📊 Location data: $thisLocation');
+          continue;
         }
-        lastLocation = currentPoint;
-        
-        _onLocation(bgLocation);
-        displayedCount++;
       }
       
       print('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
       
       // Center map on the most recent location if available
       if (lastLocation != null && _autoCenter) {
-        print('[map_view] 📍 Centering map on most recent location: ${lastLocation.latitude}, ${lastLocation.longitude}');
-        _mapController.move(lastLocation, _mapOptions.initialZoom);
-        _currentLocation = lastLocation;
+        try {
+          print('[map_view] 📍 Centering map on most recent location: ${lastLocation.latitude}, ${lastLocation.longitude}');
+          double zoom = _mapOptions.initialZoom;
+          _mapController.move(lastLocation, zoom);
+          _currentLocation = lastLocation;
+        } catch (e) {
+          print('[map_view] ❌ Error centering map on last location: $e');
+        }
       } else if (firstLocation != null) {
-        print('[map_view] 📍 Centering map on first available location: ${firstLocation.latitude}, ${firstLocation.longitude}');
-        _mapController.move(firstLocation, _mapOptions.initialZoom);
-        _currentLocation = firstLocation;
+        try {
+          print('[map_view] 📍 Centering map on first available location: ${firstLocation.latitude}, ${firstLocation.longitude}');
+          double zoom = _mapOptions.initialZoom;
+          _mapController.move(firstLocation, zoom);
+          _currentLocation = firstLocation;
+        } catch (e) {
+          print('[map_view] ❌ Error centering map on first location: $e');
+        }
       }
       
       // Force a map refresh to ensure polylines and markers are visible
@@ -199,7 +234,11 @@ class MapViewState extends State<MapView>
 
     _updateCurrentPositionMarker(ll);
 
-    _mapController.move(ll, _mapOptions.initialZoom);
+    try {
+      _mapController.move(ll, _mapOptions.initialZoom);
+    } catch (e) {
+      print('[MapView] ❌ Error moving map on motion change: $e');
+    }
 
     // clear the big red stationaryRadius circle.
     _stationaryMarker.clear();
@@ -232,7 +271,11 @@ class MapViewState extends State<MapView>
     
     // Only auto-center if enabled (user hasn't disabled it)
     if (_autoCenter) {
-      _mapController.move(ll, _mapOptions.initialZoom);
+      try {
+        _mapController.move(ll, _mapOptions.initialZoom);
+      } catch (e) {
+        print('[MapView] ❌ Error moving map to location: $e');
+      }
     }
     
     print('[MapView] Location update: ${ll.latitude.toStringAsFixed(6)}, ${ll.longitude.toStringAsFixed(6)} (sample: ${location.sample})');
