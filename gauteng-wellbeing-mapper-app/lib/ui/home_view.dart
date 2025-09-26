@@ -342,13 +342,25 @@ class HomeViewState extends State<HomeView>
               _backgroundGeoConfigured = true;
               print('[home_view.dart] Background geolocation configured');
               
-              // Then request location permissions
+              // Initialize location services (iOS will just prepare native manager, won't request permissions)
               try {
                 bool hasLocationPermission = await LocationService.initializeLocationServices(context: context);
                 if (hasLocationPermission) {
                   print('[home_view.dart] Location permission granted during initialization');
                 } else {
                   print('[home_view.dart] Location permission not granted during initialization, user can enable later via switch');
+                  
+                  // For iOS, explicitly initialize native location manager without requesting permissions
+                  // This ensures the app is ready when the user enables research mode
+                  if (Theme.of(context).platform == TargetPlatform.iOS) {
+                    print('[home_view.dart] iOS: Pre-initializing native location manager for later use');
+                    try {
+                      await IosLocationFixService.initializeNativeLocationManager();
+                      print('[home_view.dart] iOS: Native location manager pre-initialized successfully');
+                    } catch (iosError) {
+                      print('[home_view.dart] iOS: Error pre-initializing native location manager: $iosError');
+                    }
+                  }
                 }
               } catch (error) {
                 print('[home_view.dart] Error during location permission initialization: $error');

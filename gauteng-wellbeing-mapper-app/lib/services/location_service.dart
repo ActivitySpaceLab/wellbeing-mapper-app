@@ -296,7 +296,24 @@ class LocationService {
         }
       }
       
-      // Request basic location permission first
+      // For iOS, be more passive during initialization - just initialize native manager
+      // Don't request permissions during startup to avoid premature error dialogs
+      if (context != null) {
+        try {
+          final platform = Theme.of(context).platform;
+          if (platform == TargetPlatform.iOS) {
+            print('[LocationService] iOS detected - initializing native location manager without requesting permissions');
+            // Just initialize the native iOS location manager to prepare for later permission requests
+            await IosLocationFixService.initializeNativeLocationManager();
+            print('[LocationService] iOS location services initialized passively');
+            return false; // Return false so app knows permissions aren't granted yet, but don't show errors
+          }
+        } catch (e) {
+          print('[LocationService] Error initializing iOS location manager: $e');
+        }
+      }
+      
+      // For other platforms or if iOS initialization failed, request basic location permission
       bool hasLocationPermission = await requestLocationPermissions(context: context);
       
       // For iOS, double-check with native permission status if permission_handler failed
