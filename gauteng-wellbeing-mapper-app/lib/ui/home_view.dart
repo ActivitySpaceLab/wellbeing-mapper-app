@@ -425,9 +425,9 @@ class HomeViewState extends State<HomeView>
             logLevel: bg.Config.LOG_LEVEL_OFF,
             // Geolocation options
             desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH, // Changed from NAVIGATION to HIGH for better battery life
-            // DIAGNOSTIC FIX: Reduce distance filter for more sensitive tracking
-            distanceFilter: 5.0, // Reduced from 10.0 to 5.0 meters
-            stopTimeout: 5, // Wait 5 minutes before considering device stationary (was 1)
+            // Restored from aggressive debug settings to reduce noise at source
+            distanceFilter: 10.0, // Restored to 10.0 meters for reasonable GPS filtering
+            stopTimeout: 1, // Wait 1 minute before considering device stationary (restored from 5)
             // Motion Detection Settings (critical for production mode)
             stationaryRadius: 25, // meters - detect stationary within 25m radius
             minimumActivityRecognitionConfidence: 80, // 80% confidence for motion detection
@@ -441,8 +441,8 @@ class HomeViewState extends State<HomeView>
             stopOnTerminate: false,
             startOnBoot: true,
             enableHeadless: true,
-            // DIAGNOSTIC FIX: Reduce heartbeat interval for better background tracking
-            heartbeatInterval: 30, // Reduced from 60 to 30 seconds
+            // Restored from aggressive debug settings for better battery life
+            heartbeatInterval: 60, // Restored to 60 seconds from 30
             // DIAGNOSTIC FIX: Add preventSuspend for iOS background tracking
             preventSuspend: true,
             // iOS-specific fixes for pocket/background tracking

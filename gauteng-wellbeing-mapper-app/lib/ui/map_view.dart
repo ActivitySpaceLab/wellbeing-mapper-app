@@ -171,7 +171,23 @@ class MapViewState extends State<MapView>
             continue;
           }
           
+          // DATA QUALITY FILTERING
+          // 2. Remove very poor accuracy readings (>200m)
+          double accuracy = (coords['accuracy'] as num?)?.toDouble() ?? 999.0;
+          if (accuracy > 200.0) {
+            print('[map_view] 🚫 Skipping low accuracy location: ${accuracy}m accuracy');
+            continue;
+          }
+          
           LatLng currentPoint = LatLng(lat, lon);
+          
+          // 1. Remove exact duplicates - skip if same as previous location
+          if (lastLocation != null && 
+              (currentPoint.latitude - lastLocation.latitude).abs() < 0.000001 && 
+              (currentPoint.longitude - lastLocation.longitude).abs() < 0.000001) {
+            print('[map_view] 🔄 Skipping duplicate location: ${currentPoint.latitude}, ${currentPoint.longitude}');
+            continue;
+          }
           
           // Track first and last locations for map centering
           if (firstLocation == null) {
