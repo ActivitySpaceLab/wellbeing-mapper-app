@@ -77,7 +77,12 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
     
     // Add some padding and zoom to show all points
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _mapController.move(LatLng(centerLat, centerLng), 14.0);
+      try {
+        _mapController.move(LatLng(centerLat, centerLng), 14.0);
+      } catch (e) {
+        print('[InteractiveLocationMap] ⚠️ flutter_map move error (bypassed): $e');
+        // Bypass flutter_map compatibility issue - map will use default positioning
+      }
     });
   }
 
@@ -287,7 +292,8 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
                     children: [
                       // Base map tiles
                       TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        urlTemplate: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+                        subdomains: const ['a', 'b', 'c', 'd'],
                         userAgentPackageName: 'com.example.app',
                       ),
                       
@@ -340,11 +346,16 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
                         mini: true,
                         heroTag: "zoom_in",
                         onPressed: () {
-                          final currentZoom = _mapController.camera.zoom;
-                          _mapController.move(
-                            _mapController.camera.center,
-                            (currentZoom + 1).clamp(10.0, 18.0),
-                          );
+                          try {
+                            final currentZoom = _mapController.camera.zoom;
+                            _mapController.move(
+                              _mapController.camera.center,
+                              (currentZoom + 1).clamp(10.0, 18.0),
+                            );
+                          } catch (e) {
+                            print('[InteractiveLocationMap] ⚠️ flutter_map zoom in error (bypassed): $e');
+                            // Bypass flutter_map compatibility issue - zoom control disabled
+                          }
                         },
                         child: Icon(Icons.add),
                         backgroundColor: Colors.white,
@@ -355,11 +366,16 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
                         mini: true,
                         heroTag: "zoom_out",
                         onPressed: () {
-                          final currentZoom = _mapController.camera.zoom;
-                          _mapController.move(
-                            _mapController.camera.center,
-                            (currentZoom - 1).clamp(10.0, 18.0),
-                          );
+                          try {
+                            final currentZoom = _mapController.camera.zoom;
+                            _mapController.move(
+                              _mapController.camera.center,
+                              (currentZoom - 1).clamp(10.0, 18.0),
+                            );
+                          } catch (e) {
+                            print('[InteractiveLocationMap] ⚠️ flutter_map zoom out error (bypassed): $e');
+                            // Bypass flutter_map compatibility issue - zoom control disabled
+                          }
                         },
                         child: Icon(Icons.remove),
                         backgroundColor: Colors.white,
