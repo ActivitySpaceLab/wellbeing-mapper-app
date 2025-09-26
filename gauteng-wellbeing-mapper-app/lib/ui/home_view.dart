@@ -64,6 +64,9 @@ class HomeViewState extends State<HomeView>
   //late String _motionActivity;
   //late String _odometer;
   Timer? _surveyPromptTimer;
+  
+  // Track last stationary location save to prevent clouds
+  DateTime? _lastStationarySave;
 
   HomeViewState(this.appName) {
     print('[home_view.dart] HomeViewState constructor called with appName: $appName');
@@ -413,7 +416,7 @@ class HomeViewState extends State<HomeView>
     // 1.  Listen to events (See docs for all 13 available events).
     bg.BackgroundGeolocation.onLocation(_onLocation, _onLocationError);
     bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
-//    bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
+    bg.BackgroundGeolocation.onActivityChange(_onActivityChange);
     bg.BackgroundGeolocation.onProviderChange(_onProviderChange);
     bg.BackgroundGeolocation.onHttp(_onHttp);
     bg.BackgroundGeolocation.onConnectivityChange(_onConnectivityChange);
@@ -436,14 +439,14 @@ class HomeViewState extends State<HomeView>
             debug: false, // Disable debug sounds in production
             logLevel: bg.Config.LOG_LEVEL_OFF,
             // Geolocation options
-            desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH, // Changed from NAVIGATION to HIGH for better battery life
-            // Restored from aggressive debug settings to reduce noise at source
-            distanceFilter: 10.0, // Restored to 10.0 meters for reasonable GPS filtering
-            stopTimeout: 1, // Wait 1 minute before considering device stationary (restored from 5)
-            // Motion Detection Settings (critical for production mode)
-            stationaryRadius: 25, // meters - detect stationary within 25m radius
-            minimumActivityRecognitionConfidence: 80, // 80% confidence for motion detection
-            activityType: bg.Config.ACTIVITY_TYPE_OTHER, // General activity detection
+            desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH, // HIGH accuracy for good precision without excessive battery drain
+            // IMPROVED: Increased distance filter to reduce stationary noise
+            distanceFilter: 25.0, // Only record locations if moved 25+ meters (reduces stationary clouds)
+            stopTimeout: 2, // Wait 2 minutes before considering device stationary
+            // Motion Detection Settings (enhanced for noise reduction)
+            stationaryRadius: 50, // Increased to 50m - larger radius for detecting true stationary periods
+            minimumActivityRecognitionConfidence: 75, // Slightly lower for better motion detection sensitivity
+            activityType: bg.Config.ACTIVITY_TYPE_FITNESS, // Better for walking/cycling detection
             // HTTP & Persistence
             autoSync: false,
             persistMode: bg.Config.PERSIST_MODE_ALL,
@@ -895,8 +898,8 @@ class HomeViewState extends State<HomeView>
 //    SendDataToAPI sender = SendDataToAPI();
 //    sender.submitData(location, "location");
 
-    // Save location to database for survey data collection
-    _saveLocationToDatabase(location);
+    // Enhanced location processing with motion-based filtering
+    _processLocationWithMotionFilter(location);
 
     setState(() {
       //_odometer = (location.odometer / 1000.0).toStringAsFixed(1);
@@ -916,7 +919,7 @@ class HomeViewState extends State<HomeView>
   }
 
   /// Save location data to database for survey data collection
-  Future<void> _saveLocationToDatabase(bg.Location location) async {
+  Future<void> _saveLocationToDatabase(bg.Location location, {bool isFiltered = false, String reason = ""}) async {
     try {
       // Parse timestamp - location.timestamp is a String in ISO format
       final timestamp = DateTime.parse(location.timestamp);
@@ -936,18 +939,113 @@ class HomeViewState extends State<HomeView>
       final db = SurveyDatabase();
       await db.insertLocationTrack(locationData);
       
-      print('[LocationTracker] ✅ Saved location to database: ${timestamp.toIso8601String()}');
+      String filterInfo = isFiltered ? " [FILTERED: $reason]" : " [RAW]";
+      print('[LocationTracker] ✅ Saved location to database: ${timestamp.toIso8601String()}$filterInfo');
     } catch (e) {
       print('[LocationTracker] ❌ Error saving location to database: $e');
     }
   }
 
-//  void _onActivityChange(bg.ActivityChangeEvent event) {
-//    print('[${bg.Event.ACTIVITYCHANGE}] - $event');
-//    setState(() {
-  //_motionActivity = event.activity;
-//    });
-//  }
+  void _onActivityChange(bg.ActivityChangeEvent event) {
+    print('[${bg.Event.ACTIVITYCHANGE}] - Activity: ${event.activity}, Confidence: ${event.confidence}%');
+    // Activity changes help us understand user motion patterns
+    // High confidence activities (walking, vehicle, cycling) indicate meaningful movement
+    setState(() {
+      // Could track current activity state here if needed
+    });
+  }
+
+  /// Enhanced location processing with intelligent motion-based filtering
+  Future<void> _processLocationWithMotionFilter(bg.Location location) async {
+    try {
+      print('[LocationFilter] Processing location: lat=${location.coords.latitude.toStringAsFixed(6)}, lng=${location.coords.longitude.toStringAsFixed(6)}');
+      print('[LocationFilter] Motion state: ${location.isMoving ? "MOVING" : "STATIONARY"}');
+      print('[LocationFilter] Activity: ${location.activity.type} (${location.activity.confidence}% confidence)');
+      print('[LocationFilter] Accuracy: ${location.coords.accuracy.toStringAsFixed(1)}m');
+      
+      // FILTER 1: Reject very poor accuracy readings (>100m for stationary, >200m for moving)
+      double accuracyThreshold = location.isMoving ? 200.0 : 100.0;
+      if (location.coords.accuracy > accuracyThreshold) {
+        print('[LocationFilter] 🚫 REJECTED: Poor accuracy ${location.coords.accuracy.toStringAsFixed(1)}m (threshold: ${accuracyThreshold}m)');
+        return;
+      }
+      
+      // FILTER 2: Enhanced stationary filtering - use activity recognition
+      if (!location.isMoving) {
+        // For stationary locations, be more selective
+        if (location.activity.type == 'still' && location.activity.confidence > 50) {
+          // High-confidence "still" activity - apply additional filtering
+          print('[LocationFilter] 📍 Stationary location detected with high-confidence "still" activity');
+          
+          // Only save stationary locations occasionally (every ~5 minutes) to avoid clouds
+          if (await _shouldSaveStationaryLocation(location)) {
+            await _saveLocationToDatabase(location, isFiltered: true, reason: "stationary-periodic");
+          } else {
+            print('[LocationFilter] 🚫 FILTERED: Stationary location skipped (recent location exists)');
+            return;
+          }
+        } else if (location.activity.confidence < 30) {
+          // Low confidence activity during stationary - likely GPS drift
+          print('[LocationFilter] 🚫 FILTERED: Low confidence activity during stationary state (likely GPS drift)');
+          return;
+        } else {
+          // Medium confidence or other activity types during stationary
+          await _saveLocationToDatabase(location, isFiltered: true, reason: "stationary-medium-confidence");
+        }
+      } else {
+        // FILTER 3: Moving locations - validate with activity recognition
+        bool validMovingActivity = _isValidMovingActivity(location.activity);
+        
+        if (validMovingActivity || location.activity.confidence < 20) {
+          // Valid movement activity OR very low confidence (assume moving is correct)
+          print('[LocationFilter] ✅ Moving location with valid activity or low confidence - saving');
+          await _saveLocationToDatabase(location, isFiltered: true, reason: "moving-validated");
+        } else {
+          // FBG says moving but activity suggests still - examine more carefully
+          if (location.coords.accuracy < 50.0) {
+            // Good accuracy, trust the movement detection
+            print('[LocationFilter] ✅ Moving location with good accuracy despite activity mismatch - saving');
+            await _saveLocationToDatabase(location, isFiltered: true, reason: "moving-good-accuracy");
+          } else {
+            print('[LocationFilter] 🚫 FILTERED: Moving state but conflicting activity and poor accuracy');
+            return;
+          }
+        }
+      }
+      
+    } catch (e) {
+      print('[LocationFilter] ❌ Error in location filtering: $e');
+      // Fallback: save the location if filtering fails
+      await _saveLocationToDatabase(location, isFiltered: false, reason: "filter-error");
+    }
+  }
+
+  /// Check if we should save a stationary location (avoid saving too frequently)
+  Future<bool> _shouldSaveStationaryLocation(bg.Location location) async {
+    try {
+      // Simple time-based check: only save stationary locations every 5 minutes
+      // This prevents location clouds when stationary
+      final now = DateTime.now();
+      
+      if (_lastStationarySave == null || now.difference(_lastStationarySave!).inMinutes >= 5) {
+        _lastStationarySave = now;
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      print('[LocationFilter] Error checking recent stationary locations: $e');
+      return true; // If check fails, err on side of saving
+    }
+  }
+
+  /// Check if activity type indicates valid movement
+  bool _isValidMovingActivity(bg.Activity activity) {
+    const movingActivities = ['walking', 'running', 'cycling', 'in_vehicle', 'on_bicycle', 'on_foot'];
+    return movingActivities.contains(activity.type.toLowerCase());
+  }
+
+
 
   void _onProviderChange(bg.ProviderChangeEvent event) {
     print('[${bg.Event.PROVIDERCHANGE}] - $event');
