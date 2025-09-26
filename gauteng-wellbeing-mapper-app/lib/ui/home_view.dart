@@ -950,12 +950,16 @@ class HomeViewState extends State<HomeView>
 
   void _onConnectivityChange(bg.ConnectivityChangeEvent event) {
     print('[${bg.Event.CONNECTIVITYCHANGE}] - $event');
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onHeartbeat(bg.HeartbeatEvent event) {
     print('[${bg.Event.HEARTBEAT}] - $event');
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onGeofence(bg.GeofenceEvent event) async {
