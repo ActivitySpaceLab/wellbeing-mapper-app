@@ -270,18 +270,95 @@ class MapViewState extends State<MapView>
   }
 
   void _onMotionChange(bg.Location location) async {
-    // COMPLETELY BYPASS all flutter_map operations to avoid null multiplication errors
-    // Motion change processing is disabled to prevent library compatibility issues
-    print('[MapView] 🚶 Motion change received but bypassed to prevent errors');
-    return;
+    print('[MapView] 🚶 Motion change detected: ${location.isMoving ? 'moving' : 'stationary'}');
+    
+    try {
+      // Process motion changes safely without complex flutter_map operations
+      if (location.isMoving) {
+        print('[MapView] 🚶 User started moving');
+        // Could add motion-specific markers here if needed
+      } else {
+        print('[MapView] 🛑 User became stationary');
+        // Could add stationary markers here if needed
+      }
+      
+      // Update the current location regardless of motion state
+      _onLocation(location);
+      
+    } catch (error) {
+      print('[MapView] ❌ Error processing motion change: $error');
+      // Don't crash the app, just log and continue
+    }
   }
 
   void _onLocation(bg.Location location) {
-    // COMPLETELY BYPASS all flutter_map operations to avoid null multiplication errors
-    // The real-time location processing is disabled to prevent library compatibility issues
-    // Location display is handled by _displayStoredLocations instead
-    print('[MapView] 📍 Real-time location received but bypassed to prevent errors');
-    return;
+    print('[MapView] 📍 Real-time location received: ${location.coords.latitude}, ${location.coords.longitude}');
+    
+    try {
+      // Create location point safely
+      LatLng currentPoint = LatLng(location.coords.latitude, location.coords.longitude);
+      
+      // Apply data quality filtering (same as in stored location display)
+      if (location.coords.accuracy > 200.0) {
+        print('[MapView] ⚠️ Rejecting real-time location with poor accuracy: ${location.coords.accuracy}m');
+        return;
+      }
+      
+      // Check for exact duplicates
+      if (_locations.isNotEmpty) {
+        LatLng lastPoint = _locations.last.point;
+        double latDiff = (currentPoint.latitude - lastPoint.latitude).abs();
+        double lngDiff = (currentPoint.longitude - lastPoint.longitude).abs();
+        
+        if (latDiff < 0.000001 && lngDiff < 0.000001) {
+          print('[MapView] ⚠️ Skipping exact duplicate real-time location');
+          return;
+        }
+      }
+      
+      // Add to polyline and markers safely
+      _polyline.add(currentPoint);
+      _locations.add(CircleMarker(
+        point: currentPoint,
+        color: Colors.blue,
+        radius: 4.0,
+        useRadiusInMeter: false,
+      ));
+      
+      // Update current position marker safely
+      _currentPosition.clear();
+      _currentPosition.add(CircleMarker(
+        point: currentPoint,
+        color: Colors.red,
+        radius: 8.0,
+        useRadiusInMeter: false,
+      ));
+      
+      // Auto-center map if enabled (with protection against null errors)
+      if (_autoCenter) {
+        try {
+          double zoom = _mapOptions.initialZoom;
+          _mapController.move(currentPoint, zoom);
+          _currentLocation = currentPoint;
+        } catch (e) {
+          print('[MapView] ❌ Error moving map to new location (flutter_map compatibility issue): $e');
+          // Continue without map centering to avoid crashes
+        }
+      }
+      
+      // Update the UI safely
+      if (mounted) {
+        setState(() {
+          // Trigger rebuild to show new location
+        });
+      }
+      
+      print('[MapView] ✅ Successfully added real-time location point, total: ${_locations.length}');
+      
+    } catch (error) {
+      print('[MapView] ❌ Error processing real-time location: $error');
+      // Don't crash the app, just log and continue
+    }
   }
 
   /// Update Big Blue current position dot.
