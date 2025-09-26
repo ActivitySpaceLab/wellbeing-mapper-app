@@ -224,25 +224,27 @@ class MapViewState extends State<MapView>
       
       print('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
       
-      // Center map on the most recent location if available
-      if (lastLocation != null && _autoCenter) {
+      // Center map on the most recent location if auto-center is enabled
+      if (_autoCenter && lastLocation != null) {
         try {
-          print('[map_view] 📍 Centering map on most recent location: ${lastLocation.latitude}, ${lastLocation.longitude}');
+          print('[map_view] 📍 Auto-centering map on most recent location: ${lastLocation.latitude}, ${lastLocation.longitude}');
           double zoom = _mapOptions.initialZoom;
           _mapController.move(lastLocation, zoom);
           _currentLocation = lastLocation;
         } catch (e) {
           print('[map_view] ❌ Error centering map on last location: $e');
         }
-      } else if (firstLocation != null) {
+      } else if (_autoCenter && firstLocation != null) {
         try {
-          print('[map_view] 📍 Centering map on first available location: ${firstLocation.latitude}, ${firstLocation.longitude}');
+          print('[map_view] 📍 Auto-centering map on first available location: ${firstLocation.latitude}, ${firstLocation.longitude}');
           double zoom = _mapOptions.initialZoom;
           _mapController.move(firstLocation, zoom);
           _currentLocation = firstLocation;
         } catch (e) {
           print('[map_view] ❌ Error centering map on first location: $e');
         }
+      } else if (!_autoCenter) {
+        print('[map_view] 📍 Auto-center disabled - keeping current map position');
       }
       
       // Force a map refresh to ensure polylines and markers are visible
@@ -338,10 +340,13 @@ class MapViewState extends State<MapView>
           double zoom = _mapOptions.initialZoom;
           _mapController.move(currentPoint, zoom);
           _currentLocation = currentPoint;
+          print('[MapView] 🎯 Auto-centered map on real-time location: ${currentPoint.latitude}, ${currentPoint.longitude}');
         } catch (e) {
           print('[MapView] ❌ Error moving map to new location (flutter_map compatibility issue): $e');
           // Continue without map centering to avoid crashes
         }
+      } else {
+        print('[MapView] 📍 Auto-center disabled - not centering on real-time location');
       }
       
       // Update the UI safely
