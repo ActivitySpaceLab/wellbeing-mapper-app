@@ -1,44 +1,6 @@
-untracked
-
-# Keys
-android/key.properties
-*.pem
-
-# SECURITY - Never commit sensitive credentials
-.env
-*.env
-.env.*
-!.env.example
-!.env.template
-
-# API Keys and Tokens
-**/api_keys.dart
-**/tokens.dart
-**/credentials.dart
-
-# Participant data - SECURITY: Never commit participant codes
-participant_codes.json
-**/participant_codes.json
-
-# Qualtrics specific - SECURITY: Prevent API token commits
-qualtrics_config.dart
-qualtrics_tokens.dart
-secure_config.dart
-**/create_encrypted_survey_configured.dart
-**/qualtrics_api_service*.dart
-**/qualtrics_survey_creator*.dart
-**/test_qualtrics*.dart
-**/debug_qualtrics*.dart
-
-example_data
-original_survey
-
-# Specific directories ignored
-gauteng-wellbeing-mapper-app/android/key.properties
 
 # Miscellaneous
 *.class
-*.lock
 *.log
 *.pyc
 *.swp
@@ -47,7 +9,6 @@ gauteng-wellbeing-mapper-app/android/key.properties
 .buildlog/
 .history
 .svn/
-.fvm/
 
 # IntelliJ related
 *.iml
@@ -55,14 +16,17 @@ gauteng-wellbeing-mapper-app/android/key.properties
 *.iws
 .idea/
 
-# Visual Studio Code related
-.classpath
-.project
-.settings/
-.vscode/
+# FVM Version Cache
+.fvm/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
+**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -74,121 +38,36 @@ gauteng-wellbeing-mapper-app/android/key.properties
 # Web related
 lib/generated_plugin_registrant.dart
 
-# packages file containing multi-root paths
-.packages.generated
-
-# Flutter/Dart/Pub related
-**/doc/api/
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-**/generated_plugin_registrant.dart
-.packages
-.pub-cache/
-.pub/
-build/
-flutter_*.png
-linked_*.ds
-unlinked.ds
-unlinked_spec.ds
-
-# Android related
-**/android/**/gradle-wrapper.jar
-.gradle/
-**/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
-
-# Build artifacts
-*.apk
-*.aab
-build_outputs/
-**/android/local.properties
-**/android/**/GeneratedPluginRegistrant.java
-**/android/key.properties
-*.jks
-
-# iOS/XCode related
-**/ios/**/*.mode1v3
-**/ios/**/*.mode2v3
-**/ios/**/*.moved-aside
-**/ios/**/*.pbxuser
-**/ios/**/*.perspectivev3
-**/ios/**/*sync/
-**/ios/**/.sconsign.dblite
-**/ios/**/.tags*
-**/ios/**/.vagrant/
-**/ios/**/DerivedData/
-**/ios/**/Icon?
-**/ios/**/Pods/
-**/ios/**/.symlinks/
-**/ios/**/profile
-**/ios/**/xcuserdata
-**/ios/.generated/
-**/ios/Flutter/.last_build_id
-**/ios/Flutter/App.framework
-**/ios/Flutter/Flutter.framework
-**/ios/Flutter/Flutter.podspec
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/ephemeral
-**/ios/Flutter/app.flx
-**/ios/Flutter/app.zip
-**/ios/Flutter/flutter_assets/
-**/ios/Flutter/flutter_export_environment.sh
-**/ios/ServiceDefinitions.json
-**/ios/Runner/GeneratedPluginRegistrant.*
-
-# macOS
-**/macos/Flutter/GeneratedPluginRegistrant.swift
-
-# Coverage
-coverage/
-
-# Symbols
+# Symbolication related
 app.*.symbols
 
-# Exceptions to above rules.
-!**/ios/**/default.mode1v3
-!**/ios/**/default.mode2v3
-!**/ios/**/default.pbxuser
-!**/ios/**/default.perspectivev3
-!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
-!/dev/ci/**/Gemfile.lock
-# Android keystore files
-gauteng-wellbeing-mapper-app/android/app/gauteng-wellbeing-mapper-app.keystore
-gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app.keystore
-gauteng-wellbeing-mapper-app/.fvm/flutter_sdk
-gauteng-wellbeing-mapper-app/.fvm/fvm_config.json
+# Obfuscation related
+app.*.map.json
 
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
 
-# R
-*.RData
-*.Rhistory
+# Build outputs and artifacts (not source assets)
+build_outputs/
+*.apk
+*.aab
+*.ipa
+*.dSYM.zip
 
-# SECURITY - Data Analysis Toolkit: Prevent survey data commits
-# All downloaded and processed survey data must be kept private
-data_analysis_toolkit/**/data/
-data_analysis_toolkit/**/decrypted_data/
-data_analysis_toolkit/**/structured_data/
-data_analysis_toolkit/**/*.csv
-data_analysis_toolkit/**/*_responses.csv
-data_analysis_toolkit/**/*_locations.csv
-data_analysis_toolkit/**/*_decrypted*
-data_analysis_toolkit/**/*survey_data*
-data_analysis_toolkit/**/export_*
-data_analysis_toolkit/**/*.json
-data_analysis_toolkit/**/*.db
-data_analysis_toolkit/**/*_data.db
-data_analysis_toolkit/**/*_test_data.*
-data_analysis_toolkit/**/data_summary.md
-!data_analysis_toolkit/**/test_*.csv
-!data_analysis_toolkit/**/example_*.csv
-!data_analysis_toolkit/**/sample_*.csv
+# Testing artifacts
+coverage/
+test_results/
 
-# Private keys and sensitive configuration
-data_analysis_toolkit/**/private_key.pem
-data_analysis_toolkit/**/public_key.pem
-data_analysis_toolkit/**/*_key.pem
-data_analysis_toolkit/**/.env
-data_analysis_toolkit/**/config.json
-data_analysis_toolkit/**/api_config.*
+# Logs and temporary files
+*.log
+logs/
+temp/
+
+# Environment and secrets
+.env
+.env.local
+secrets.json
+google-services.json.backup
+GoogleService-Info.plist.backup

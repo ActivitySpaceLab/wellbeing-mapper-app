@@ -1,0 +1,35 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "dart.flutterSdkPath": ".fvm/flutter_sdk",
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/bower_components": true,
+      "**/.fvm": true,
+      "**/build": true,
+      "**/.dart_tool": true,
+      "**/project_assets/archive": true
+    },
+    "files.watcherExclude": {
+      "**/build/**": true,
+      "**/.dart_tool/**": true,
+      "**/.fvm/**": true,
+      "**/project_assets/archive/**": true
+    },
+    "files.exclude": {
+      "**/.fvm": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "dart-code.dart-code",
+      "dart-code.flutter",
+      "github.vscode-github-actions",
+      "ms-vscode.vscode-json"
+    ]
+  }
+}

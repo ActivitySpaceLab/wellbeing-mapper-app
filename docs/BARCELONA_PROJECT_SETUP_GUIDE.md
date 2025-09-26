@@ -85,11 +85,9 @@ mv archive/ project_assets/archive/
 git remote add gauteng https://github.com/yourusername/gauteng-wellbeing-mapper-app.git
 git remote add space_mapper https://github.com/yourusername/space_mapper.git
 
-# 7. Update .gitignore to exclude project assets
-echo "# Project assets (not part of app)" >> .gitignore
-echo "project_assets/" >> .gitignore
-echo "scripts/" >> .gitignore
-echo "docs/" >> .gitignore
+# 7. Set up proper .gitignore (exclude build artifacts, keep source assets)
+# Note: project_assets/, scripts/, and docs/ should be tracked in Git
+# Flutter won't bundle them because they're not in pubspec.yaml assets section
 ```
 
 ## Key Changes Needed for Barcelona
@@ -148,19 +146,27 @@ flutter:
 # Note: project_assets/ will NOT be bundled (outside app structure)
 ```
 
-### 5. Updated .gitignore
-```gitignore
-# Project assets (not part of app)
-project_assets/
-scripts/
-docs/
+### 5. Asset Bundling Strategy
+**Key Point**: Keep `docs/`, `scripts/`, and `project_assets/` in Git, but prevent Flutter from bundling them.
 
-# Standard Flutter ignores
+**How it works**:
+- ✅ Git tracks: `docs/`, `scripts/`, `project_assets/` (needed for development)
+- ✅ Flutter bundles: Only what's in `pubspec.yaml` → `assets:` section
+- ✅ .gitignore excludes: Build artifacts (`.apk`, `build/`, etc.)
+
+```gitignore
+# Build outputs and artifacts (not source assets)
+build_outputs/
+*.apk
+*.aab
+*.ipa
+coverage/
+
+# Standard Flutter build ignores  
 .dart_tool/
 .packages
 build/
 ios/Flutter/Generated.xcconfig
-ios/.symlinks/
 android/.gradle/
 ```
 

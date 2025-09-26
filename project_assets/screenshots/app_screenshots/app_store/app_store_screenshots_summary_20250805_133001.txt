@@ -1,0 +1,25 @@
+Apple App Store iPhone Screenshots Generated on Tue Aug  5 13:30:37 EDT 2025
+========================================================
+
+Device: iPhone-15-Pro-Max (430x932 - 6.7" Display - Required)
+Screenshots:
+  - iPhone-15-Pro-Max_appIcon.png ( 20K)
+
+Device: iPhone-15-Pro (393x852 - 6.1" Display - Required)
+Screenshots:
+  - iPhone-15-Pro_appIcon.png ( 20K)
+  - iPhone-15-Pro_iPhone-15-Pro-Max_appIcon.png ( 20K)
+
+Device: iPhone-8-Plus (414x736 - 5.5" Display - Optional)
+Screenshots:
+  - iPhone-8-Plus_appIcon.png ( 20K)
+  - iPhone-8-Plus_iPhone-15-Pro_appIcon.png ( 20K)
+  - iPhone-8-Plus_iPhone-15-Pro_iPhone-15-Pro-Max_appIcon.png ( 20K)
+  - iPhone-8-Plus_iPhone-15-Pro-Max_appIcon.png ( 20K)
+
+App Store Submission Instructions:
+1. Upload screenshots for iPhone 6.7" Display (iPhone-15-Pro-Max)
+2. Upload screenshots for iPhone 6.1" Display (iPhone-15-Pro)
+3. Optionally upload screenshots for iPhone 5.5" Display (iPhone-8-Plus)
+4. Ensure screenshots are in PNG format and meet Apple's requirements
+5. Screenshots should be 1290×2796 pixels for 6.7" and 1179×2556 pixels for 6.1"

@@ -1,0 +1,84 @@
+list_name,name,label
+ethnicity_gauteng,black,Black
+ethnicity_gauteng,coloured,Coloured  
+ethnicity_gauteng,indian,Indian
+ethnicity_gauteng,white,White
+ethnicity_gauteng,other,Other
+ethnicity_gauteng,prefer_not_say,Prefer not to say
+ethnicity_barcelona,south_asian,South Asian
+ethnicity_barcelona,east_southeast_asian,East or Southeast Asian
+ethnicity_barcelona,white,White
+ethnicity_barcelona,latino,Latina/o
+ethnicity_barcelona,maghrebi_arab,Maghrebi or Arab
+ethnicity_barcelona,black,Black
+ethnicity_barcelona,romani_gypsy,Romani or Gypsy
+ethnicity_barcelona,other,Other
+ethnicity_barcelona,prefer_not_say,Prefer not to say
+gender,male,Male
+gender,female,Female
+gender,transmale,Transmale
+gender,transfemale,Transfemale
+gender,non_binary,Non-binary
+gender,prefer_not_say,Prefer not to say
+sexuality,heterosexual,Heterosexual/straight
+sexuality,lesbian,Lesbian
+sexuality,gay,Gay
+sexuality,bisexual,Bisexual
+sexuality,queer,Queer
+sexuality,other,Other
+sexuality,prefer_not_say,Prefer not to say
+birth_place_gauteng,south_africa,South Africa
+birth_place_gauteng,other_african,Other African country
+birth_place_gauteng,other_country,Other country
+birth_place_gauteng,prefer_not_say,Prefer not to say
+birth_place_barcelona,spain,Spain
+birth_place_barcelona,other_country,Other country
+birth_place_barcelona,prefer_not_say,Prefer not to say
+yes_no_prefer,yes,Yes
+yes_no_prefer,no,No
+yes_no_prefer,dont_know,Don't know / Prefer not to say
+building_type_gauteng,brick_house,A brick house
+building_type_gauteng,townhouse,A townhouse in a complex of townhouses
+building_type_gauteng,rdp_house,An RDP house
+building_type_gauteng,flat_apartment,A flat or apartment in an apartment building
+building_type_gauteng,backyard_room,A backyard room
+building_type_gauteng,informal_dwelling,Informal dwelling
+building_type_gauteng,other,Other
+building_type_barcelona,detached_single,It is a detached single-family home
+building_type_barcelona,semi_detached,It is a semi-detached or terraced single-family home
+building_type_barcelona,two_unit,It is a two housing-unit building
+building_type_barcelona,three_to_nine,"The housing unit is in a building with 3 or more units but less than 10"
+building_type_barcelona,ten_plus,The housing unit is in a building with 10 or more housing units
+building_type_barcelona,mixed_use,"The housing unit is a building that is used for other uses (even though it includes one or more housing units, for example, housing for porters, guards or security staff of the building)"
+building_type_barcelona,other,Other
+household_items,radio,Radio
+household_items,television,Television
+household_items,refrigerator,Refrigerator
+household_items,microwave,Microwave
+household_items,internet,"Internet access (e.g., fibre)"
+household_items,computer,Computer
+household_items,smartphone,Cellular smartphone
+household_items,car,Car
+household_items,cooling,"Electric cooling devices (e.g. fan or air-conditioning)"
+education_gauteng,less_than_high_school,Less than high school
+education_gauteng,high_school,High school
+education_gauteng,tvet,TVET college
+education_gauteng,bachelors,Bachelor's degree
+education_gauteng,professional,Professional degree
+education_gauteng,postgraduate,"Post-graduate degree (e.g., honours, masters or doctorate)"
+education_gauteng,prefer_not_say,Prefer not to say
+education_barcelona,less_than_high_school,Less than high school
+education_barcelona,high_school,High school
+education_barcelona,bachelors,Bachelor's degree
+education_barcelona,graduate_professional,Graduate or professional degree
+education_barcelona,prefer_not_say,Prefer not to say
+general_health,excellent,Excellent
+general_health,very_good,Very good
+general_health,good,Good
+general_health,fair,Fair
+general_health,poor,Poor
+climate_activism,all_the_time,All the time
+climate_activism,often,Often
+climate_activism,sometimes,Sometimes
+climate_activism,occasionally,Occasionally
+climate_activism,never,Never

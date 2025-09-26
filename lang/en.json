@@ -1,0 +1,22 @@
+{
+    "side_drawer_title": "Wellbeing Mapper Menu",
+    "locations_history": "Locations History",
+    "share_locations": "Share Locations",
+    "report_an_issue": "Report an Issue",
+    "report_summary": "Help us improve by either reporting an issue or requesting a useful feature.",
+    "github_description": "Report issues on github to get the fastest solution.",
+    "github_button": "Go to Github Issues",
+    "email_description": "As an alternative, you can send us an email.",
+    "report_email_btn1": "Report an issue by email",
+    "report_email_btn2": "Request a feature by email",
+    "activity": "Activity",
+    "speed": "Speed",
+    "altitude": "Altitude",
+    "show_all_datapoints": "Show all data points",
+    "submit": "Submit",
+    "reset": "Reset",
+    "gender": "gender",
+    "visit_project_website": "Visit Project Website",
+    "consent_form" : "Informed Consent",
+    "do_you_agree_to_share_your_anonymous_location_with" : "This survey is for authorized participants only. To participate, you must have already provided informed consent directly to the research team. Each time you submit a survey form the app will also automatically transmit your location history, going back to the date when you started participating. By checking this box, you confirm that you have understood this information, and that you are authorized to participating and that you have already providfed informed consent to having any data you shared used in this way."
+}
