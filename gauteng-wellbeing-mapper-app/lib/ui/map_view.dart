@@ -204,21 +204,21 @@ class MapViewState extends State<MapView>
             if (_viewMode == 'path') {
               _polyline.add(currentPoint);
             }
-            
-            // Add markers based on view mode
-            if (_viewMode == 'path') {
-              // Path view: small blue dots only
+            // Only add to _locations/_accuracyCircles if NOT the last (most recent) location
+            bool isLast = false;
+            if (displayedCount == filteredLocations.length - 1) {
+              isLast = true;
+            }
+            if (_viewMode == 'path' && !isLast) {
               _locations.add(CircleMarker(
                 point: currentPoint,
                 color: Colors.blue,
                 radius: 4.0,
                 useRadiusInMeter: false,
               ));
-            } else if (_viewMode == 'point') {
-              // Point view: GPS accuracy circles
+            } else if (_viewMode == 'point' && !isLast) {
               double accuracy = (coords['accuracy'] as num?)?.toDouble() ?? 50.0;
-              double radius = accuracy.clamp(10.0, 200.0); // Clamp radius for readability
-              
+              double radius = accuracy.clamp(10.0, 200.0);
               _accuracyCircles.add(CircleMarker(
                 point: currentPoint,
                 color: Colors.blue.withValues(alpha: 0.3),
@@ -228,10 +228,8 @@ class MapViewState extends State<MapView>
                 useRadiusInMeter: true,
               ));
             }
-            
             print('[map_view] ✅ Successfully added location point: ${currentPoint.latitude}, ${currentPoint.longitude}');
             displayedCount++;
-            
           } catch (directError) {
             print('[map_view] ❌ Error in direct location processing: $directError');
             // Still count it as processed to avoid infinite loops
