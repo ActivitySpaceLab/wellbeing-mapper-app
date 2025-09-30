@@ -487,7 +487,7 @@ class MapViewState extends State<MapView>
                   new Polyline(
                     points: _polyline,
                     strokeWidth: 10.0,
-                    color: Color.fromRGBO(0, 179, 253, 0.8),
+                    color: Colors.purple, // Use purple for path lines
                   ),
                 ],
               ),
@@ -545,7 +545,7 @@ class MapViewState extends State<MapView>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // View mode toggle
+              // View mode toggle (top-most)
               FloatingActionButton(
                 mini: true,
                 heroTag: "view_mode_toggle",
@@ -555,7 +555,6 @@ class MapViewState extends State<MapView>
                   });
                   // Refresh the stored locations to apply new view mode
                   _displayStoredLocations();
-                  
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(_viewMode == 'path' 
@@ -565,12 +564,12 @@ class MapViewState extends State<MapView>
                     ),
                   );
                 },
-                backgroundColor: _viewMode == 'path' ? Colors.orange : Colors.purple,
+                backgroundColor: _viewMode == 'point' ? Colors.blue : Colors.purple,
                 foregroundColor: Colors.white,
-                child: Icon(_viewMode == 'path' ? Icons.timeline : Icons.radio_button_checked),
+                child: Icon(_viewMode == 'point' ? Icons.radio_button_checked : Icons.timeline),
               ),
               SizedBox(height: 8),
-              // Auto-center toggle
+              // Auto-center toggle (middle button, now green when enabled)
               FloatingActionButton(
                 mini: true,
                 heroTag: "auto_center_toggle",
@@ -587,30 +586,9 @@ class MapViewState extends State<MapView>
                     ),
                   );
                 },
-                backgroundColor: _autoCenter ? Colors.blue : Colors.grey[600],
+                backgroundColor: _autoCenter ? Colors.green : Colors.grey[600],
                 foregroundColor: Colors.white,
                 child: Icon(_autoCenter ? Icons.gps_fixed : Icons.gps_not_fixed),
-              ),
-              SizedBox(height: 8),
-              // Manual re-center button
-              FloatingActionButton(
-                mini: true,
-                heroTag: "recenter",
-                onPressed: _currentLocation != null ? () {
-                  _mapController.move(_currentLocation!, _mapOptions.initialZoom);
-                  setState(() {
-                    _autoCenter = true; // Re-enable auto-center when manually centering
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Centered on current location'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                } : null,
-                backgroundColor: _currentLocation != null ? Colors.green : Colors.grey[400],
-                foregroundColor: Colors.white,
-                child: Icon(Icons.my_location),
               ),
             ],
           ),
