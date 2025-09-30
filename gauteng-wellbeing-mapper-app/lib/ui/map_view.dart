@@ -37,8 +37,7 @@ class MapViewState extends State<MapView>
   late MapController _mapController;
   late MapOptions _mapOptions;
   
-  // Track current location for re-center functionality
-  LatLng? _currentLocation;
+  // Track current location for re-center functionality (stored in _currentPosition)
   bool _autoCenter = true; // Start with auto-center enabled
 
   @override
@@ -195,9 +194,9 @@ class MapViewState extends State<MapView>
               double radius = accuracy.clamp(10.0, 200.0);
               _accuracyCircles.add(CircleMarker(
                 point: currentPoint,
-                color: Colors.blue.withValues(alpha: 0.3),
-                borderColor: Colors.blue,
-                borderStrokeWidth: 2.0,
+                color: Colors.blue.withOpacity(0.2),
+                borderColor: Colors.blue.withOpacity(0.5),
+                borderStrokeWidth: 1.0,
                 radius: radius,
                 useRadiusInMeter: true,
               ));
@@ -220,7 +219,6 @@ class MapViewState extends State<MapView>
           print('[map_view] 📍 Auto-centering map on most recent location: ${lastLocation.latitude}, ${lastLocation.longitude}');
           double zoom = _mapOptions.initialZoom;
           _mapController.move(lastLocation, zoom);
-          _currentLocation = lastLocation;
         } catch (e) {
           print('[map_view] ❌ Error centering map on last location: $e');
         }
@@ -229,7 +227,6 @@ class MapViewState extends State<MapView>
           print('[map_view] 📍 Auto-centering map on first available location: ${firstLocation.latitude}, ${firstLocation.longitude}');
           double zoom = _mapOptions.initialZoom;
           _mapController.move(firstLocation, zoom);
-          _currentLocation = firstLocation;
         } catch (e) {
           print('[map_view] ❌ Error centering map on first location: $e');
         }
@@ -306,44 +303,29 @@ class MapViewState extends State<MapView>
         }
       }
       
-      // Add to polyline only (do not add to _locations or _accuracyCircles for the live point)
-      if (_viewMode == 'path') {
-        _polyline.add(currentPoint);
-      }
+      // Add to polyline for both path and point view to ensure continuity
+      _polyline.add(currentPoint);
       
       // Update current position marker safely
       _currentPosition.clear();
-      // Google Maps style: blue outer, white border, blue center dot
-      _currentPosition.addAll([
-        // Outer blue circle (glow)
+      
+      // Simple single marker approach - avoid overlapping elements
+      _currentPosition.add(
         CircleMarker(
           point: currentPoint,
-          color: Colors.blue.withOpacity(0.3),
-          radius: 16.0,
+          color: _viewMode == 'point' ? Colors.blue.withOpacity(0.8) : Colors.purple.withOpacity(0.8),
+          borderColor: Colors.white,
+          borderStrokeWidth: 3.0,
+          radius: 8.0,
           useRadiusInMeter: false,
         ),
-        // White border
-        CircleMarker(
-          point: currentPoint,
-          color: Colors.white,
-          radius: 10.0,
-          useRadiusInMeter: false,
-        ),
-        // Blue center dot
-        CircleMarker(
-          point: currentPoint,
-          color: Colors.blue,
-          radius: 6.0,
-          useRadiusInMeter: false,
-        ),
-      ]);
+      );
       
       // Auto-center map if enabled (with protection against null errors)
       if (_autoCenter) {
         try {
           double zoom = _mapOptions.initialZoom;
           _mapController.move(currentPoint, zoom);
-          _currentLocation = currentPoint;
           print('[MapView] 🎯 Auto-centered map on real-time location: ${currentPoint.latitude}, ${currentPoint.longitude}');
         } catch (e) {
           print('[MapView] ❌ Error moving map to new location (flutter_map compatibility issue): $e');
@@ -454,35 +436,8 @@ class MapViewState extends State<MapView>
               PolylineLayer(polylines: _motionChangePolylines),
             // Simplified stop locations (smaller, less confusing)
             if (_stopLocations.isNotEmpty) CircleLayer(circles: _stopLocations),
-            // Current position (always shown)
+            // Current position (always shown) - single clean marker
             if (_currentPosition.isNotEmpty) CircleLayer(circles: _currentPosition),
-            // Current position center dot (Google Maps style) - always on top
-            if (_currentLocation != null)
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _currentLocation!,
-                    width: 16,
-                    height: 16,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: Colors.blue[600],
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
           ],
         ),
         
