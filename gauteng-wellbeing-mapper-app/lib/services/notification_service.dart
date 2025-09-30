@@ -459,6 +459,7 @@ class NotificationService {
     final int notificationCount = prefs.getInt(_notificationCountKey) ?? 0;
     final bool hasPending = prefs.getBool(_pendingSurveyKey) ?? false;
     final int? testingMinutes = await getTestingInterval();
+    final String? userUUID = prefs.getString("user_uuid");
     
     DateTime? lastNotificationDate;
     DateTime? nextNotificationDate;
@@ -467,6 +468,9 @@ class NotificationService {
     if (lastNotificationTimestamp != null) {
       lastNotificationDate = DateTime.fromMillisecondsSinceEpoch(lastNotificationTimestamp);
       nextNotificationDate = lastNotificationDate.add(effectiveInterval);
+    } else if (userUUID != null) {
+      // First time user - schedule notification for the interval from now
+      nextNotificationDate = DateTime.now().add(effectiveInterval);
     }
     
     return {

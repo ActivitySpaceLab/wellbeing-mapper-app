@@ -163,7 +163,7 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
             _buildStatRow('Total Notifications', notificationCount.toString()),
             _buildStatRow('Last Notification', _formatDate(lastNotificationDate)),
             _buildStatRow('Next Notification', _formatNextNotification(nextNotificationDate)),
-            _buildStatRow('Pending Prompt', hasPendingPrompt ? 'Yes' : 'No'),
+            _buildStatRow('Pending Survey', hasPendingPrompt ? 'Yes (tap to complete)' : 'No'),
             _buildStatRow('Notification Interval', '14 days'),
           ],
         ),
