@@ -306,28 +306,9 @@ class MapViewState extends State<MapView>
         }
       }
       
-      // Add to polyline and markers based on view mode
+      // Add to polyline only (do not add to _locations or _accuracyCircles for the live point)
       if (_viewMode == 'path') {
         _polyline.add(currentPoint);
-        _locations.add(CircleMarker(
-          point: currentPoint,
-          color: Colors.blue,
-          radius: 4.0,
-          useRadiusInMeter: false,
-        ));
-      } else if (_viewMode == 'point') {
-        // Add real-time accuracy circle
-        double accuracy = location.coords.accuracy;
-        double radius = accuracy.clamp(10.0, 200.0);
-        
-        _accuracyCircles.add(CircleMarker(
-          point: currentPoint,
-          color: Colors.blue.withValues(alpha: 0.3),
-          borderColor: Colors.blue,
-          borderStrokeWidth: 2.0,
-          radius: radius,
-          useRadiusInMeter: true,
-        ));
       }
       
       // Update current position marker safely
