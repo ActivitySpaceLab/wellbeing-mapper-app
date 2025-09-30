@@ -215,7 +215,6 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
 
   Widget _buildHappinessSlider() {
     final question = WellbeingSurveyQuestion.question;
-    
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
@@ -224,15 +223,6 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Happiness Survey (Optional)',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[600],
-              ),
-            ),
-            SizedBox(height: 12),
-            Text(
               question.text,
               style: TextStyle(
                 fontSize: 18,
@@ -240,7 +230,6 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
               ),
             ),
             SizedBox(height: 24),
-            
             // Slider with improved UX
             Container(
               padding: EdgeInsets.all(16),
@@ -250,7 +239,6 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
                   width: 1,
                 ),
                 borderRadius: BorderRadius.circular(8),
-                color: _happinessScore == null ? Colors.red[50] : Colors.blue[50],
               ),
               child: Column(
                 children: [
@@ -262,11 +250,11 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                       Text(
-                        _happinessScore == null 
-                          ? 'Not selected' 
+                        _happinessScore == null
+                          ? ''
                           : _happinessScore!.toStringAsFixed(1),
                         style: TextStyle(
-                          fontSize: 16, 
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: _happinessScore == null ? Colors.red[600] : SouthAfricanTheme.primaryBlue,
                         ),
@@ -283,7 +271,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
                     min: question.minValue,
                     max: question.maxValue,
                     divisions: 10, // 0, 1, 2, ..., 10
-                    label: _happinessScore?.toStringAsFixed(1) ?? 'Not selected',
+                    label: _happinessScore?.toStringAsFixed(1),
                     onChanged: (value) {
                       setState(() {
                         _happinessScore = value;
@@ -292,54 +280,37 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
                     activeColor: _happinessScore == null ? Colors.red[300] : SouthAfricanTheme.primaryBlue,
                     inactiveColor: Colors.grey[300],
                   ),
+                  SizedBox(height: 8),
                   if (_happinessScore == null)
-                    Padding(
-                      padding: EdgeInsets.only(top: 8),
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.blue[200]!),
+                      ),
                       child: Text(
-                        'Please move the slider to rate your happiness',
-                        style: TextStyle(fontSize: 12, color: Colors.red[600], fontWeight: FontWeight.w500),
+                        'Please move the slider to rate your happiness before submitting.',
+                        style: TextStyle(fontSize: 12, color: Colors.blue[700]),
                       ),
                     ),
                 ],
               ),
             ),
-            
-
-            
-            SizedBox(height: 16),
-            
-            // Current value display
-            if (_happinessScore != null)
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: SouthAfricanTheme.softYellow,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.mood,
-                      color: SouthAfricanTheme.primaryBlue,
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Your happiness: ${_happinessScore!.toStringAsFixed(1)}/10',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: SouthAfricanTheme.primaryBlue,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),
     );
+  }
+
+  void _handleSubmit() async {
+    if (_happinessScore == null) {
+      setState(() {}); // Triggers validation message
+      return;
+    }
+
+    // Proceed with submission
+    _submitSurvey();
   }
 
   @override
@@ -395,7 +366,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _submitSurvey,
+                onPressed: _isSubmitting ? null : _handleSubmit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
