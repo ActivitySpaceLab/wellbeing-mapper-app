@@ -510,6 +510,33 @@ class MapViewState extends State<MapView>
             if (_stopLocations.isNotEmpty) CircleLayer(circles: _stopLocations),
             // Current position (always shown)
             if (_currentPosition.isNotEmpty) CircleLayer(circles: _currentPosition),
+            // Current position center dot (Google Maps style) - always on top
+            if (_currentLocation != null)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _currentLocation!,
+                    width: 16,
+                    height: 16,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.blue[600],
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
         
