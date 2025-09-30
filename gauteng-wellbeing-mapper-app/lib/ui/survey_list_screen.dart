@@ -76,7 +76,7 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
           _hasInitialSurvey ? Icons.check_circle : Icons.radio_button_unchecked,
           color: _hasInitialSurvey ? Colors.green : Colors.grey,
         ),
-        title: Text('Initial Demographics Survey'),
+        title: Text('Initial Survey'),
         subtitle: Text(_hasInitialSurvey 
             ? 'Completed' 
             : 'Not completed - tap to complete'),

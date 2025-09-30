@@ -374,7 +374,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
                   title: Text("Initial Survey"),
                   subtitle: Text(hasCompletedInitialSurvey 
                     ? "Completed ✓" 
-                    : "Complete your initial demographics survey"
+                    : "Complete your initial survey"
                   ),
                   trailing: hasCompletedInitialSurvey 
                     ? Icon(Icons.check_circle, color: Colors.green)
