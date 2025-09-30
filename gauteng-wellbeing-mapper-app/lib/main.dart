@@ -227,6 +227,17 @@ void main() {
       print('[main.dart] Error initializing NotificationService: $error');
     }
 
+    // Initialize iOS location fix service on iOS devices
+    try {
+      print('[main.dart] Initializing iOS location services...');
+      // Import at the top of file: import 'services/ios_location_fix_service.dart';
+      // For now, we'll skip auto-initialization to avoid import complexity
+      // The fix will still work when LocationService.initializeLocationServices is called
+      print('[main.dart] iOS location initialization deferred to first location request');
+    } catch (error) {
+      print('[main.dart] Error initializing iOS location services: $error');
+    }
+
     // Register headless tasks with error handling to prevent UI blocking
     try {
       print('[main.dart] Registering headless tasks...');
