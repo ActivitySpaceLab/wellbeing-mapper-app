@@ -189,8 +189,8 @@ class MapViewState extends State<MapView>
             double radius = accuracy.clamp(10.0, 200.0);
             _accuracyCircles.add(CircleMarker(
               point: currentPoint,
-              color: Colors.blue.withOpacity(0.2),
-              borderColor: Colors.blue.withOpacity(0.5),
+              color: Colors.blue.withValues(alpha: 0.2),
+              borderColor: Colors.blue.withValues(alpha: 0.5),
               borderStrokeWidth: 1.0,
               radius: radius,
               useRadiusInMeter: true,
@@ -307,7 +307,7 @@ class MapViewState extends State<MapView>
       _currentPosition.add(
         CircleMarker(
           point: currentPoint,
-          color: Colors.blue.withOpacity(0.8),
+          color: Colors.blue.withValues(alpha: 0.8),
           borderColor: Colors.white,
           borderStrokeWidth: 3.0,
           radius: 8.0,
