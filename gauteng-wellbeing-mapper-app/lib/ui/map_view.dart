@@ -150,74 +150,48 @@ class MapViewState extends State<MapView>
       
       for (var thisLocation in filteredLocations) {
         try {
-          // Add null safety checks
           if (thisLocation == null) {
             print('[map_view] ⚠️ Skipping null location data');
             continue;
           }
-          
           print('[map_view] 🔍 Processing location data: ${thisLocation.toString().substring(0, 100)}...');
-          
-          // Extract coordinates directly from raw location data without using bg.Location constructor
           Map<String, dynamic>? coords = thisLocation['coords'];
           if (coords == null) {
             print('[map_view] ⚠️ Skipping location with null coords');
             continue;
           }
-          
-          // Validate coordinate values
           double lat = (coords['latitude'] as num?)?.toDouble() ?? double.nan;
           double lon = (coords['longitude'] as num?)?.toDouble() ?? double.nan;
-          
           if (lat.isNaN || lon.isNaN || lat.isInfinite || lon.isInfinite) {
             print('[map_view] ⚠️ Skipping location with invalid coordinates: lat=$lat, lon=$lon');
             continue;
           }
-          
-          // DATA QUALITY FILTERING
-          // 2. Remove very poor accuracy readings (>200m)
           double accuracy = (coords['accuracy'] as num?)?.toDouble() ?? 999.0;
           if (accuracy > 200.0) {
             print('[map_view] 🚫 Skipping low accuracy location: ${accuracy}m accuracy');
             continue;
           }
-          
           LatLng currentPoint = LatLng(lat, lon);
-          
-          // 1. Remove exact duplicates - skip if same as previous location
-          if (lastLocation != null && 
-              (currentPoint.latitude - lastLocation.latitude).abs() < 0.000001 && 
+          if (lastLocation != null &&
+              (currentPoint.latitude - lastLocation.latitude).abs() < 0.000001 &&
               (currentPoint.longitude - lastLocation.longitude).abs() < 0.000001) {
             print('[map_view] 🔄 Skipping duplicate location: ${currentPoint.latitude}, ${currentPoint.longitude}');
             continue;
           }
-          
-          // Track first and last locations for map centering
           if (firstLocation == null) {
             firstLocation = currentPoint;
           }
           lastLocation = currentPoint;
-          
-          // Use our own simplified location processing instead of _onLocation
-          try {
-            // Add to polyline for path view
-            if (_viewMode == 'path') {
-              _polyline.add(currentPoint);
-            }
-            // Only add to _locations/_accuracyCircles if NOT the last (most recent) location
+          // Only build the polyline, do not add points for path view
+          if (_viewMode == 'path') {
+            _polyline.add(currentPoint);
+          } else if (_viewMode == 'point') {
+            // Only add accuracy circles for point view (not for the last point)
             bool isLast = false;
             if (displayedCount == filteredLocations.length - 1) {
               isLast = true;
             }
-            if (_viewMode == 'path' && !isLast) {
-              _locations.add(CircleMarker(
-                point: currentPoint,
-                color: Colors.blue,
-                radius: 4.0,
-                useRadiusInMeter: false,
-              ));
-            } else if (_viewMode == 'point' && !isLast) {
-              double accuracy = (coords['accuracy'] as num?)?.toDouble() ?? 50.0;
+            if (!isLast) {
               double radius = accuracy.clamp(10.0, 200.0);
               _accuracyCircles.add(CircleMarker(
                 point: currentPoint,
@@ -228,14 +202,9 @@ class MapViewState extends State<MapView>
                 useRadiusInMeter: true,
               ));
             }
-            print('[map_view] ✅ Successfully added location point: ${currentPoint.latitude}, ${currentPoint.longitude}');
-            displayedCount++;
-          } catch (directError) {
-            print('[map_view] ❌ Error in direct location processing: $directError');
-            // Still count it as processed to avoid infinite loops
-            displayedCount++;
           }
-          
+          print('[map_view] ✅ Successfully added location point: ${currentPoint.latitude}, ${currentPoint.longitude}');
+          displayedCount++;
         } catch (e) {
           print('[map_view] ❌ Error processing individual location: $e');
           print('[map_view] 📊 Location data: $thisLocation');
@@ -480,7 +449,7 @@ class MapViewState extends State<MapView>
                   ),
                 ),
               ),
-            // Path view: show polylines and small dots
+            // Path view: show only the polyline (no points)
             if (_viewMode == 'path' && _polyline.isNotEmpty)
               PolylineLayer(
                 polylines: [
@@ -491,8 +460,6 @@ class MapViewState extends State<MapView>
                   ),
                 ],
               ),
-            if (_viewMode == 'path' && _locations.isNotEmpty) 
-              CircleLayer(circles: _locations),
             
             // Point view: show accuracy circles only
             if (_viewMode == 'point' && _accuracyCircles.isNotEmpty)
