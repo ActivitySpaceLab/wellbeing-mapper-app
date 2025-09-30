@@ -29,8 +29,6 @@ class MapViewState extends State<MapView>
   List<CircleMarker> _stopLocations = [];
   List<Polyline> _motionChangePolylines = [];
   
-  // View mode: 'path' for clean polylines, 'point' for GPS accuracy circles
-  String _viewMode = 'path';
   List<CircleMarker> _accuracyCircles = [];
 
   LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
@@ -181,26 +179,22 @@ class MapViewState extends State<MapView>
             firstLocation = currentPoint;
           }
           lastLocation = currentPoint;
-          // Only build the polyline, do not add points for path view
-          if (_viewMode == 'path') {
-            _polyline.add(currentPoint);
-          } else if (_viewMode == 'point') {
-            // Only add accuracy circles for point view (not for the last point)
-            bool isLast = false;
-            if (displayedCount == filteredLocations.length - 1) {
-              isLast = true;
-            }
-            if (!isLast) {
-              double radius = accuracy.clamp(10.0, 200.0);
-              _accuracyCircles.add(CircleMarker(
-                point: currentPoint,
-                color: Colors.blue.withOpacity(0.2),
-                borderColor: Colors.blue.withOpacity(0.5),
-                borderStrokeWidth: 1.0,
-                radius: radius,
-                useRadiusInMeter: true,
-              ));
-            }
+          
+          // Add accuracy circles for all points except the last (live) one
+          bool isLast = false;
+          if (displayedCount == filteredLocations.length - 1) {
+            isLast = true;
+          }
+          if (!isLast) {
+            double radius = accuracy.clamp(10.0, 200.0);
+            _accuracyCircles.add(CircleMarker(
+              point: currentPoint,
+              color: Colors.blue.withOpacity(0.2),
+              borderColor: Colors.blue.withOpacity(0.5),
+              borderStrokeWidth: 1.0,
+              radius: radius,
+              useRadiusInMeter: true,
+            ));
           }
           print('[map_view] ✅ Successfully added location point: ${currentPoint.latitude}, ${currentPoint.longitude}');
           displayedCount++;
@@ -303,17 +297,17 @@ class MapViewState extends State<MapView>
         }
       }
       
-      // Add to polyline for both path and point view to ensure continuity
+      // Add to polyline for continuity
       _polyline.add(currentPoint);
       
       // Update current position marker safely
       _currentPosition.clear();
       
-      // Simple single marker approach - avoid overlapping elements
+      // Simple blue marker for point view
       _currentPosition.add(
         CircleMarker(
           point: currentPoint,
-          color: _viewMode == 'point' ? Colors.blue.withOpacity(0.8) : Colors.purple.withOpacity(0.8),
+          color: Colors.blue.withOpacity(0.8),
           borderColor: Colors.white,
           borderStrokeWidth: 3.0,
           radius: 8.0,
@@ -412,20 +406,8 @@ class MapViewState extends State<MapView>
                   ),
                 ),
               ),
-            // Path view: show only the polyline (no points)
-            if (_viewMode == 'path' && _polyline.isNotEmpty)
-              PolylineLayer(
-                polylines: [
-                  new Polyline(
-                    points: _polyline,
-                    strokeWidth: 10.0,
-                    color: Colors.purple, // Use purple for path lines
-                  ),
-                ],
-              ),
-            
-            // Point view: show accuracy circles only
-            if (_viewMode == 'point' && _accuracyCircles.isNotEmpty)
+            // Point view: show accuracy circles
+            if (_accuracyCircles.isNotEmpty)
               CircleLayer(circles: _accuracyCircles),
             
             // Remove confusing big red stationary radius circles
@@ -448,31 +430,7 @@ class MapViewState extends State<MapView>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // View mode toggle (top-most)
-              FloatingActionButton(
-                mini: true,
-                heroTag: "view_mode_toggle",
-                onPressed: () {
-                  setState(() {
-                    _viewMode = _viewMode == 'path' ? 'point' : 'path';
-                  });
-                  // Refresh the stored locations to apply new view mode
-                  _displayStoredLocations();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(_viewMode == 'path' 
-                        ? 'Path View: Showing movement trails' 
-                        : 'Point View: Showing GPS accuracy circles'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                backgroundColor: _viewMode == 'point' ? Colors.blue : Colors.purple,
-                foregroundColor: Colors.white,
-                child: Icon(_viewMode == 'point' ? Icons.radio_button_checked : Icons.timeline),
-              ),
-              SizedBox(height: 8),
-              // Auto-center toggle (middle button, now green when enabled)
+              // Auto-center toggle (green when enabled)
               FloatingActionButton(
                 mini: true,
                 heroTag: "auto_center_toggle",
