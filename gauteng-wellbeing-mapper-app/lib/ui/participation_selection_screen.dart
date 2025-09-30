@@ -316,19 +316,6 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
           ),
         ),
         SizedBox(height: 12),
-        // iOS Location Debug Button (only visible on iOS)
-        if (!kIsWeb && Theme.of(context).platform == TargetPlatform.iOS)
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: _isLoading ? null : _runIOSLocationDebugFix,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.orange,
-                side: BorderSide(color: Colors.orange),
-              ),
-              child: Text('iOS Location Debug Fix'),
-            ),
-          ),
         // TextButton(
         //   onPressed: _showContactInfo,
         //   child: Text('Contact Development Team'),
@@ -610,80 +597,6 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
         ],
       ),
     );
-  }
-
-  Future<void> _runIOSLocationDebugFix() async {
-    if (kIsWeb) return;
-    
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      print('[ParticipationSelection] Running iOS Location Debug Fix...');
-      
-      // Show progress dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: Text('iOS Location Fix'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Running iOS location permission fix...\nThis may take a few moments.'),
-            ],
-          ),
-        ),
-      );
-
-      // Initialize native location manager
-      await IosLocationFixService.initializeNativeLocationManager();
-      await Future.delayed(Duration(milliseconds: 500));
-      
-      // Perform comprehensive fix
-      final result = await IosLocationFixService.performComprehensiveFix(context: context);
-      await Future.delayed(Duration(milliseconds: 1000));
-      
-      // Check status
-      final nativePermission = await IosLocationFixService.checkNativeLocationPermission();
-      final isRegistered = await IosLocationFixService.isAppRegisteredInSettings();
-      
-      // Close progress dialog
-      Navigator.of(context).pop();
-      
-      // Show result dialog
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('iOS Location Fix Results'),
-          content: Text(
-            'Fix completed: $result\n'
-            'Native Permission: $nativePermission\n'
-            'App Registered: $isRegistered\n\n'
-            'Please go to iPhone Settings > Privacy & Security > Location Services to verify the app appears in the list.'
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK'),
-            ),
-          ],
-        ),
-      );
-      
-    } catch (e) {
-      // Close progress dialog if still open
-      Navigator.of(context).pop();
-      
-      _showErrorDialog('iOS Location Fix Error: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
   @override
