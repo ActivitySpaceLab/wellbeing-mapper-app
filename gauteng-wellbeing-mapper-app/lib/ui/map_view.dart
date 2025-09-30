@@ -447,7 +447,7 @@ class MapViewState extends State<MapView>
                     ),
                   );
                 },
-                backgroundColor: _autoCenter ? Colors.green : Colors.grey[600],
+                backgroundColor: _autoCenter ? Colors.blue : Colors.grey[600],
                 foregroundColor: Colors.white,
                 child: Icon(_autoCenter ? Icons.gps_fixed : Icons.gps_not_fixed),
               ),
