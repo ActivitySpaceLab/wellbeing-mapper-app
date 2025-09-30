@@ -28,6 +28,7 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
   void initState() {
     super.initState();
     _loadAvailableModes();
+    _validateStoredMode(); // Add validation for stored mode
   }
 
   void _loadAvailableModes() {
@@ -37,6 +38,31 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
     // Ensure selected mode is available in current build
     if (!_availableModes.any((mode) => mode.toString().split('.').last == _selectedMode)) {
       _selectedMode = _availableModes.first.toString().split('.').last;
+    }
+  }
+
+  // Add validation to clear incompatible stored modes
+  Future<void> _validateStoredMode() async {
+    try {
+      final currentMode = await AppModeService.getCurrentMode();
+      final currentModeString = currentMode.toString().split('.').last;
+      
+      // Check if stored mode is available in current build
+      if (!_availableModes.any((mode) => mode.toString().split('.').last == currentModeString)) {
+        print('[ParticipationSelection] Stored mode $currentModeString not available in current build, clearing...');
+        await AppModeService.clearModeData();
+        _selectedMode = 'private'; // Reset to default
+      } else {
+        _selectedMode = currentModeString;
+      }
+      
+      setState(() {}); // Refresh UI with validated mode
+    } catch (e) {
+      print('[ParticipationSelection] Error validating stored mode: $e');
+      // Clear all mode data on error to prevent further issues
+      await AppModeService.clearModeData();
+      _selectedMode = 'private';
+      setState(() {});
     }
   }
 
@@ -341,11 +367,20 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
     });
 
     try {
-      // Convert selected mode string to AppMode enum
+      // Convert selected mode string to AppMode enum with safety check
       final selectedAppMode = _availableModes.firstWhere(
         (mode) => mode.toString().split('.').last == _selectedMode,
         orElse: () => AppMode.private,
       );
+
+      // Validate mode is still available (double-check to prevent conflicts)
+      if (!AppModeService.getAvailableModes().contains(selectedAppMode)) {
+        print('[ParticipationSelection] Selected mode $selectedAppMode not available, defaulting to private');
+        await AppModeService.setCurrentMode(AppMode.private);
+        await _savePrivateUserSettings();
+        _navigateToMainApp();
+        return;
+      }
 
       // Request location permissions first for all modes
       print('[ParticipationSelection] Requesting location permissions...');
