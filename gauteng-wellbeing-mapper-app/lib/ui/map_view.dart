@@ -365,12 +365,30 @@ class MapViewState extends State<MapView>
       
       // Update current position marker safely
       _currentPosition.clear();
-      _currentPosition.add(CircleMarker(
-        point: currentPoint,
-        color: Colors.red,
-        radius: 8.0,
-        useRadiusInMeter: false,
-      ));
+      // Google Maps style: blue outer, white border, blue center dot
+      _currentPosition.addAll([
+        // Outer blue circle (glow)
+        CircleMarker(
+          point: currentPoint,
+          color: Colors.blue.withOpacity(0.3),
+          radius: 16.0,
+          useRadiusInMeter: false,
+        ),
+        // White border
+        CircleMarker(
+          point: currentPoint,
+          color: Colors.white,
+          radius: 10.0,
+          useRadiusInMeter: false,
+        ),
+        // Blue center dot
+        CircleMarker(
+          point: currentPoint,
+          color: Colors.blue,
+          radius: 6.0,
+          useRadiusInMeter: false,
+        ),
+      ]);
       
       // Auto-center map if enabled (with protection against null errors)
       if (_autoCenter) {
