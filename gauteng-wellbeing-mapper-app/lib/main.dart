@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:wellbeing_mapper/models/route_generator.dart';
 import 'package:wellbeing_mapper/util/env.dart';
 import 'package:wellbeing_mapper/services/notification_service.dart';
@@ -337,29 +338,37 @@ class InitialRouteDecider extends StatelessWidget {
   Future<String> _getInitialRoute() async {
     try {
       print('[InitialRouteDecider] ===== DETERMINING INITIAL ROUTE =====');
-      
       // Check if app was launched from a notification
       final notificationPayload = NotificationService.getPendingNotificationPayload();
       print('[InitialRouteDecider] Notification payload: $notificationPayload');
-      
       if (notificationPayload == '/wellbeing_survey') {
         print('[InitialRouteDecider] App launched from notification, navigating to survey');
         return '/wellbeing_survey';
       }
-      
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? participationSettings = prefs.getString('participation_settings');
       print('[InitialRouteDecider] Participation settings: $participationSettings');
-      
+      if (participationSettings != null && participationSettings.isNotEmpty) {
+        // Check if private user (never needs consent)
+        try {
+          final settingsMap = Map<String, dynamic>.from(jsonDecode(participationSettings));
+          final isResearchParticipant = settingsMap['isResearchParticipant'] ?? false;
+          if (isResearchParticipant == false) {
+            print('[InitialRouteDecider] Private user detected, going to home route');
+            return '/';
+          }
+        } catch (e) {
+          print('[InitialRouteDecider] Error parsing participationSettings: $e');
+        }
+      }
       // Check if user needs to complete current consent
       bool needsConsent = await ConsentTrackingService.needsConsent();
       print('[InitialRouteDecider] Needs consent: $needsConsent');
-      
       if (participationSettings != null && participationSettings.isNotEmpty && !needsConsent) {
         print('[InitialRouteDecider] Going to home route');
         return '/'; // Go to home
       } else {
-        print('[InitialRouteDecider] Going to participation selection (${needsConsent ? 'needs consent' : 'no settings'})');
+        print('[InitialRouteDecider] Going to participation selection ([33m${needsConsent ? 'needs consent' : 'no settings'}[0m)');
         return '/participation_selection'; // Go to participation selection
       }
     } catch (error) {
