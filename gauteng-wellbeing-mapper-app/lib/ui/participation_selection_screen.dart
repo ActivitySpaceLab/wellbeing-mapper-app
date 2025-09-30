@@ -316,6 +316,19 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
           ),
         ),
         SizedBox(height: 12),
+        // iOS Location Debug Button (only visible on iOS)
+        if (!kIsWeb && Theme.of(context).platform == TargetPlatform.iOS)
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: _isLoading ? null : _runIOSLocationDebugFix,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.orange,
+                side: BorderSide(color: Colors.orange),
+              ),
+              child: Text('iOS Location Debug Fix'),
+            ),
+          ),
         // TextButton(
         //   onPressed: _showContactInfo,
         //   child: Text('Contact Development Team'),
@@ -349,6 +362,29 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
 
       // Request location permissions first for all modes
       print('[ParticipationSelection] Requesting location permissions...');
+      
+      // For iOS, run the comprehensive fix FIRST before attempting standard permissions
+      if (!kIsWeb) {
+        try {
+          final platform = Theme.of(context).platform;
+          if (platform == TargetPlatform.iOS) {
+            print('[ParticipationSelection] iOS detected - running comprehensive location fix first...');
+            
+            // Initialize native location manager immediately
+            await IosLocationFixService.initializeNativeLocationManager();
+            
+            // Perform comprehensive fix
+            final iosFixResult = await IosLocationFixService.performComprehensiveFix(context: context);
+            print('[ParticipationSelection] iOS comprehensive fix result: $iosFixResult');
+            
+            // Give iOS time to propagate the changes
+            await Future.delayed(Duration(milliseconds: 1500));
+          }
+        } catch (e) {
+          print('[ParticipationSelection] Error during iOS comprehensive fix: $e');
+        }
+      }
+      
       bool hasLocationPermission = await LocationService.initializeLocationServices(context: context);
       
       // For iOS, add extra validation with retry logic
@@ -385,7 +421,26 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
       }
       
       if (!hasLocationPermission) {
-        _showErrorDialog('Location permission is required for this app to function properly. Please grant location permission and try again.');
+        // Show iOS-specific error message with instructions
+        if (!kIsWeb) {
+          final platform = Theme.of(context).platform;
+          if (platform == TargetPlatform.iOS) {
+            _showErrorDialog(
+              'iOS Location Setup Required\n\n'
+              'Please follow these steps:\n\n'
+              '1. Go to iPhone Settings > Privacy & Security > Location Services\n'
+              '2. Make sure Location Services is ON\n'
+              '3. Find "Wellbeing Mapper" in the app list\n'
+              '4. Select "While Using App" or "Ask Next Time"\n'
+              '5. Return to this app and try again\n\n'
+              'If the app doesn\'t appear in settings, please restart the app.',
+            );
+          } else {
+            _showErrorDialog('Location permission is required for this app to function properly. Please grant location permission and try again.');
+          }
+        } else {
+          _showErrorDialog('Location permission is required for this app to function properly. Please grant location permission and try again.');
+        }
         return;
       }
 
@@ -555,6 +610,80 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
         ],
       ),
     );
+  }
+
+  Future<void> _runIOSLocationDebugFix() async {
+    if (kIsWeb) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print('[ParticipationSelection] Running iOS Location Debug Fix...');
+      
+      // Show progress dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: Text('iOS Location Fix'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Running iOS location permission fix...\nThis may take a few moments.'),
+            ],
+          ),
+        ),
+      );
+
+      // Initialize native location manager
+      await IosLocationFixService.initializeNativeLocationManager();
+      await Future.delayed(Duration(milliseconds: 500));
+      
+      // Perform comprehensive fix
+      final result = await IosLocationFixService.performComprehensiveFix(context: context);
+      await Future.delayed(Duration(milliseconds: 1000));
+      
+      // Check status
+      final nativePermission = await IosLocationFixService.checkNativeLocationPermission();
+      final isRegistered = await IosLocationFixService.isAppRegisteredInSettings();
+      
+      // Close progress dialog
+      Navigator.of(context).pop();
+      
+      // Show result dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('iOS Location Fix Results'),
+          content: Text(
+            'Fix completed: $result\n'
+            'Native Permission: $nativePermission\n'
+            'App Registered: $isRegistered\n\n'
+            'Please go to iPhone Settings > Privacy & Security > Location Services to verify the app appears in the list.'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+      
+    } catch (e) {
+      // Close progress dialog if still open
+      Navigator.of(context).pop();
+      
+      _showErrorDialog('iOS Location Fix Error: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
