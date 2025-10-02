@@ -38,6 +38,10 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
       // CRITICAL: Check app mode before any upload operations
       final currentMode = await AppModeService.getCurrentMode();
+      print('[EncryptedSurveyService] Current app mode: ${currentMode.toString()}');
+      print('[EncryptedSurveyService] App flavor: ${AppModeService.appFlavor}');
+      print('[EncryptedSurveyService] Is beta build: ${AppModeService.isBetaBuild}');
+      print('[EncryptedSurveyService] Sends data to research: ${await AppModeService.sendsDataToResearch()}');
       
       // If in app testing mode, simulate upload but don't actually send data
       if (currentMode == AppMode.appTesting) {
@@ -49,7 +53,8 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
       // Only proceed with real upload if in research mode
       if (!await AppModeService.sendsDataToResearch()) {
-        print('[EncryptedSurveyService] Data upload not available in current app mode');
+        print('[EncryptedSurveyService] ❌ Data upload not available in current app mode');
+        print('[EncryptedSurveyService] ❌ Mode: $currentMode, Sends to research: ${await AppModeService.sendsDataToResearch()}');
         return;
       }
       
@@ -58,34 +63,45 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       // CONSENT SAFEGUARD: Check if participant has given consent before syncing surveys
       // (Consent forms are always synced since they ARE the consent)
       final participantUuid = GlobalData.userUUID;
+      print('[EncryptedSurveyService] Participant UUID: ${participantUuid.isNotEmpty ? "present (${participantUuid.length} chars)" : "MISSING"}');
+      
       if (participantUuid.isNotEmpty) {
         final consent = await db.getLatestDataSharingConsent(participantUuid);
+        print('[EncryptedSurveyService] Consent record found: ${consent != null ? "YES" : "NO"}');
         
         // Sync initial and biweekly surveys only if consent exists
         if (consent != null) {
-          print('[EncryptedSurveyService] Consent found, proceeding with survey sync');
+          print('[EncryptedSurveyService] ✅ Consent found, proceeding with survey sync');
           
           // Sync initial surveys
           final unsyncedInitial = await db.getUnsyncedInitialSurveys();
+          print('[EncryptedSurveyService] Unsynced initial surveys: ${unsyncedInitial.length}');
           for (final survey in unsyncedInitial) {
+            print('[EncryptedSurveyService] Syncing initial survey ID: ${survey['id']}');
             await _syncInitialSurveyEncrypted(survey);
           }
           
           // Sync biweekly surveys  
           final unsyncedBiweekly = await db.getUnsyncedRecurringSurveys();
+          print('[EncryptedSurveyService] Unsynced biweekly surveys: ${unsyncedBiweekly.length}');
           for (final survey in unsyncedBiweekly) {
+            print('[EncryptedSurveyService] Syncing biweekly survey ID: ${survey['id']}');
             await _syncBiweeklySurveyEncrypted(survey);
           }
         } else {
-          print('[EncryptedSurveyService] No consent found, skipping survey sync (consent required)');
+          print('[EncryptedSurveyService] ❌ No consent found, skipping survey sync (consent required)');
+          print('[EncryptedSurveyService] ❌ This is likely why no data has been uploaded since Sept 30!');
         }
       } else {
-        print('[EncryptedSurveyService] No participant UUID found, skipping survey sync');
+        print('[EncryptedSurveyService] ❌ No participant UUID found, skipping survey sync');
+        print('[EncryptedSurveyService] ❌ GlobalData.userUUID is empty - this prevents all uploads!');
       }
       
       // Always sync consent forms (they ARE the consent, so no consent check needed)
       final unsyncedConsent = await db.getUnsyncedConsentForms();
+      print('[EncryptedSurveyService] Unsynced consent forms: ${unsyncedConsent.length}');
       for (final consent in unsyncedConsent) {
+        print('[EncryptedSurveyService] Syncing consent form ID: ${consent['id']}');
         await _syncConsentFormEncrypted(consent);
       }
       
@@ -93,6 +109,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
     } catch (e) {
       print('❌ Error in encrypted survey sync: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
     }
   }
   
