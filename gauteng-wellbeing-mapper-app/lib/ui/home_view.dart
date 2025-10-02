@@ -440,12 +440,15 @@ class HomeViewState extends State<HomeView>
             logLevel: bg.Config.LOG_LEVEL_OFF,
             // Geolocation options
             desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH, // HIGH accuracy for good precision without excessive battery drain
-            // IMPROVED: Increased distance filter to reduce stationary noise
-            distanceFilter: 25.0, // Only record locations if moved 25+ meters (reduces stationary clouds)
-            stopTimeout: 2, // Wait 2 minutes before considering device stationary
-            // Motion Detection Settings (enhanced for noise reduction)
-            stationaryRadius: 50, // Increased to 50m - larger radius for detecting true stationary periods
-            minimumActivityRecognitionConfidence: 75, // Slightly lower for better motion detection sensitivity
+            // FIXED: Reduced distance filter to capture more movement (was 25m, now 10m)
+            distanceFilter: 10.0, // Record locations if moved 10+ meters - better for capturing movement during driving
+            // FIXED: Increased stop timeout to avoid premature stationary detection (was 2min, now 5min)
+            stopTimeout: 5, // Wait 5 minutes before considering device stationary - prevents gaps during brief stops
+            // Motion Detection Settings (optimized for better tracking continuity)
+            // FIXED: Reduced stationary radius for faster motion resume (was 50m, now 25m) 
+            stationaryRadius: 25, // 25m radius - faster detection when movement resumes
+            // FIXED: Lowered confidence threshold for better motion detection (was 75%, now 60%)
+            minimumActivityRecognitionConfidence: 60, // Lower threshold to catch movement sooner
             activityType: bg.Config.ACTIVITY_TYPE_FITNESS, // Better for walking/cycling detection
             // HTTP & Persistence
             autoSync: false,
