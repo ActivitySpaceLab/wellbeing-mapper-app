@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
 import 'dart:convert';
 import '../models/survey_models.dart';
 import '../models/consent_models.dart';
@@ -25,11 +23,11 @@ class RecurringSurveyScreen extends StatefulWidget {
 class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
   bool _isSubmitting = false;
-  List<File> _selectedImages = [];
+  // Photo functionality removed - _selectedImages not needed
   
   // Track slider values for better UX - starts with no selection
   final Map<String, double?> _sliderValues = {};
-  final ImagePicker _picker = ImagePicker();
+  // Photo functionality removed - ImagePicker not needed
   String _researchSite = 'gauteng'; // Default to Gauteng
   
   // Voice recording state
@@ -351,7 +349,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
             
             // First prompt as a wrapped paragraph
             Text(
-              'What environmental challenges have you experienced recently? Please share as much detail as you can. Feel free to upload up to 3 images, along with an explanation of what they mean.',
+              'What environmental challenges have you experienced recently? Please share as much detail as you can. Feel free to upload 1 image, along with an explanation of what it means.',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             SizedBox(height: 8),
@@ -364,11 +362,6 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
               maxLines: 3,
               minLines: 2,
             ),
-            
-            SizedBox(height: 16),
-            
-            // Image upload section
-            _buildImageUploadSection(),
             
             SizedBox(height: 20),
             
@@ -658,7 +651,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         ),
         SizedBox(height: 8),
         Text(
-          'Add photos that relate to your environmental experiences (max 5 photos).',
+          'Add a photo that relates to your environmental experiences (max 1 photo).',
           style: TextStyle(fontSize: 14, color: Colors.grey[600]),
         ),
         SizedBox(height: 12),
@@ -720,7 +713,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           ),
           SizedBox(height: 12),
           Text(
-            '${_selectedImages.length}/5 photos selected',
+            '${_selectedImages.length}/1 photo selected',
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
           SizedBox(height: 8),
@@ -728,7 +721,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         Row(
           children: [
             ElevatedButton.icon(
-              onPressed: _selectedImages.length >= 5 ? null : _selectFromGallery,
+              onPressed: _selectedImages.length >= 1 ? null : _selectFromGallery,
               icon: Icon(Icons.photo_library),
               label: Text('Add Photo'),
               style: ElevatedButton.styleFrom(
@@ -738,11 +731,18 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
             ),
           ],
         ),
-        if (_selectedImages.length >= 5)
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        if (_selectedImages.length >= 1)
           Padding(
             padding: EdgeInsets.only(top: 8),
             child: Text(
-              'Maximum of 5 photos reached. Remove a photo to add more.',
+              'Maximum of 1 photo reached.',
               style: TextStyle(fontSize: 12, color: Colors.orange[700]),
             ),
           ),
@@ -1568,7 +1568,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       copingHelp: formData['copingHelp'],
       // TODO: MULTIMEDIA ENCRYPTION - Images are stored locally, encryption to be implemented
       // voiceNoteUrls: null, // Voice notes not implemented yet
-      imageUrls: _selectedImages.isNotEmpty ? _selectedImages.map((f) => f.path).toList() : null,
+      imageUrls: null, // Photo functionality removed
       researchSite: _researchSite,
       submittedAt: submissionTime,
       encryptedLocationData: locationDataMap != null ? jsonEncode(locationDataMap) : null, // Store as JSON for unified encryption
@@ -1765,148 +1765,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   }
 
   /// Build the image upload section for the digital diary
-  Widget _buildImageUploadSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.photo_camera, color: Colors.green),
-            SizedBox(width: 8),
-            Text(
-              'Photos (Optional)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-        SizedBox(height: 8),
-        Text(
-          'Upload up to 3 images related to environmental challenges you\'ve experienced.',
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-        ),
-        SizedBox(height: 12),
-        
-        // Display selected images
-        if (_selectedImages.isNotEmpty) ...[
-          Container(
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _selectedImages.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  width: 100,
-                  margin: EdgeInsets.only(right: 8),
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          _selectedImages[index],
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: GestureDetector(
-                          onTap: () => _removeImage(index),
-                          child: Container(
-                            padding: EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          SizedBox(height: 12),
-        ],
-        
-        // Add image buttons
-        Row(
-          children: [
-            if (_selectedImages.length < 3) ...[
-              ElevatedButton.icon(
-                onPressed: () => _pickImageFromGallery(),
-                icon: Icon(Icons.photo_library),
-                label: Text('Add Photo'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ],
-        ),
-        
-        if (_selectedImages.length >= 3)
-          Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.orange[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info, color: Colors.orange[700], size: 16),
-                SizedBox(width: 8),
-                Text(
-                  'Maximum of 3 images reached',
-                  style: TextStyle(color: Colors.orange[700], fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  /// Pick an image from the gallery
-  Future<void> _pickImageFromGallery() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1920,
-        imageQuality: 85,
-      );
-      
-      if (image != null) {
-        setState(() {
-          _selectedImages.add(File(image.path));
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error selecting photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  /// Remove an image from the selected list
-  void _removeImage(int index) {
-    setState(() {
-      _selectedImages.removeAt(index);
-    });
-  }
+  // Photo functionality removed for production reliability
 
   /*
   void _showErrorDialog(String error) {
