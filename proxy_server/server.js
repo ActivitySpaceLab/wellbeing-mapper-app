@@ -83,31 +83,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Diagnostic endpoint to help debug issues
-app.get('/diagnostic', (req, res) => {
-  const diagnostics = {
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    server_version: '1.2.0',
-    qualtrics_config: {
-      api_base: QUALTRICS_API_BASE,
-      survey_id: QUALTRICS_SURVEY_ID,
-      api_token_present: !!QUALTRICS_API_TOKEN,
-      api_token_length: QUALTRICS_API_TOKEN ? QUALTRICS_API_TOKEN.length : 0
-    },
-    participant_codes: {
-      database_loaded: !!participantCodes,
-      total_codes: participantCodes ? participantCodes.meta.totalCodes : 0,
-      database_version: participantCodes ? participantCodes.meta.version : 'not loaded'
-    },
-    valid_survey_types: VALID_SURVEY_TYPES,
-    memory_usage: process.memoryUsage(),
-    uptime: process.uptime()
-  };
-  
-  res.json(diagnostics);
-});
-
 // Participant code validation endpoint
 app.post('/api/v1/participants/validate', async (req, res) => {
   try {
@@ -227,9 +202,19 @@ app.post('/submit', async (req, res) => {
     console.log(`📤 Forwarding ${survey_type} survey to Qualtrics...`);
     console.log(`🔐 Encrypted data size: ${encrypted_data.length} characters`);
     
-    // Additional validation
-    if (encrypted_data.length > 1000000) { // 1MB limit
-      console.log(`⚠️ Large encrypted data detected: ${encrypted_data.length} characters`);
+    // Additional validation and size warnings
+    const dataSizeInMB = encrypted_data.length / (1024 * 1024);
+    if (dataSizeInMB > 5.0) {
+      console.log(`🚨 CRITICAL: Payload is ${dataSizeInMB.toFixed(2)}MB - exceeds AWS Lambda 6MB limit!`);
+      return res.status(413).json({ 
+        error: 'Payload too large for AWS Lambda',
+        size_mb: dataSizeInMB.toFixed(2),
+        max_size_mb: 6 
+      });
+    } else if (dataSizeInMB > 3.0) {
+      console.log(`⚠️ Large payload warning: ${dataSizeInMB.toFixed(2)}MB`);
+    } else {
+      console.log(`✅ Payload size: ${dataSizeInMB.toFixed(2)}MB`);
     }
     
     if (!timestamp || timestamp.length === 0) {
