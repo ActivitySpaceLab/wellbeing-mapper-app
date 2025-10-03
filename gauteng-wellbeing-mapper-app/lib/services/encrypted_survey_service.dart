@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:fast_rsa/fast_rsa.dart';
@@ -349,33 +348,15 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       final imageUrls = List<String>.from(jsonDecode(imageUrlsJson));
       final List<String> base64Images = [];
       
-      print('📷 Processing ${imageUrls.length} images for encryption...');
-      
-      for (final imageUrl in imageUrls) {
-        try {
-          final file = File(imageUrl);
-          if (await file.exists()) {
-            // Read the file and convert to base64
-            final bytes = await file.readAsBytes();
-            final base64Data = base64.encode(bytes);
-            
-            // Store base64 data directly (avoid double JSON encoding)
-            base64Images.add(base64Data);
-            print('   ✅ Processed ${file.path.split('/').last} (${bytes.length} bytes → ${base64Data.length} base64 chars)');
-            
-            // Track cumulative size
-            final totalBase64Size = base64Images.fold<int>(0, (sum, img) => sum + img.length);
-            final totalSizeInMB = totalBase64Size / (1024 * 1024);
-            if (totalSizeInMB > 4.0) {
-              print('   ⚠️ Cumulative image data: ${totalSizeInMB.toStringAsFixed(2)}MB - approaching limits!');
-            }
-          } else {
-            print('   ⚠️ Image file not found: $imageUrl');
-          }
-        } catch (e) {
-          print('   ❌ Error processing image $imageUrl: $e');
-        }
+      // Photo functionality removed for production reliability
+      // Strip any existing photos from legacy surveys for backward compatibility
+      if (imageUrls.isNotEmpty) {
+        print('📷 Removing ${imageUrls.length} photos from legacy survey for reliable upload');
+        imageUrls.clear(); // Remove all photos
       }
+      print('📷 Photo upload disabled - survey will upload without images');
+      
+      // Photo processing removed - surveys upload without images for reliability
       
       print('📷 Successfully processed ${base64Images.length}/${imageUrls.length} images');
       
@@ -625,4 +606,6 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       print('❌ Critical error in enhanced survey sync: $e');
     }
   }
+
+  // Photo compression function removed - no longer needed
 }
