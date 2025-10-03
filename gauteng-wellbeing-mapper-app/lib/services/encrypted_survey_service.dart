@@ -457,6 +457,16 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       print('   Package: ${packageJson.length} chars');
       print('   Base64: ${packageBase64.length} chars');
       
+      // Data integrity check - verify the base64 is valid
+      try {
+        final testDecode = utf8.decode(base64.decode(packageBase64));
+        jsonDecode(testDecode); // Verify JSON is parseable
+        print('✅ Package integrity verified');
+      } catch (e) {
+        print('❌ Package integrity check failed: $e');
+        throw Exception('Encrypted package corrupted during encoding');
+      }
+      
       return packageBase64;
       
     } catch (e) {
@@ -514,7 +524,8 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         } else {
           print('❌ Proxy server HTTP error: ${response.statusCode}');
           final bodyPreview = response.body.length > 200 ? '${response.body.substring(0, 200)}...' : response.body;
-          print('Response body: $bodyPreview');
+          print('❌ Response body: $bodyPreview');
+          print('❌ Request size: ${encryptedBlob.length} characters');
           
           // Don't retry for client errors (4xx) - these won't get better
           if (response.statusCode >= 400 && response.statusCode < 500) {
