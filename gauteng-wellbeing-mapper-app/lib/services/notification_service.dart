@@ -310,9 +310,22 @@ class NotificationService {
         await _setPendingSurveyPrompt();
         await prefs.setInt(_lastNotificationKey, now.millisecondsSinceEpoch);
         
-        // Calculate and set the NEXT notification date (14 days from now)
+        // Calculate and set the NEXT notification date based on consent date
+        final String? consentTimestampStr = prefs.getString('consent_timestamp');
         final Duration effectiveInterval = await getEffectiveNotificationInterval();
-        final DateTime nextNotificationDate = now.add(effectiveInterval);
+        DateTime nextNotificationDate;
+        
+        if (consentTimestampStr != null) {
+          try {
+            final DateTime consentDate = DateTime.parse(consentTimestampStr);
+            nextNotificationDate = _calculateNextNotificationFromConsent(consentDate, effectiveInterval);
+          } catch (e) {
+            print('[NotificationService] Error parsing consent timestamp for next notification: $e');
+            nextNotificationDate = now.add(effectiveInterval);
+          }
+        } else {
+          nextNotificationDate = now.add(effectiveInterval);
+        }
         await prefs.setInt(_nextNotificationDateKey, nextNotificationDate.millisecondsSinceEpoch);
         
         // Increment notification count
