@@ -15,8 +15,7 @@ import 'app_mode_service.dart';
 class NotificationService {
   static const String _lastNotificationKey = 'last_survey_notification';
   static const String _notificationCountKey = 'survey_notification_count';
-  static const String _firstInstallDateKey = 'first_install_date'; // NEW: Track stable install date
-  static const String _nextNotificationDateKey = 'next_notification_date'; // NEW: Persist next date
+  static const String _nextNotificationDateKey = 'next_notification_date'; // Persist next date
   static const String _notificationTaskId = 'com.wellbeingmapper.survey_notification';
   static const String _pendingSurveyKey = 'pending_survey_prompt';
   static const String _testingIntervalKey = 'testing_notification_interval_minutes';
@@ -292,12 +291,18 @@ class NotificationService {
           shouldShowNotification = true;
         }
       } else {
-        // No next notification date set - check if we should initialize one
-        final String? userUUID = prefs.getString("user_uuid");
-        if (userUUID != null) {
-          // Initialize notification schedule by calling getNotificationStats (which sets up dates)
-          await getNotificationStats();
-          print('[NotificationService] Initialized notification schedule for existing user');
+        // No next notification date set - check if we should initialize one based on consent
+        final String? consentTimestampStr = prefs.getString('consent_timestamp');
+        if (consentTimestampStr != null) {
+          try {
+            final DateTime consentDate = DateTime.parse(consentTimestampStr);
+            final Duration effectiveInterval = await getEffectiveNotificationInterval();
+            final DateTime nextNotificationDate = _calculateNextNotificationFromConsent(consentDate, effectiveInterval);
+            await prefs.setInt(_nextNotificationDateKey, nextNotificationDate.millisecondsSinceEpoch);
+            print('[NotificationService] Initialized notification schedule from consent date for existing user');
+          } catch (e) {
+            print('[NotificationService] Error parsing consent timestamp: $e');
+          }
         }
       }
       
@@ -460,37 +465,35 @@ class NotificationService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     
     final int? lastNotificationTimestamp = prefs.getInt(_lastNotificationKey);
-    final int? firstInstallTimestamp = prefs.getInt(_firstInstallDateKey);
     final int? nextNotificationTimestamp = prefs.getInt(_nextNotificationDateKey);
     final int notificationCount = prefs.getInt(_notificationCountKey) ?? 0;
     final bool hasPending = prefs.getBool(_pendingSurveyKey) ?? false;
     final int? testingMinutes = await getTestingInterval();
-    final String? userUUID = prefs.getString("user_uuid");
     
+    // Get consent timestamp as the baseline
+    final String? consentTimestampStr = prefs.getString('consent_timestamp');
+    DateTime? consentDate;
     DateTime? lastNotificationDate;
-    DateTime? firstInstallDate;
     DateTime? nextNotificationDate;
     Duration effectiveInterval = await getEffectiveNotificationInterval();
     
-    // Ensure we have a stable first install date
-    if (firstInstallTimestamp != null) {
-      firstInstallDate = DateTime.fromMillisecondsSinceEpoch(firstInstallTimestamp);
-    } else if (userUUID != null) {
-      // Set first install date to now if user exists but no install date recorded
-      firstInstallDate = DateTime.now();
-      await prefs.setInt(_firstInstallDateKey, firstInstallDate.millisecondsSinceEpoch);
-      print('[NotificationService] Set first install date: $firstInstallDate');
+    if (consentTimestampStr != null) {
+      try {
+        consentDate = DateTime.parse(consentTimestampStr);
+      } catch (e) {
+        print('[NotificationService] Error parsing consent timestamp: $e');
+      }
     }
     
-    // Calculate next notification date based on stable schedule
+    // Calculate next notification date based on consent date + 14-day intervals
     if (nextNotificationTimestamp != null) {
       // Use persisted next notification date
       nextNotificationDate = DateTime.fromMillisecondsSinceEpoch(nextNotificationTimestamp);
-    } else if (firstInstallDate != null) {
-      // Calculate initial next notification date from first install + 14 days
-      nextNotificationDate = firstInstallDate.add(effectiveInterval);
+    } else if (consentDate != null) {
+      // Calculate next notification based on consent date + 14-day intervals
+      nextNotificationDate = _calculateNextNotificationFromConsent(consentDate, effectiveInterval);
       await prefs.setInt(_nextNotificationDateKey, nextNotificationDate.millisecondsSinceEpoch);
-      print('[NotificationService] Calculated initial next notification: $nextNotificationDate');
+      print('[NotificationService] Calculated next notification from consent date: $nextNotificationDate');
     }
     
     if (lastNotificationTimestamp != null) {
@@ -501,7 +504,7 @@ class NotificationService {
       'notificationCount': notificationCount,
       'lastNotificationDate': lastNotificationDate,
       'nextNotificationDate': nextNotificationDate,
-      'firstInstallDate': firstInstallDate,
+      'consentDate': consentDate,
       'intervalDays': _notificationIntervalDays,
       'hasPendingPrompt': hasPending,
       'testingIntervalMinutes': testingMinutes,
@@ -510,16 +513,31 @@ class NotificationService {
     };
   }
 
+  /// Calculate the next notification date based on consent date + 14-day intervals
+  static DateTime _calculateNextNotificationFromConsent(DateTime consentDate, Duration interval) {
+    final now = DateTime.now();
+    
+    // Start from consent date
+    DateTime nextDate = consentDate.add(interval);
+    
+    // Keep adding intervals until we find the next future date
+    while (nextDate.isBefore(now) || nextDate.isAtSameMomentAs(now)) {
+      nextDate = nextDate.add(interval);
+    }
+    
+    print('[NotificationService] Calculated next notification from consent date $consentDate: $nextDate');
+    return nextDate;
+  }
+
   /// Reset notification schedule (for testing or user preference)
   static Future<void> resetNotificationSchedule() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(_lastNotificationKey);
     await prefs.remove(_notificationCountKey);
-    await prefs.remove(_firstInstallDateKey);
     await prefs.remove(_nextNotificationDateKey);
     await prefs.remove(_pendingSurveyKey);
     await prefs.remove('${_pendingSurveyKey}_timestamp');
-    print('[NotificationService] Notification schedule reset - will reinitialize on next check');
+    print('[NotificationService] Notification schedule reset - will recalculate from consent date');
   }
 
   /// Cancel all scheduled notifications
