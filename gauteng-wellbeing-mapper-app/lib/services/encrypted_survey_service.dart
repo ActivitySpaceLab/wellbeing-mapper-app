@@ -43,6 +43,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       print('[EncryptedSurveyService] Is beta build: ${AppModeService.isBetaBuild}');
       print('[EncryptedSurveyService] Sends data to research: ${await AppModeService.sendsDataToResearch()}');
       
+      // Generate comprehensive mode status report for debugging
+      await AppModeService.logModeStatus();
+      
       // If in app testing mode, simulate upload but don't actually send data
       if (currentMode == AppMode.appTesting) {
         print('[EncryptedSurveyService] App Testing Mode: Simulating sync without sending real data');
@@ -66,12 +69,14 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       print('[EncryptedSurveyService] Participant UUID: ${participantUuid.isNotEmpty ? "present (${participantUuid.length} chars)" : "MISSING"}');
       
       if (participantUuid.isNotEmpty) {
-        final consent = await db.getLatestDataSharingConsent(participantUuid);
-        print('[EncryptedSurveyService] Consent record found: ${consent != null ? "YES" : "NO"}');
+        // Check for research consent (not location sharing consent)
+        // Location sharing consent is only needed for location data, not surveys
+        final researchConsent = await db.getConsent();
+        print('[EncryptedSurveyService] Research consent found: ${researchConsent != null ? "YES" : "NO"}');
         
-        // Sync initial and biweekly surveys only if consent exists
-        if (consent != null) {
-          print('[EncryptedSurveyService] ✅ Consent found, proceeding with survey sync');
+        // Sync initial and biweekly surveys if user has research consent
+        if (researchConsent != null) {
+          print('[EncryptedSurveyService] ✅ Research consent found, proceeding with survey sync');
           
           // Sync initial surveys
           final unsyncedInitial = await db.getUnsyncedInitialSurveys();
@@ -89,8 +94,8 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
             await _syncBiweeklySurveyEncrypted(survey);
           }
         } else {
-          print('[EncryptedSurveyService] ❌ No consent found, skipping survey sync (consent required)');
-          print('[EncryptedSurveyService] ❌ This is likely why no data has been uploaded since Sept 30!');
+          print('[EncryptedSurveyService] ❌ No research consent found, skipping survey sync');
+          print('[EncryptedSurveyService] ❌ User needs to complete consent form in research mode');
         }
       } else {
         print('[EncryptedSurveyService] ❌ No participant UUID found, skipping survey sync');
