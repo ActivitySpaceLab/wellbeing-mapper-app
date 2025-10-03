@@ -378,13 +378,20 @@ class InitialRouteDecider extends StatelessWidget {
         return '/';
       } else if (currentMode == AppMode.research) {
         print('[InitialRouteDecider] Research mode detected - checking participation status');
+        print('[InitialRouteDecider] participationSettings: $participationSettings');
+        
         // For research mode, check if user has completed participation setup
         if (participationSettings != null && participationSettings.isNotEmpty) {
+          print('[InitialRouteDecider] Found participation settings, parsing...');
           try {
             final settingsMap = Map<String, dynamic>.from(jsonDecode(participationSettings));
+            print('[InitialRouteDecider] Parsed settings map: $settingsMap');
             final isResearchParticipant = settingsMap['isResearchParticipant'] ?? false;
+            print('[InitialRouteDecider] isResearchParticipant: $isResearchParticipant');
+            
             if (isResearchParticipant == true) {
               // Check if user needs to complete current consent
+              print('[InitialRouteDecider] User is research participant, checking consent...');
               bool needsConsent = await ConsentTrackingService.needsConsent();
               print('[InitialRouteDecider] Research mode - needs consent: $needsConsent');
               if (!needsConsent) {
@@ -394,14 +401,19 @@ class InitialRouteDecider extends StatelessWidget {
                 print('[InitialRouteDecider] Research mode needs consent - going to participation selection');
                 return '/participation_selection';
               }
+            } else {
+              print('[InitialRouteDecider] isResearchParticipant is false, going to participation selection');
+              return '/participation_selection';
             }
           } catch (e) {
             print('[InitialRouteDecider] Error parsing participationSettings: $e');
+            return '/participation_selection';
           }
+        } else {
+          // Research mode but no valid participation settings - need to set up
+          print('[InitialRouteDecider] Research mode without participation settings - going to participation selection');
+          return '/participation_selection';
         }
-        // Research mode but no valid participation settings - need to set up
-        print('[InitialRouteDecider] Research mode without setup - going to participation selection');
-        return '/participation_selection';
       }
       
       // Fallback logic for cases where mode isn't set properly

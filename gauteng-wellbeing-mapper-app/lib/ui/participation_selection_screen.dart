@@ -593,7 +593,10 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
   // since both modes keep data local and don't upload to research servers
 
   void _navigateToMainApp() {
+    print('[ParticipationSelection] === NAVIGATING TO MAIN APP ===');
+    print('[ParticipationSelection] Using pushReplacementNamed to route: /');
     Navigator.of(context).pushReplacementNamed('/');
+    print('[ParticipationSelection] Navigation call completed');
   }
 
   // void _showContactInfo() {
