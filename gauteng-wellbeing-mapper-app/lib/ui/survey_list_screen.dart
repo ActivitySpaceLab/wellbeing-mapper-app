@@ -179,11 +179,7 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
             Text(_hasInitialSurvey 
                 ? 'Completed' 
                 : 'Not completed - tap to complete'),
-            if (_hasInitialSurvey && _initialSurvey?.imageUrls != null && _initialSurvey!.imageUrls!.isNotEmpty)
-              Text(
-                '📷 ${_initialSurvey!.imageUrls!.length} photo${_initialSurvey!.imageUrls!.length == 1 ? '' : 's'}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
+            // Photo indicators removed - photos no longer supported
           ],
         ),
         trailing: _hasInitialSurvey 
@@ -329,11 +325,7 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(_formatDate(survey.submittedAt)),
-            if (survey.imageUrls != null && survey.imageUrls!.isNotEmpty)
-              Text(
-                '📷 ${survey.imageUrls!.length} photo${survey.imageUrls!.length == 1 ? '' : 's'}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
+            // Photo indicators removed - photos no longer supported
           ],
         ),
         children: [
