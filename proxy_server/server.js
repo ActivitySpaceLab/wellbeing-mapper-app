@@ -211,8 +211,8 @@ app.post('/submit', async (req, res) => {
         size_mb: dataSizeInMB.toFixed(2),
         max_size_mb: 6 
       });
-    } else if (dataSizeInMB > 3.0) {
-      console.log(`⚠️ Large payload warning: ${dataSizeInMB.toFixed(2)}MB`);
+    } else if (dataSizeInMB > 1.0) {
+      console.log(`⚠️ Large payload warning: ${dataSizeInMB.toFixed(2)}MB - may exceed Qualtrics limits`);
     } else {
       console.log(`✅ Payload size: ${dataSizeInMB.toFixed(2)}MB`);
     }
@@ -281,6 +281,14 @@ async function forwardToQualtricsAPI(data) {
       const apiUrl = `${QUALTRICS_API_BASE}/surveys/${QUALTRICS_SURVEY_ID}/responses`;
       const url = new URL(apiUrl);
       
+      // Check Qualtrics payload size - they may have smaller limits than AWS Lambda
+      const qualtricsPayloadSizeMB = postData.length / (1024 * 1024);
+      console.log(`📊 Qualtrics payload size: ${qualtricsPayloadSizeMB.toFixed(2)}MB`);
+      
+      if (qualtricsPayloadSizeMB > 0.5) {
+        console.log(`⚠️ WARNING: Large Qualtrics payload (${qualtricsPayloadSizeMB.toFixed(2)}MB) - may be rejected by Qualtrics API`);
+      }
+      
       const options = {
         hostname: url.hostname,
         path: url.pathname,
@@ -313,7 +321,14 @@ async function forwardToQualtricsAPI(data) {
           } else {
             console.log(`❌ Qualtrics API error: ${res.statusCode}`);
             console.log(`📋 Full response: ${responseBody.substring(0, Math.min(1000, responseBody.length))}`);
-            console.log(`🔍 Request details - Data size: ${postData.length}, Survey type: ${data.survey_type}`);
+            console.log(`🔍 Request details - Data size: ${postData.length} bytes (${(postData.length / (1024 * 1024)).toFixed(2)}MB), Survey type: ${data.survey_type}`);
+            
+            // Check for specific Qualtrics error patterns
+            if (responseBody.includes('request entity too large') || responseBody.includes('payload too large')) {
+              console.log(`💡 DIAGNOSIS: Qualtrics rejected large payload - consider data compression or splitting`);
+            } else if (res.statusCode === 413) {
+              console.log(`💡 DIAGNOSIS: HTTP 413 - Payload Too Large - Qualtrics size limit exceeded`);
+            }
           }
           resolve(success);
         });
