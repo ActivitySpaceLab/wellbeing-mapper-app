@@ -63,6 +63,16 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
       final db = SurveyDatabase();
       
+      // Track counts for summary
+      int initialCount = 0;
+      int biweeklyCount = 0; 
+      int consentCount = 0;
+      
+      // Track successful syncs
+      int initialSynced = 0;
+      int biweeklySynced = 0;
+      int consentSynced = 0;
+      
       // CONSENT SAFEGUARD: Check if participant has given consent before syncing surveys
       // (Consent forms are always synced since they ARE the consent)
       final participantUuid = GlobalData.userUUID;
@@ -80,18 +90,30 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
           
           // Sync initial surveys
           final unsyncedInitial = await db.getUnsyncedInitialSurveys();
-          print('[EncryptedSurveyService] Unsynced initial surveys: ${unsyncedInitial.length}');
+          initialCount = unsyncedInitial.length;
+          print('[EncryptedSurveyService] Unsynced initial surveys: $initialCount');
           for (final survey in unsyncedInitial) {
             print('[EncryptedSurveyService] Syncing initial survey ID: ${survey['id']}');
-            await _syncInitialSurveyEncrypted(survey);
+            final success = await _syncInitialSurveyEncrypted(survey);
+            if (success) {
+              initialSynced++;
+            } else {
+              print('[EncryptedSurveyService] ❌ Failed to sync initial survey ID: ${survey['id']}');
+            }
           }
           
           // Sync biweekly surveys  
           final unsyncedBiweekly = await db.getUnsyncedRecurringSurveys();
-          print('[EncryptedSurveyService] Unsynced biweekly surveys: ${unsyncedBiweekly.length}');
+          biweeklyCount = unsyncedBiweekly.length;
+          print('[EncryptedSurveyService] Unsynced biweekly surveys: $biweeklyCount');
           for (final survey in unsyncedBiweekly) {
             print('[EncryptedSurveyService] Syncing biweekly survey ID: ${survey['id']}');
-            await _syncBiweeklySurveyEncrypted(survey);
+            final success = await _syncBiweeklySurveyEncrypted(survey);
+            if (success) {
+              biweeklySynced++;
+            } else {
+              print('[EncryptedSurveyService] ❌ Failed to sync biweekly survey ID: ${survey['id']}');
+            }
           }
         } else {
           print('[EncryptedSurveyService] ❌ No research consent found, skipping survey sync');
@@ -104,17 +126,44 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
       // Always sync consent forms (they ARE the consent, so no consent check needed)
       final unsyncedConsent = await db.getUnsyncedConsentForms();
-      print('[EncryptedSurveyService] Unsynced consent forms: ${unsyncedConsent.length}');
+      consentCount = unsyncedConsent.length;
+      print('[EncryptedSurveyService] Unsynced consent forms: $consentCount');
       for (final consent in unsyncedConsent) {
         print('[EncryptedSurveyService] Syncing consent form ID: ${consent['id']}');
-        await _syncConsentFormEncrypted(consent);
+        final success = await _syncConsentFormEncrypted(consent);
+        if (success) {
+          consentSynced++;
+        } else {
+          print('[EncryptedSurveyService] ❌ Failed to sync consent form ID: ${consent['id']}');
+        }
       }
       
-      print('✅ Encrypted survey sync completed');
+      // Calculate total attempted vs successful syncs
+      final totalAttempted = initialCount + biweeklyCount + consentCount;
+      final totalSynced = initialSynced + biweeklySynced + consentSynced;
+      
+      print('[EncryptedSurveyService] 📊 Sync Summary:');
+      print('[EncryptedSurveyService] 📊   Initial: $initialSynced/$initialCount synced');
+      print('[EncryptedSurveyService] 📊   Biweekly: $biweeklySynced/$biweeklyCount synced');
+      print('[EncryptedSurveyService] 📊   Consent: $consentSynced/$consentCount synced');
+      print('[EncryptedSurveyService] 📊   Total: $totalSynced/$totalAttempted synced');
+      
+      if (totalAttempted == 0) {
+        print('[EncryptedSurveyService] ✅ No pending surveys to sync');
+      } else if (totalSynced == 0) {
+        print('[EncryptedSurveyService] ❌ All sync attempts failed');
+        throw Exception('All $totalAttempted sync attempts failed. Check network connection and proxy server status.');
+      } else if (totalSynced < totalAttempted) {
+        print('[EncryptedSurveyService] ⚠️ Partial sync success: $totalSynced out of $totalAttempted');
+        throw Exception('Partial sync failure: Only $totalSynced out of $totalAttempted surveys uploaded successfully.');
+      } else {
+        print('[EncryptedSurveyService] ✅ All surveys synced successfully');
+      }
       
     } catch (e) {
-      print('❌ Error in encrypted survey sync: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
+      print('[EncryptedSurveyService] ❌ Error in sync: $e');
+      print('[EncryptedSurveyService] ❌ Stack trace: ${StackTrace.current}');
+      rethrow; // Re-throw so the calling code can handle it
     }
   }
   
@@ -413,12 +462,14 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
               // This counts as a failure - retry
             }
           } catch (jsonError) {
-            print('❌ Invalid JSON response from proxy: ${response.body.substring(0, 200)}...');
+            final bodyPreview = response.body.length > 200 ? '${response.body.substring(0, 200)}...' : response.body;
+            print('❌ Invalid JSON response from proxy: $bodyPreview');
             // Malformed response - retry
           }
         } else {
           print('❌ Proxy server HTTP error: ${response.statusCode}');
-          print('Response body: ${response.body.substring(0, 200)}...');
+          final bodyPreview = response.body.length > 200 ? '${response.body.substring(0, 200)}...' : response.body;
+          print('Response body: $bodyPreview');
           
           // Don't retry for client errors (4xx) - these won't get better
           if (response.statusCode >= 400 && response.statusCode < 500) {
@@ -442,8 +493,11 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
       // If we reach here, the attempt failed - wait before retry
       if (attempt < maxRetries) {
-        final delay = Duration(seconds: initialDelay.inSeconds * attempt);
-        print('⏳ Waiting ${delay.inSeconds} seconds before retry...');
+        // Exponential backoff with jitter: 2s, 4s, 8s + random 0-2s
+        final baseDelay = initialDelay.inSeconds * (1 << (attempt - 1)); // 2^(attempt-1)
+        final jitter = (DateTime.now().millisecondsSinceEpoch % 2000) / 1000; // 0-2 seconds
+        final delay = Duration(milliseconds: ((baseDelay + jitter) * 1000).round());
+        print('⏳ Waiting ${delay.inSeconds}.${(delay.inMilliseconds % 1000).toString().padLeft(3, '0')}s before retry (exponential backoff)...');
         await Future.delayed(delay);
       }
     }
