@@ -3,6 +3,8 @@ import 'package:wellbeing_mapper/models/route_generator.dart';
 import 'package:wellbeing_mapper/util/env.dart';
 import 'package:wellbeing_mapper/services/notification_service.dart';
 import 'package:wellbeing_mapper/services/global_notification_service.dart';
+import 'package:wellbeing_mapper/services/app_mode_service.dart';
+import 'package:wellbeing_mapper/models/app_mode.dart';
 
 import 'package:wellbeing_mapper/ui/home_view.dart';
 import 'package:wellbeing_mapper/theme/south_african_theme.dart';
@@ -349,6 +351,7 @@ class InitialRouteDecider extends StatelessWidget {
   Future<String> _getInitialRoute() async {
     try {
       print('[InitialRouteDecider] ===== DETERMINING INITIAL ROUTE =====');
+      
       // Check if app was launched from a notification
       final notificationPayload = NotificationService.getPendingNotificationPayload();
       print('[InitialRouteDecider] Notification payload: $notificationPayload');
@@ -356,9 +359,52 @@ class InitialRouteDecider extends StatelessWidget {
         print('[InitialRouteDecider] App launched from notification, navigating to survey');
         return '/wellbeing_survey';
       }
+      
+      // Get current app mode first
+      final currentMode = await AppModeService.getCurrentMode();
+      print('[InitialRouteDecider] Current app mode: $currentMode');
+      
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? participationSettings = prefs.getString('participation_settings');
       print('[InitialRouteDecider] Participation settings: $participationSettings');
+      
+      // Handle different modes
+      print('[InitialRouteDecider] === MODE-BASED ROUTING ===');
+      if (currentMode == AppMode.private) {
+        print('[InitialRouteDecider] Private mode detected - going directly to home');
+        return '/';
+      } else if (currentMode == AppMode.appTesting) {
+        print('[InitialRouteDecider] App testing mode detected - going directly to home');
+        return '/';
+      } else if (currentMode == AppMode.research) {
+        print('[InitialRouteDecider] Research mode detected - checking participation status');
+        // For research mode, check if user has completed participation setup
+        if (participationSettings != null && participationSettings.isNotEmpty) {
+          try {
+            final settingsMap = Map<String, dynamic>.from(jsonDecode(participationSettings));
+            final isResearchParticipant = settingsMap['isResearchParticipant'] ?? false;
+            if (isResearchParticipant == true) {
+              // Check if user needs to complete current consent
+              bool needsConsent = await ConsentTrackingService.needsConsent();
+              print('[InitialRouteDecider] Research mode - needs consent: $needsConsent');
+              if (!needsConsent) {
+                print('[InitialRouteDecider] Research mode with valid setup - going to home');
+                return '/';
+              } else {
+                print('[InitialRouteDecider] Research mode needs consent - going to participation selection');
+                return '/participation_selection';
+              }
+            }
+          } catch (e) {
+            print('[InitialRouteDecider] Error parsing participationSettings: $e');
+          }
+        }
+        // Research mode but no valid participation settings - need to set up
+        print('[InitialRouteDecider] Research mode without setup - going to participation selection');
+        return '/participation_selection';
+      }
+      
+      // Fallback logic for cases where mode isn't set properly
       if (participationSettings != null && participationSettings.isNotEmpty) {
         // Check if private user (never needs consent)
         try {
@@ -372,6 +418,7 @@ class InitialRouteDecider extends StatelessWidget {
           print('[InitialRouteDecider] Error parsing participationSettings: $e');
         }
       }
+      
       // Check if user needs to complete current consent
       bool needsConsent = await ConsentTrackingService.needsConsent();
       print('[InitialRouteDecider] Needs consent: $needsConsent');
@@ -379,7 +426,7 @@ class InitialRouteDecider extends StatelessWidget {
         print('[InitialRouteDecider] Going to home route');
         return '/'; // Go to home
       } else {
-        print('[InitialRouteDecider] Going to participation selection ([33m${needsConsent ? 'needs consent' : 'no settings'}[0m)');
+        print('[InitialRouteDecider] Going to participation selection ([33m${needsConsent ? 'needs consent' : 'no settings'}[0m)');
         return '/participation_selection'; // Go to participation selection
       }
     } catch (error) {
