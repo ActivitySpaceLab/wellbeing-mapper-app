@@ -248,6 +248,7 @@ class RecurringSurveyResponse {
   final String researchSite; // Currently only 'gauteng'
   final DateTime submittedAt;
   final String? encryptedLocationData; // Encrypted location data captured at submission time
+  final bool synced; // Whether this survey has been uploaded to the server
 
   RecurringSurveyResponse({
     required this.activities,
@@ -285,6 +286,7 @@ class RecurringSurveyResponse {
     required this.researchSite,
     required this.submittedAt,
     this.encryptedLocationData,
+    this.synced = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -324,6 +326,7 @@ class RecurringSurveyResponse {
       'researchSite': researchSite,
       'submittedAt': submittedAt.toIso8601String(),
       'encryptedLocationData': encryptedLocationData,
+      'synced': synced,
     };
   }
 
@@ -364,6 +367,7 @@ class RecurringSurveyResponse {
       researchSite: json['researchSite'] ?? 'barcelona',
       submittedAt: DateTime.parse(json['submittedAt']),
       encryptedLocationData: json['encryptedLocationData'],
+      synced: json['synced'] == 1 || json['synced'] == true,
     );
   }
 }

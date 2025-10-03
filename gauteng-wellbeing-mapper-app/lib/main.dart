@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:wellbeing_mapper/models/route_generator.dart';
 import 'package:wellbeing_mapper/util/env.dart';
 import 'package:wellbeing_mapper/services/notification_service.dart';
+import 'package:wellbeing_mapper/services/global_notification_service.dart';
 
 import 'package:wellbeing_mapper/ui/home_view.dart';
 import 'package:wellbeing_mapper/theme/south_african_theme.dart';
@@ -217,8 +218,6 @@ void main() {
     print('[main.dart] userUUID: $userUUID');
     print('[main.dart] sampleId: $sampleId');
 
-
-
     // Initialize notification service
     try {
       await NotificationService.initialize();
@@ -281,6 +280,7 @@ class MyApp extends StatelessWidget {
     print('[main.dart] MyApp build() called');
     return MaterialApp(
       navigatorKey: navigatorKey,
+      scaffoldMessengerKey: GlobalNotificationService.scaffoldMessengerKey,
       title: 'Wellbeing Mapper',
       debugShowCheckedModeBanner: false,
       theme: SouthAfricanTheme.materialTheme,
