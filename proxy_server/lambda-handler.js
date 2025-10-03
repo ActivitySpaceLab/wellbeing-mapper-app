@@ -1,9 +1,12 @@
 const app = require('./server');
 
-// AWS Lambda handler for Function URLs
+// AWS Lambda handler for Function URLs and API Gateway
 exports.handler = async (event, context) => {
-  // Function URL format uses requestContext.http instead of httpMethod
-  if (event.requestContext && event.requestContext.http) {
+  // Check if this is a Function URL or API Gateway event
+  const isWebEvent = event.httpMethod || 
+                    (event.requestContext && (event.requestContext.httpMethod || event.requestContext.http));
+  
+  if (isWebEvent) {
     const serverless = require('serverless-http');
     const handler = serverless(app);
     return await handler(event, context);
