@@ -13,6 +13,7 @@ class SurveyListScreen extends StatefulWidget {
 class _SurveyListScreenState extends State<SurveyListScreen> {
   final SurveyDatabase _db = SurveyDatabase();
   List<RecurringSurveyResponse> _surveys = [];
+  InitialSurveyResponse? _initialSurvey;
   bool _hasInitialSurvey = false;
   bool _initialSurveySynced = false;
   bool _consentFormSynced = false;
@@ -31,6 +32,15 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
     try {
       final surveys = await _db.getRecurringSurveys();
       final hasInitial = await _db.hasCompletedInitialSurvey();
+      
+      // Load initial survey data
+      InitialSurveyResponse? initialSurvey;
+      if (hasInitial) {
+        final initialSurveys = await _db.getInitialSurveys();
+        if (initialSurveys.isNotEmpty) {
+          initialSurvey = initialSurveys.first;
+        }
+      }
       
       // Check initial survey sync status
       bool initialSynced = false;
@@ -54,6 +64,7 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
       
       setState(() {
         _surveys = surveys;
+        _initialSurvey = initialSurvey;
         _hasInitialSurvey = hasInitial;
         _initialSurveySynced = initialSynced;
         _hasConsentForm = consentForm != null;
@@ -162,9 +173,19 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
               ),
           ],
         ),
-        subtitle: Text(_hasInitialSurvey 
-            ? 'Completed' 
-            : 'Not completed - tap to complete'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(_hasInitialSurvey 
+                ? 'Completed' 
+                : 'Not completed - tap to complete'),
+            if (_hasInitialSurvey && _initialSurvey?.imageUrls != null && _initialSurvey!.imageUrls!.isNotEmpty)
+              Text(
+                '📷 ${_initialSurvey!.imageUrls!.length} photo${_initialSurvey!.imageUrls!.length == 1 ? '' : 's'}',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+          ],
+        ),
         trailing: _hasInitialSurvey 
             ? null 
             : Icon(Icons.arrow_forward_ios),
@@ -304,7 +325,17 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
             ),
           ],
         ),
-        subtitle: Text(_formatDate(survey.submittedAt)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(_formatDate(survey.submittedAt)),
+            if (survey.imageUrls != null && survey.imageUrls!.isNotEmpty)
+              Text(
+                '📷 ${survey.imageUrls!.length} photo${survey.imageUrls!.length == 1 ? '' : 's'}',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+          ],
+        ),
         children: [
           Padding(
             padding: EdgeInsets.all(16.0),
