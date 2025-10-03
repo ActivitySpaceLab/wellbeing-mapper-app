@@ -44,9 +44,16 @@ class AppModeService {
     
     // Ensure the requested mode is available in this build flavor
     // In test mode, allow any stored mode for comprehensive testing
+    print('[AppModeService] Requested mode: ${requestedMode.toString()}');
+    print('[AppModeService] Is test mode: $isTestMode');
+    
     if (isTestMode || getAvailableModes().contains(requestedMode)) {
+      print('[AppModeService] ✅ Mode validated successfully: ${requestedMode.toString()}');
       return requestedMode;
     } else {
+      print('[AppModeService] ❌ Stored mode "${requestedMode.toString()}" not available in $appFlavor build!');
+      print('[AppModeService] ❌ Falling back to private mode');
+      print('[AppModeService] ❌ Available modes: ${getAvailableModes()}');
       // If the stored mode is not available in this build, return default
       return AppMode.private;
     }
@@ -54,15 +61,20 @@ class AppModeService {
 
   /// Set current app mode
   static Future<void> setCurrentMode(AppMode mode) async {
+    print('[AppModeService] Setting current mode to: ${mode.toString()}');
+    print('[AppModeService] Available modes: ${getAvailableModes()}');
+    
     // In test mode, allow setting any mode for comprehensive testing
     // but still respect flavor restrictions for getAvailableModes()
     if (!isTestMode && !getAvailableModes().contains(mode)) {
-      print('[AppModeService] Cannot set mode ${mode.displayName} - not available in $appFlavor build');
+      print('[AppModeService] ❌ Cannot set mode ${mode.displayName} - not available in $appFlavor build');
       return;
     }
     
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_modeKey, mode.toString().split('.').last);
+    final modeString = mode.toString().split('.').last;
+    await prefs.setString(_modeKey, modeString);
+    print('[AppModeService] ✅ Mode saved to SharedPreferences: $modeString');
     
     // If switching to app testing mode, generate a test participant code
     if (mode == AppMode.appTesting) {
@@ -118,11 +130,57 @@ class AppModeService {
     };
   }
 
-  /// Clear all app mode data (for reset)
+  /// Clear stored mode data - useful for testing/debugging
   static Future<void> clearModeData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_modeKey);
-    await prefs.remove(_testingParticipantCodeKey);
+    await prefs.remove('testing_participant_code');
+  }
+
+  /// Debug function: Print comprehensive mode status report
+  /// Call this anytime to get complete mode information in logs
+  static Future<void> logModeStatus() async {
+    print('');
+    print('======= COMPREHENSIVE MODE STATUS REPORT =======');
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedMode = prefs.getString(_modeKey);
+      final currentMode = await getCurrentMode();
+      final availableModes = getAvailableModes();
+      
+      print('App Flavor: $appFlavor');
+      print('Is Beta Build: $isBetaBuild');
+      print('Is Production Build: $isProductionBuild');
+      print('Is Test Mode: $isTestMode');
+      print('');
+      print('Raw Stored Mode: $storedMode');
+      print('Resolved Current Mode: ${currentMode.toString()}');
+      print('Available Modes: $availableModes');
+      print('');
+      print('Mode Properties:');
+      print('  - Sends Data to Research: ${await sendsDataToResearch()}');
+      print('  - Has Research Features: ${currentMode.hasResearchFeatures}');
+      print('  - Display Name: ${currentMode.displayName}');
+      print('');
+      
+      // Check for potential issues
+      if (storedMode != null && !availableModes.contains(AppMode.values.firstWhere((mode) => mode.toString().split('.').last == storedMode, orElse: () => AppMode.private))) {
+        print('⚠️  WARNING: Stored mode "$storedMode" not available in current build!');
+        print('⚠️  This could indicate a build configuration issue.');
+      }
+      
+      if (currentMode == AppMode.private && storedMode == 'research') {
+        print('🚨 CRITICAL: User was in research mode but fell back to private!');
+        print('🚨 Data uploads will not work in private mode!');
+      }
+      
+    } catch (error) {
+      print('❌ Error generating mode status report: $error');
+    }
+    
+    print('============================================');
+    print('');
   }
 
   /// Get available modes for selection
