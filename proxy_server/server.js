@@ -78,11 +78,34 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
-    message: 'Encrypted Survey Proxy Server',
-    version: '1.0.0',
-    participant_codes_loaded: participantCodes !== null,
-    total_codes: participantCodes ? participantCodes.meta.totalCodes : 0
+    environment: process.env.NODE_ENV || 'development',
+    server_version: '1.2.0'
   });
+});
+
+// Diagnostic endpoint to help debug issues
+app.get('/diagnostic', (req, res) => {
+  const diagnostics = {
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    server_version: '1.2.0',
+    qualtrics_config: {
+      api_base: QUALTRICS_API_BASE,
+      survey_id: QUALTRICS_SURVEY_ID,
+      api_token_present: !!QUALTRICS_API_TOKEN,
+      api_token_length: QUALTRICS_API_TOKEN ? QUALTRICS_API_TOKEN.length : 0
+    },
+    participant_codes: {
+      database_loaded: !!participantCodes,
+      total_codes: participantCodes ? participantCodes.meta.totalCodes : 0,
+      database_version: participantCodes ? participantCodes.meta.version : 'not loaded'
+    },
+    valid_survey_types: VALID_SURVEY_TYPES,
+    memory_usage: process.memoryUsage(),
+    uptime: process.uptime()
+  };
+  
+  res.json(diagnostics);
 });
 
 // Participant code validation endpoint
@@ -204,6 +227,15 @@ app.post('/submit', async (req, res) => {
     console.log(`📤 Forwarding ${survey_type} survey to Qualtrics...`);
     console.log(`🔐 Encrypted data size: ${encrypted_data.length} characters`);
     
+    // Additional validation
+    if (encrypted_data.length > 1000000) { // 1MB limit
+      console.log(`⚠️ Large encrypted data detected: ${encrypted_data.length} characters`);
+    }
+    
+    if (!timestamp || timestamp.length === 0) {
+      console.log(`⚠️ No timestamp provided, using server timestamp`);
+    }
+    
     // Prepare data for Qualtrics (single text field with encrypted blob)
     const qualtricsData = {
       'QID1_TEXT': encrypted_data, // Single field containing entire encrypted survey
@@ -295,7 +327,8 @@ async function forwardToQualtricsAPI(data) {
             console.log(`📋 Response: ${responseBody.substring(0, Math.min(200, responseBody.length))}`);
           } else {
             console.log(`❌ Qualtrics API error: ${res.statusCode}`);
-            console.log(`Response: ${responseBody.substring(0, Math.min(500, responseBody.length))}`);
+            console.log(`📋 Full response: ${responseBody.substring(0, Math.min(1000, responseBody.length))}`);
+            console.log(`🔍 Request details - Data size: ${postData.length}, Survey type: ${data.survey_type}`);
           }
           resolve(success);
         });
