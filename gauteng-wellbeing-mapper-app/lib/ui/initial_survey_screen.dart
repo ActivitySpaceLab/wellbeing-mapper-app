@@ -751,7 +751,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Go to main app and clear stack
+              Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false); // Go to main app and clear stack
             },
             child: Text('OK'),
           ),
@@ -814,7 +814,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Go to main app and clear stack
+              Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false); // Go to main app and clear stack
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             child: Text('Got it!', style: TextStyle(color: Colors.white)),
