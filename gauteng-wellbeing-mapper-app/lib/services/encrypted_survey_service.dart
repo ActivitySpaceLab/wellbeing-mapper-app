@@ -194,12 +194,13 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       };
       
       // Encrypt the entire JSON
+      print('🔐 Starting encryption process...');
       final encryptedBlob = await _encryptSurveyData(surveyJson);
-      
+      print('🔐 Encryption completed, blob size: ${encryptedBlob.length} characters');
+
       // Send to proxy server
-      final success = await _sendToProxy('initial', encryptedBlob);
-      
-      if (success) {
+      print('🌐 Sending to proxy server...');
+      final success = await _sendToProxy('initial', encryptedBlob);      if (success) {
         final db = SurveyDatabase();
         await db.markInitialSurveySynced(surveyData['id']);
         print('✅ Initial survey encrypted and synced');
@@ -218,33 +219,45 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
   static Future<bool> _syncBiweeklySurveyEncrypted(Map<String, dynamic> surveyData) async {
     try {
       print('🔐 Encrypting and syncing biweekly survey...');
+      print('🔄 Survey data keys: ${surveyData.keys.join(', ')}');
+      print('🔄 Survey ID: ${surveyData['id']}');
       
       // Include location data if available - now as part of unified survey JSON
       Map<String, dynamic>? locationData;
+      print('🔄 Processing location data...');
       if (surveyData['encrypted_location_data'] != null) {
         try {
+          print('🔄 Parsing encrypted_location_data...');
           // Parse the location data JSON and include it directly in survey
           locationData = jsonDecode(surveyData['encrypted_location_data'].toString());
+          print('🔄 Successfully parsed encrypted_location_data');
         } catch (e) {
           print('⚠️ Error parsing location data: $e');
           locationData = null;
         }
       } else if (surveyData['location_data'] != null) {
-        // Fallback for legacy field name
         try {
+          print('🔄 Parsing legacy location_data...');
+          // Fallback for legacy field name
           locationData = jsonDecode(surveyData['location_data'].toString());
+          print('🔄 Successfully parsed legacy location_data');
         } catch (e) {
           print('⚠️ Error parsing legacy location data: $e');
           locationData = null;
         }
+      } else {
+        print('🔄 No location data found');
       }
       
       // Process images if they exist
       List<String>? encryptedImages;
       if (surveyData['image_urls'] != null) {
+        print('🔄 Processing images for encryption...');
         encryptedImages = await _processImagesForEncryption(surveyData['image_urls'].toString());
+        print('🔄 Image processing completed. Result: ${encryptedImages != null ? '${encryptedImages.length} images' : 'null'}');
       }
-      
+
+      print('🔄 Creating survey JSON structure...');
       final surveyJson = {
         'type': 'biweekly_survey',
         'participant_uuid': GlobalData.userUUID,
@@ -260,8 +273,15 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
           'has_images': encryptedImages != null && encryptedImages.isNotEmpty,
         }
       };
-      
+      print('🔄 Survey JSON structure created successfully');
+
+      // Encrypt the entire JSON
+      print('🔐 Starting encryption process...');
       final encryptedBlob = await _encryptSurveyData(surveyJson);
+      print('🔐 Encryption completed, blob size: ${encryptedBlob.length} characters');
+      
+      // Send to proxy server
+      print('🌐 Sending to proxy server...');
       final success = await _sendToProxy('biweekly', encryptedBlob);
       
       if (success) {
@@ -275,6 +295,8 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
     } catch (e) {
       print('❌ Error encrypting biweekly survey: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      print('❌ Stack trace: ${StackTrace.current}');
       return false;
     }
   }
@@ -337,15 +359,16 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
             final bytes = await file.readAsBytes();
             final base64Data = base64.encode(bytes);
             
-            // Include metadata about the image
-            final imageData = {
-              'filename': file.path.split('/').last,
-              'size': bytes.length,
-              'data': base64Data,
-            };
+            // Store base64 data directly (avoid double JSON encoding)
+            base64Images.add(base64Data);
+            print('   ✅ Processed ${file.path.split('/').last} (${bytes.length} bytes → ${base64Data.length} base64 chars)');
             
-            base64Images.add(jsonEncode(imageData));
-            print('   ✅ Processed ${file.path.split('/').last} (${bytes.length} bytes)');
+            // Track cumulative size
+            final totalBase64Size = base64Images.fold<int>(0, (sum, img) => sum + img.length);
+            final totalSizeInMB = totalBase64Size / (1024 * 1024);
+            if (totalSizeInMB > 4.0) {
+              print('   ⚠️ Cumulative image data: ${totalSizeInMB.toStringAsFixed(2)}MB - approaching limits!');
+            }
           } else {
             print('   ⚠️ Image file not found: $imageUrl');
           }
@@ -355,6 +378,18 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       }
       
       print('📷 Successfully processed ${base64Images.length}/${imageUrls.length} images');
+      
+      // Log total image data size
+      if (base64Images.isNotEmpty) {
+        final totalImageDataSize = base64Images.fold<int>(0, (sum, img) => sum + img.length);
+        final totalImageSizeInMB = totalImageDataSize / (1024 * 1024);
+        print('📷 Total image data size: ${totalImageSizeInMB.toStringAsFixed(2)}MB');
+        
+        if (totalImageSizeInMB > 4.0) {
+          print('⚠️ WARNING: Image data alone is ${totalImageSizeInMB.toStringAsFixed(2)}MB - may cause size issues!');
+        }
+      }
+      
       return base64Images.isNotEmpty ? base64Images : null;
       
     } catch (e) {
@@ -378,6 +413,16 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       // Convert to JSON string
       final jsonString = jsonEncode(surveyJson);
       print('📄 Survey JSON size: ${jsonString.length} characters');
+      
+      // Check if payload might be too large for AWS Lambda (6MB limit)
+      final jsonSizeInMB = jsonString.length / (1024 * 1024);
+      if (jsonSizeInMB > 5.0) {
+        print('⚠️ WARNING: Survey JSON is ${jsonSizeInMB.toStringAsFixed(2)}MB - may exceed AWS Lambda 6MB limit!');
+      } else if (jsonSizeInMB > 2.0) {
+        print('⚠️ Large payload: ${jsonSizeInMB.toStringAsFixed(2)}MB');
+      } else {
+        print('✅ Payload size: ${jsonSizeInMB.toStringAsFixed(2)}MB');
+      }
       
       // Generate random 32-byte AES key (256-bit)
       final random = Random.secure();
