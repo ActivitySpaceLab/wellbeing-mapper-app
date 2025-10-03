@@ -10,6 +10,7 @@ import '../models/consent_models.dart';
 import '../models/data_sharing_consent.dart';
 import '../models/app_mode.dart';
 import '../services/encrypted_survey_service.dart';
+import '../services/global_notification_service.dart';
 import '../db/survey_database.dart';
 import '../services/app_mode_service.dart';
 import 'interactive_location_privacy_map.dart';
@@ -1730,29 +1731,21 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
 
       // Try to upload in background - user already navigated away
       try {
+        print('[RecurringSurveyScreen] 🚀 Starting background upload...');
+        
         // Use the same encrypted survey service as consent and initial surveys
         await EncryptedSurveyService.syncPendingSurveys();
         
-        // Show success if still mounted (user might be on main screen)
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Research data uploaded successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+        print('[RecurringSurveyScreen] ✅ Background upload completed successfully!');
+        
+        // Show success notification using global service
+        GlobalNotificationService.showSuccess('✅ Research data uploaded successfully!');
         
       } catch (uploadError) {
-        // Show error if still mounted
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Upload failed: $uploadError - data saved locally'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        print('[RecurringSurveyScreen] ❌ Background upload failed: $uploadError');
+        
+        // Show error notification using global service
+        GlobalNotificationService.showWarning('Upload failed - data saved locally for retry');
       }
     } catch (e) {
       // Show error if still mounted
