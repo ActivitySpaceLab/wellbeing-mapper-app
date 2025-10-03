@@ -6,7 +6,6 @@ import 'package:wellbeing_mapper/services/global_notification_service.dart';
 import 'package:wellbeing_mapper/services/app_mode_service.dart';
 import 'package:wellbeing_mapper/models/app_mode.dart';
 
-import 'package:wellbeing_mapper/ui/home_view.dart';
 import 'package:wellbeing_mapper/theme/south_african_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -311,8 +310,13 @@ class MyApp extends StatelessWidget {
         // from the list (English, in this case).
         return supportedLocales.first;
       },
-      onGenerateRoute: RouteGenerator.generateRoute,
-      home: InitialRouteDecider(),
+      onGenerateRoute: (settings) {
+        print('[main.dart] onGenerateRoute called for: ${settings.name}');
+        final route = RouteGenerator.generateRoute(settings);
+        print('[main.dart] RouteGenerator returned: $route');
+        return route;
+      },
+      initialRoute: '/',
     );
   }
 }
@@ -329,16 +333,16 @@ class InitialRouteDecider extends StatelessWidget {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (route != '/') {
               Navigator.of(context).pushReplacementNamed(route);
+            } else {
+              // Navigate to home route instead of returning HomeView directly
+              Navigator.of(context).pushReplacementNamed('/home');
             }
           });
           
-          if (route == '/') {
-            return HomeView('Wellbeing Mapper');
-          } else {
-            return Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
+          // Show loading indicator while navigation is happening
+          return Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         } else {
           return Scaffold(
             body: Center(child: CircularProgressIndicator()),

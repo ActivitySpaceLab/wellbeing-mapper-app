@@ -594,9 +594,15 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
 
   void _navigateToMainApp() {
     print('[ParticipationSelection] === NAVIGATING TO MAIN APP ===');
-    print('[ParticipationSelection] Using pushReplacementNamed to route: /');
-    Navigator.of(context).pushReplacementNamed('/');
-    print('[ParticipationSelection] Navigation call completed');
+    print('[ParticipationSelection] Context: $context');
+    print('[ParticipationSelection] Navigator.canPop: ${Navigator.canPop(context)}');
+    try {
+      print('[ParticipationSelection] Using pushNamedAndRemoveUntil to route: /home (bypassing InitialRouteDecider)');
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+      print('[ParticipationSelection] Navigation call completed successfully');
+    } catch (e) {
+      print('[ParticipationSelection] ERROR during navigation: $e');
+    }
   }
 
   // void _showContactInfo() {
