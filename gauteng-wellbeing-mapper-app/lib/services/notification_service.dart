@@ -15,6 +15,8 @@ import 'app_mode_service.dart';
 class NotificationService {
   static const String _lastNotificationKey = 'last_survey_notification';
   static const String _notificationCountKey = 'survey_notification_count';
+  static const String _firstInstallDateKey = 'first_install_date'; // NEW: Track stable install date
+  static const String _nextNotificationDateKey = 'next_notification_date'; // NEW: Persist next date
   static const String _notificationTaskId = 'com.wellbeingmapper.survey_notification';
   static const String _pendingSurveyKey = 'pending_survey_prompt';
   static const String _testingIntervalKey = 'testing_notification_interval_minutes';
@@ -277,29 +279,25 @@ class NotificationService {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       
-      final int? lastNotificationTimestamp = prefs.getInt(_lastNotificationKey);
+      final int? nextNotificationTimestamp = prefs.getInt(_nextNotificationDateKey);
       final DateTime now = DateTime.now();
       
       bool shouldShowNotification = false;
       
-      if (lastNotificationTimestamp == null) {
-        // First time - show notification after app has been used for at least a week
-        final String? userUUID = prefs.getString("user_uuid");
-        if (userUUID != null) {
-          // User has been using the app, schedule first notification
+      if (nextNotificationTimestamp != null) {
+        final DateTime nextNotificationDate = DateTime.fromMillisecondsSinceEpoch(nextNotificationTimestamp);
+        
+        // Show notification if we've reached or passed the scheduled time
+        if (now.isAfter(nextNotificationDate) || now.isAtSameMomentAs(nextNotificationDate)) {
           shouldShowNotification = true;
         }
       } else {
-        final DateTime lastNotification = 
-            DateTime.fromMillisecondsSinceEpoch(lastNotificationTimestamp);
-        final Duration timeSinceLastNotification = now.difference(lastNotification);
-        
-        // Get the effective interval (testing or production)
-        final Duration effectiveInterval = await getEffectiveNotificationInterval();
-        
-        // Show notification if enough time has passed based on current interval
-        if (timeSinceLastNotification >= effectiveInterval) {
-          shouldShowNotification = true;
+        // No next notification date set - check if we should initialize one
+        final String? userUUID = prefs.getString("user_uuid");
+        if (userUUID != null) {
+          // Initialize notification schedule by calling getNotificationStats (which sets up dates)
+          await getNotificationStats();
+          print('[NotificationService] Initialized notification schedule for existing user');
         }
       }
       
@@ -307,11 +305,17 @@ class NotificationService {
         await _setPendingSurveyPrompt();
         await prefs.setInt(_lastNotificationKey, now.millisecondsSinceEpoch);
         
+        // Calculate and set the NEXT notification date (14 days from now)
+        final Duration effectiveInterval = await getEffectiveNotificationInterval();
+        final DateTime nextNotificationDate = now.add(effectiveInterval);
+        await prefs.setInt(_nextNotificationDateKey, nextNotificationDate.millisecondsSinceEpoch);
+        
         // Increment notification count
         final int count = prefs.getInt(_notificationCountKey) ?? 0;
         await prefs.setInt(_notificationCountKey, count + 1);
         
         print('[NotificationService] Survey prompt scheduled. Count: ${count + 1}');
+        print('[NotificationService] Next notification scheduled for: $nextNotificationDate');
       }
     } catch (error) {
       print('[NotificationService] Error checking notification timing: $error');
@@ -456,27 +460,48 @@ class NotificationService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     
     final int? lastNotificationTimestamp = prefs.getInt(_lastNotificationKey);
+    final int? firstInstallTimestamp = prefs.getInt(_firstInstallDateKey);
+    final int? nextNotificationTimestamp = prefs.getInt(_nextNotificationDateKey);
     final int notificationCount = prefs.getInt(_notificationCountKey) ?? 0;
     final bool hasPending = prefs.getBool(_pendingSurveyKey) ?? false;
     final int? testingMinutes = await getTestingInterval();
     final String? userUUID = prefs.getString("user_uuid");
     
     DateTime? lastNotificationDate;
+    DateTime? firstInstallDate;
     DateTime? nextNotificationDate;
     Duration effectiveInterval = await getEffectiveNotificationInterval();
     
+    // Ensure we have a stable first install date
+    if (firstInstallTimestamp != null) {
+      firstInstallDate = DateTime.fromMillisecondsSinceEpoch(firstInstallTimestamp);
+    } else if (userUUID != null) {
+      // Set first install date to now if user exists but no install date recorded
+      firstInstallDate = DateTime.now();
+      await prefs.setInt(_firstInstallDateKey, firstInstallDate.millisecondsSinceEpoch);
+      print('[NotificationService] Set first install date: $firstInstallDate');
+    }
+    
+    // Calculate next notification date based on stable schedule
+    if (nextNotificationTimestamp != null) {
+      // Use persisted next notification date
+      nextNotificationDate = DateTime.fromMillisecondsSinceEpoch(nextNotificationTimestamp);
+    } else if (firstInstallDate != null) {
+      // Calculate initial next notification date from first install + 14 days
+      nextNotificationDate = firstInstallDate.add(effectiveInterval);
+      await prefs.setInt(_nextNotificationDateKey, nextNotificationDate.millisecondsSinceEpoch);
+      print('[NotificationService] Calculated initial next notification: $nextNotificationDate');
+    }
+    
     if (lastNotificationTimestamp != null) {
       lastNotificationDate = DateTime.fromMillisecondsSinceEpoch(lastNotificationTimestamp);
-      nextNotificationDate = lastNotificationDate.add(effectiveInterval);
-    } else if (userUUID != null) {
-      // First time user - schedule notification for the interval from now
-      nextNotificationDate = DateTime.now().add(effectiveInterval);
     }
     
     return {
       'notificationCount': notificationCount,
       'lastNotificationDate': lastNotificationDate,
       'nextNotificationDate': nextNotificationDate,
+      'firstInstallDate': firstInstallDate,
       'intervalDays': _notificationIntervalDays,
       'hasPendingPrompt': hasPending,
       'testingIntervalMinutes': testingMinutes,
@@ -490,9 +515,11 @@ class NotificationService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(_lastNotificationKey);
     await prefs.remove(_notificationCountKey);
+    await prefs.remove(_firstInstallDateKey);
+    await prefs.remove(_nextNotificationDateKey);
     await prefs.remove(_pendingSurveyKey);
     await prefs.remove('${_pendingSurveyKey}_timestamp');
-    print('[NotificationService] Notification schedule reset');
+    print('[NotificationService] Notification schedule reset - will reinitialize on next check');
   }
 
   /// Cancel all scheduled notifications

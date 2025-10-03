@@ -39,17 +39,22 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
 
   String _formatNextNotification(DateTime? nextDate) {
     if (nextDate == null) return 'Not scheduled';
+    
     final now = DateTime.now();
     final difference = nextDate.difference(now);
     
+    // Format the actual date
+    final dateStr = '${nextDate.day.toString().padLeft(2, '0')}/${nextDate.month.toString().padLeft(2, '0')}/${nextDate.year}';
+    final timeStr = '${nextDate.hour.toString().padLeft(2, '0')}:${nextDate.minute.toString().padLeft(2, '0')}';
+    
     if (difference.isNegative) {
-      return 'Overdue';
+      return '$dateStr at $timeStr (Overdue)';
     } else if (difference.inDays > 0) {
-      return 'In ${difference.inDays} days';
+      return '$dateStr at $timeStr (in ${difference.inDays} days)';
     } else if (difference.inHours > 0) {
-      return 'In ${difference.inHours} hours';
+      return '$dateStr at $timeStr (in ${difference.inHours} hours)';
     } else {
-      return 'Soon';
+      return '$dateStr at $timeStr (soon)';
     }
   }
 
@@ -138,6 +143,7 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
     final notificationCount = _notificationStats['notificationCount'] ?? 0;
     final lastNotificationDate = _notificationStats['lastNotificationDate'] as DateTime?;
     final nextNotificationDate = _notificationStats['nextNotificationDate'] as DateTime?;
+    final firstInstallDate = _notificationStats['firstInstallDate'] as DateTime?;
     final hasPendingPrompt = _notificationStats['hasPendingPrompt'] ?? false;
 
     return Card(
@@ -157,9 +163,16 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                Spacer(),
+                IconButton(
+                  icon: Icon(Icons.refresh, color: Colors.blue),
+                  onPressed: _loadNotificationStats,
+                  tooltip: 'Refresh',
+                ),
               ],
             ),
             SizedBox(height: 16),
+            _buildStatRow('App First Used', _formatDate(firstInstallDate)),
             _buildStatRow('Total Notifications', notificationCount.toString()),
             _buildStatRow('Last Notification', _formatDate(lastNotificationDate)),
             _buildStatRow('Next Notification', _formatNextNotification(nextNotificationDate)),
