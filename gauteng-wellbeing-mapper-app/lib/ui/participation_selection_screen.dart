@@ -83,6 +83,15 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
         ),
         backgroundColor: SouthAfricanTheme.primaryBlue,
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () async {
+            // Allow user to go back to mode selection if they're trapped
+            // Reset to Private mode as a safe default
+            await AppModeService.setCurrentMode(AppMode.private);
+            Navigator.of(context).pushReplacementNamed('/change_mode');
+          },
+        ),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(24.0),

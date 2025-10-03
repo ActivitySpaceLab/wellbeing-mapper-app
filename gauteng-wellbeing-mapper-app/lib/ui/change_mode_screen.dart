@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/consent_service.dart';
 import '../services/app_mode_service.dart';
 import '../models/app_mode.dart';
@@ -44,16 +43,15 @@ class _ChangeModeScreenState extends State<ChangeModeScreen> {
     try {
       // Handle legacy consent service for research mode
       if (newMode == AppMode.research) {
-        // Clear any existing participation settings to ensure clean state
-        final SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.remove('participation_settings');
+        // DON'T clear participation settings yet - let the participation flow handle this
+        // Only clear consent data to ensure fresh consent process
         await ConsentService.clearConsentData();
         
         // Set mode to research BEFORE navigation
         await AppModeService.setCurrentMode(newMode);
         
         // Navigate to participation selection for real research
-        // Use pushReplacementNamed to avoid navigation stack issues
+        // Use pushReplacementNamed to go directly to participation flow
         Navigator.of(context).pushReplacementNamed('/participation_selection');
         return;
       } else if (newMode == AppMode.appTesting) {
@@ -90,6 +88,9 @@ class _ChangeModeScreenState extends State<ChangeModeScreen> {
       } else {
         // Clear any existing research participation for other modes
         await ConsentService.clearConsentData();
+        
+        // Set the new mode (this was missing!)
+        await AppModeService.setCurrentMode(newMode);
       }
       
       setState(() {
