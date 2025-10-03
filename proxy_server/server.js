@@ -108,7 +108,7 @@ app.post('/api/v1/participants/validate', async (req, res) => {
       });
     }
     
-    console.log(`🔐 Validating hashed code: ${hashed_code.substring(0, 8)}...`);
+    console.log(`🔐 Validating hashed code: ${hashed_code.substring(0, Math.min(8, hashed_code.length))}...`);
     
     let isValid = false;
     let codeType = 'unknown';
@@ -143,7 +143,7 @@ app.post('/api/v1/participants/validate', async (req, res) => {
     }
     
     if (!isValid) {
-      console.log(`❌ Invalid participant code attempted: ${hashed_code.substring(0, 8)}...`);
+      console.log(`❌ Invalid participant code attempted: ${hashed_code.substring(0, Math.min(8, hashed_code.length))}...`);
     }
     
     // Response
@@ -292,10 +292,10 @@ async function forwardToQualtricsAPI(data) {
           const success = res.statusCode >= 200 && res.statusCode < 300;
           if (success) {
             console.log('✅ Successfully submitted to Qualtrics API');
-            console.log(`📋 Response: ${responseBody.substring(0, 200)}`);
+            console.log(`📋 Response: ${responseBody.substring(0, Math.min(200, responseBody.length))}`);
           } else {
             console.log(`❌ Qualtrics API error: ${res.statusCode}`);
-            console.log(`Response: ${responseBody.substring(0, 500)}`);
+            console.log(`Response: ${responseBody.substring(0, Math.min(500, responseBody.length))}`);
           }
           resolve(success);
         });
