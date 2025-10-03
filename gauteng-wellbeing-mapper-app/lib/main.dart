@@ -217,8 +217,6 @@ void main() {
     print('[main.dart] userUUID: $userUUID');
     print('[main.dart] sampleId: $sampleId');
 
-
-
     // Initialize notification service
     try {
       await NotificationService.initialize();
