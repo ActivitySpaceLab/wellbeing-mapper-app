@@ -41,7 +41,9 @@ class RouteGenerator {
     switch (settings.name) {
       case '/':
         print('[route_generator.dart] Creating InitialRouteDecider route');
-        return MaterialPageRoute(builder: (_) {
+        return MaterialPageRoute(
+          settings: settings, // Preserve route settings for tests
+          builder: (_) {
           print('[route_generator.dart] About to create InitialRouteDecider');
           try {
             return InitialRouteDecider();
@@ -55,28 +57,53 @@ class RouteGenerator {
         });
       case '/home':
         print('[route_generator.dart] Creating HomeView route');
-        return MaterialPageRoute(builder: (_) => HomeView('Wellbeing Mapper'));
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => HomeView('Wellbeing Mapper')
+        );
       case '/report_an_issue':
-        return MaterialPageRoute(builder: (_) => ReportAnIssue());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ReportAnIssue()
+        );
 //      case '/my_statistics':
       //       return MaterialPageRoute(builder: (_) => MyStatistics());
 
       case '/notification_settings':
-        return MaterialPageRoute(builder: (_) => NotificationSettingsView());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => NotificationSettingsView()
+        );
       case '/storage_settings':
-        return MaterialPageRoute(builder: (_) => StorageSettingsView());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => StorageSettingsView()
+        );
       case '/initial_survey':
-        return MaterialPageRoute(builder: (_) => InitialSurveyScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => InitialSurveyScreen()
+        );
       case '/recurring_survey':
-        return MaterialPageRoute(builder: (_) => RecurringSurveyScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => RecurringSurveyScreen()
+        );
 
       case '/survey_list':
-        return MaterialPageRoute(builder: (_) => SurveyListScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => SurveyListScreen()
+        );
       case '/participation_selection':
-        return MaterialPageRoute(builder: (_) => ParticipationSelectionScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ParticipationSelectionScreen()
+        );
       case '/consent_form':
         if (args is Map<String, dynamic>) {
           return MaterialPageRoute(
+            settings: settings,
             builder: (_) => ConsentFormScreen(
               participantCode: args['participantCode'] ?? '',
               researchSite: args['researchSite'] ?? 'gauteng',
@@ -86,26 +113,48 @@ class RouteGenerator {
         }
         return _errorRoute();
       case '/data_sharing_preferences':
-        return MaterialPageRoute(builder: (_) => DataSharingPreferencesScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => DataSharingPreferencesScreen()
+        );
       case '/wellbeing_survey':
-        return MaterialPageRoute(builder: (_) => WellbeingSurveyScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => WellbeingSurveyScreen()
+        );
       case '/wellbeing_map':
-        return MaterialPageRoute(builder: (_) => WellbeingMapView());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => WellbeingMapView()
+        );
       case '/wellbeing_timeline':
-        return MaterialPageRoute(builder: (_) => WellbeingTimelineView());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => WellbeingTimelineView()
+        );
       case '/change_mode':
-        return MaterialPageRoute(builder: (_) => ChangeModeScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ChangeModeScreen()
+        );
       case '/help':
-        return MaterialPageRoute(builder: (_) => HelpScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => HelpScreen()
+        );
       case '/participant_code_entry':
         if (args is Map<String, dynamic>) {
           return MaterialPageRoute(
+            settings: settings,
             builder: (_) => ParticipantCodeEntryScreen(
               researchSite: args['researchSite'] ?? 'gauteng',
             ),
           );
         }
-        return MaterialPageRoute(builder: (_) => ParticipantCodeEntryScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ParticipantCodeEntryScreen()
+        );
       default:
         // If there is no such named route in the switch statement, e.g. /third
         return _errorRoute();
