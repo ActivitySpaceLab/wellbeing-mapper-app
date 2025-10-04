@@ -4,6 +4,8 @@ import 'package:flutter_background_geolocation/flutter_background_geolocation.da
     as bg;
 import 'package:flutter_map/flutter_map.dart';
 //import 'package:flutter_map/plugin_api.dart';
+import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:latlong2/latlong.dart';
 import 'package:wellbeing_mapper/services/test_service.dart';
@@ -37,6 +39,11 @@ class MapViewState extends State<MapView>
   
   // Track current location for re-center functionality (stored in _currentPosition)
   bool _autoCenter = true; // Start with auto-center enabled
+  
+  // FIXED: Add throttling to prevent excessive redraws when stationary
+  Timer? _mapUpdateTimer;
+  bool _pendingMapUpdate = false;
+  static const Duration _mapUpdateThrottle = Duration(milliseconds: 1000); // Max 1 update per second
 
   @override
   void initState() {
@@ -164,8 +171,9 @@ class MapViewState extends State<MapView>
             continue;
           }
           double accuracy = (coords['accuracy'] as num?)?.toDouble() ?? 999.0;
-          if (accuracy > 200.0) {
-            print('[map_view] 🚫 Skipping low accuracy location: ${accuracy}m accuracy');
+          // IMPROVED: More lenient accuracy filtering to reduce gaps (was 200m, now 500m)
+          if (accuracy > 500.0) {
+            print('[map_view] 🚫 Skipping extremely poor accuracy location: ${accuracy}m accuracy');
             continue;
           }
           LatLng currentPoint = LatLng(lat, lon);
@@ -279,26 +287,35 @@ class MapViewState extends State<MapView>
       // Create location point safely
       LatLng currentPoint = LatLng(location.coords.latitude, location.coords.longitude);
       
-      // Apply data quality filtering (same as in stored location display)
-      if (location.coords.accuracy > 200.0) {
-        print('[MapView] ⚠️ Rejecting real-time location with poor accuracy: ${location.coords.accuracy}m');
+      // IMPROVED: More lenient accuracy filtering for real-time display (was 200m, now 500m)
+      if (location.coords.accuracy > 500.0) {
+        print('[MapView] ⚠️ Rejecting real-time location with extremely poor accuracy: ${location.coords.accuracy}m');
         return;
       }
       
-      // Check for exact duplicates
-      if (_locations.isNotEmpty) {
-        LatLng lastPoint = _locations.last.point;
-        double latDiff = (currentPoint.latitude - lastPoint.latitude).abs();
-        double lngDiff = (currentPoint.longitude - lastPoint.longitude).abs();
+      // FIXED: Enhanced duplicate and stationary filtering to reduce flashing
+      if (_currentPosition.isNotEmpty) {
+        LatLng lastPoint = _currentPosition.first.point;
+        double distance = _calculateDistance(currentPoint.latitude, currentPoint.longitude, 
+                                            lastPoint.latitude, lastPoint.longitude);
         
-        if (latDiff < 0.000001 && lngDiff < 0.000001) {
-          print('[MapView] ⚠️ Skipping exact duplicate real-time location');
+        // If stationary and very close to last position, skip update more aggressively
+        if (!location.isMoving && distance < 15.0) {
+          print('[MapView] ⚠️ Skipping stationary location update (${distance.toStringAsFixed(1)}m from last)');
+          return;
+        }
+        
+        // For moving locations, still filter exact duplicates
+        if (distance < 0.5) {
+          print('[MapView] ⚠️ Skipping very close duplicate location (${distance.toStringAsFixed(1)}m)');
           return;
         }
       }
       
-      // Add to polyline for continuity
-      _polyline.add(currentPoint);
+      // Add to polyline for continuity (only if moving or significant distance)
+      if (location.isMoving || _polyline.isEmpty) {
+        _polyline.add(currentPoint);
+      }
       
       // Update current position marker safely
       _currentPosition.clear();
@@ -329,12 +346,8 @@ class MapViewState extends State<MapView>
         print('[MapView] 📍 Auto-center disabled - not centering on real-time location');
       }
       
-      // Update the UI safely
-      if (mounted) {
-        setState(() {
-          // Trigger rebuild to show new location
-        });
-      }
+      // FIXED: Throttled map updates to prevent flashing when stationary
+      _scheduleThrottledMapUpdate();
       
       print('[MapView] ✅ Successfully added real-time location point, total: ${_locations.length}');
       
@@ -342,6 +355,40 @@ class MapViewState extends State<MapView>
       print('[MapView] ❌ Error processing real-time location: $error');
       // Don't crash the app, just log and continue
     }
+  }
+
+  // FIXED: Add throttled map updates to prevent flashing
+  void _scheduleThrottledMapUpdate() {
+    if (!_pendingMapUpdate) {
+      _pendingMapUpdate = true;
+      _mapUpdateTimer?.cancel();
+      _mapUpdateTimer = Timer(_mapUpdateThrottle, () {
+        if (mounted) {
+          setState(() {
+            // Trigger rebuild to show new location
+          });
+        }
+        _pendingMapUpdate = false;
+      });
+    }
+  }
+  
+  // FIXED: Add distance calculation helper for location filtering
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double earthRadius = 6371000; // Earth radius in meters
+    double dLat = (lat2 - lat1) * (math.pi / 180);
+    double dLon = (lon2 - lon1) * (math.pi / 180);
+    double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * (math.pi / 180)) * math.cos(lat2 * (math.pi / 180)) *
+        math.sin(dLon / 2) * math.sin(dLon / 2);
+    double c = 2 * math.asin(math.sqrt(a));
+    return earthRadius * c;
+  }
+  
+  @override
+  void dispose() {
+    _mapUpdateTimer?.cancel();
+    super.dispose();
   }
 
 
