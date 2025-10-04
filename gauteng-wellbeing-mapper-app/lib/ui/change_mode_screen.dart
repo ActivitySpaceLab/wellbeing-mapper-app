@@ -19,34 +19,57 @@ class _ChangeModeScreenState extends State<ChangeModeScreen> {
   }
 
   Future<void> _loadCurrentMode() async {
+    print('[ChangeModeScreen] === LOADING CURRENT MODE ===');
     try {
       final mode = await AppModeService.getCurrentMode();
+      print('[ChangeModeScreen] Current mode from AppModeService: $mode');
       setState(() {
         currentMode = mode;
         isLoading = false;
       });
+      print('[ChangeModeScreen] Mode loaded and state updated successfully');
     } catch (e) {
       print('[ChangeModeScreen] Error loading current mode: $e');
       setState(() {
-        currentMode = AppMode.private;
+        currentMode = AppMode.private; // Safe fallback
         isLoading = false;
       });
     }
   }
 
   Future<void> _switchToMode(AppMode newMode) async {
-    if (newMode == currentMode) return;
+    print('[ChangeModeScreen] === STARTING MODE SWITCH ===');
+    print('[ChangeModeScreen] Current mode: $currentMode');
+    print('[ChangeModeScreen] Requested new mode: $newMode');
+    
+    if (newMode == currentMode) {
+      print('[ChangeModeScreen] Same mode selected, returning');
+      return;
+    }
 
     final confirmed = await _showModeChangeDialog(newMode);
-    if (!confirmed) return;
+    if (!confirmed) {
+      print('[ChangeModeScreen] Mode change cancelled by user');
+      return;
+    }
 
     try {
-      await AppModeService.setCurrentMode(newMode);
-      
       // Handle legacy consent service for research mode
       if (newMode == AppMode.research) {
+        print('[ChangeModeScreen] Processing Research mode switch');
+        
+        // Clear any existing participation settings and consent data to ensure clean state
+        print('[ChangeModeScreen] Clearing consent data for Research mode');
+        await ConsentService.clearConsentData();
+        
+        // DON'T set mode to research yet - let the participation flow complete first
+        // This prevents getting stuck if user cancels the participation setup
+        print('[ChangeModeScreen] NOT setting mode to Research yet - waiting for participation completion');
+        
         // Navigate to participation selection for real research
-        Navigator.of(context).pushNamed('/participation_selection');
+        // Use pushReplacementNamed to go directly to participation flow
+        print('[ChangeModeScreen] Navigating to participation_selection');
+        Navigator.of(context).pushReplacementNamed('/participation_selection');
         return;
       } else if (newMode == AppMode.appTesting) {
         // App testing mode - require consent form reading like research participants
@@ -82,6 +105,9 @@ class _ChangeModeScreenState extends State<ChangeModeScreen> {
       } else {
         // Clear any existing research participation for other modes
         await ConsentService.clearConsentData();
+        
+        // Set the new mode (this was missing!)
+        await AppModeService.setCurrentMode(newMode);
       }
       
       setState(() {

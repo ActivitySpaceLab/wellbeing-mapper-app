@@ -515,6 +515,38 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
                   ),
                   ListTile(
                     dense: true,
+                    title: Text("App Mode"),
+                    subtitle: Text(currentMode.displayName),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Show indicator icon based on mode
+                        Icon(
+                          currentMode == AppMode.research 
+                              ? Icons.science 
+                              : currentMode == AppMode.appTesting 
+                                  ? Icons.bug_report 
+                                  : Icons.lock,
+                          size: 16,
+                          color: currentMode == AppMode.research 
+                              ? Colors.green 
+                              : currentMode == AppMode.appTesting 
+                                  ? Colors.orange 
+                                  : Colors.grey,
+                        ),
+                        SizedBox(width: 4),
+                        IconButton(
+                          icon: Icon(Icons.copy, size: 16),
+                          onPressed: () => _copyToClipboard(
+                            "App Mode: ${currentMode.displayName}",
+                            "App mode"
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ListTile(
+                    dense: true,
                     title: Text("User UUID"),
                     subtitle: Text(userUuid.length > 30 ? "${userUuid.substring(0, 30)}..." : userUuid),
                     trailing: IconButton(
@@ -528,7 +560,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
                     trailing: IconButton(
                       icon: Icon(Icons.copy_all),
                       onPressed: () => _copyToClipboard(
-                        "App Version: $appVersion\nBuild Number: $buildNumber\nUser UUID: $userUuid",
+                        "App Version: $appVersion\nBuild Number: $buildNumber\nApp Mode: ${currentMode.displayName}\nUser UUID: $userUuid",
                         "All app information"
                       ),
                     ),

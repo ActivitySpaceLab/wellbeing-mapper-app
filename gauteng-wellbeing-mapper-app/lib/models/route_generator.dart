@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../ui/home_view.dart';
 import '../ui/report_issues.dart';
+import '../main.dart';
 
 import '../ui/initial_survey_screen.dart';
 import '../ui/recurring_survey_screen.dart';
@@ -29,22 +30,32 @@ class RouteGenerator {
     // Getting arguments passed in while calling Navigator.pushNamed
     final args = settings.arguments;
     GlobalRouteData.user_route = settings.name;
-    print('[route_generator.dart] generateRoute called for: ${settings.name}');
+    print('[RouteGenerator] ===============================');
+    print('[RouteGenerator] ===============================');
+    print('[RouteGenerator] ===============================');
+    print('[RouteGenerator] generateRoute called for: ${settings.name}');
+    print('[RouteGenerator] Arguments: $args');
+    print('[RouteGenerator] ===============================');
+    print('[RouteGenerator] ===============================');
+    print('[RouteGenerator] ===============================');
     switch (settings.name) {
       case '/':
-        print('[route_generator.dart] Creating HomeView route');
+        print('[route_generator.dart] Creating InitialRouteDecider route');
         return MaterialPageRoute(builder: (_) {
-          print('[route_generator.dart] About to create HomeView');
+          print('[route_generator.dart] About to create InitialRouteDecider');
           try {
-            return HomeView('Wellbeing Mapper');
+            return InitialRouteDecider();
           } catch (e) {
-            print('[route_generator.dart] ERROR creating HomeView: $e');
+            print('[route_generator.dart] ERROR creating InitialRouteDecider: $e');
             return Scaffold(
               appBar: AppBar(title: Text('Error')),
-              body: Center(child: Text('Error loading home screen: $e')),
+              body: Center(child: Text('Error loading initial route: $e')),
             );
           }
         });
+      case '/home':
+        print('[route_generator.dart] Creating HomeView route');
+        return MaterialPageRoute(builder: (_) => HomeView('Wellbeing Mapper'));
       case '/report_an_issue':
         return MaterialPageRoute(builder: (_) => ReportAnIssue());
 //      case '/my_statistics':

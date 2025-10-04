@@ -83,6 +83,18 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
         ),
         backgroundColor: SouthAfricanTheme.primaryBlue,
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () async {
+            print('[ParticipationSelection] Back button pressed - escaping to mode selection');
+            // Allow user to go back to mode selection if they're trapped
+            // Reset to Private mode as a safe default
+            print('[ParticipationSelection] Setting mode to Private as safe default');
+            await AppModeService.setCurrentMode(AppMode.private);
+            print('[ParticipationSelection] Navigating to change_mode screen');
+            Navigator.of(context).pushReplacementNamed('/change_mode');
+          },
+        ),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(24.0),
@@ -492,24 +504,32 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
         }
         // If consent was cancelled or failed, do nothing (stay on current screen)
       } else if (selectedAppMode == AppMode.research) {
+        print('[ParticipationSelection] === PROCESSING RESEARCH MODE ===');
         // Research participation flow - check if already validated and consented
-        await AppModeService.setCurrentMode(AppMode.research);
+        // DON'T set mode to research yet - only after successful completion
         
         // Check if participant is already validated
+        print('[ParticipationSelection] Checking if participant is already validated');
         final isValidated = await ParticipantValidationService.isParticipantValidated();
+        print('[ParticipationSelection] Is validated: $isValidated');
         
         if (isValidated) {
+          print('[ParticipationSelection] User is validated, checking consent status');
           // Already validated - check if consent is also completed
           final hasConsent = await ConsentTrackingService.hasCompletedCurrentConsent();
+          print('[ParticipationSelection] Has current consent: $hasConsent');
           
           if (hasConsent) {
-            // Both validation and consent completed - go directly to main app
-            print('[ParticipationSelection] User already validated and consented - bypassing consent form');
+            // Both validation and consent completed - set mode and go to main app
+            print('[ParticipationSelection] User already validated and consented - setting research mode');
+            await AppModeService.setCurrentMode(AppMode.research);
+            print('[ParticipationSelection] Research mode set successfully, navigating to main app');
             _navigateToMainApp();
           } else {
             // Validated but no consent - go to consent form
-            print('[ParticipationSelection] User validated but needs consent');
+            print('[ParticipationSelection] User validated but needs consent - navigating to consent form');
             final participantCode = await ParticipantValidationService.getValidatedParticipantCode();
+            print('[ParticipationSelection] Participant code: $participantCode');
             final result = await Navigator.of(context).pushNamed(
               '/consent_form',
               arguments: {
@@ -518,25 +538,41 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
                 'isTestingMode': false,
               },
             );
+            print('[ParticipationSelection] Consent form result: $result');
 
             if (result == true) {
+              // Consent completed - NOW set research mode
+              print('[ParticipationSelection] Consent completed - setting Research mode');
+              await AppModeService.setCurrentMode(AppMode.research);
+              print('[ParticipationSelection] Research mode set successfully after consent');
               _navigateToMainApp();
+            } else {
+              print('[ParticipationSelection] Consent was cancelled or failed');
             }
           }
         } else {
           // Not validated - go to participant code entry screen
+          print('[ParticipationSelection] User not validated - navigating to participant code entry');
           final result = await Navigator.of(context).pushNamed(
             '/participant_code_entry',
             arguments: {
               'researchSite': 'gauteng',
             },
           );
+          print('[ParticipationSelection] Participant code entry result: $result');
 
           if (result == true) {
+            // Validation completed - NOW set research mode
+            print('[ParticipationSelection] Validation completed - setting Research mode');
+            await AppModeService.setCurrentMode(AppMode.research);
+            print('[ParticipationSelection] Research mode set successfully after validation');
             _navigateToMainApp();
+          } else {
+            print('[ParticipationSelection] Participant validation was cancelled or failed');
           }
         }
         // If validation/consent was cancelled or failed, do nothing (stay on current screen)
+        print('[ParticipationSelection] Research mode processing completed');
       }
     } catch (error) {
       _showErrorDialog('Error setting up app mode: $error');
@@ -557,7 +593,16 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
   // since both modes keep data local and don't upload to research servers
 
   void _navigateToMainApp() {
-    Navigator.of(context).pushReplacementNamed('/');
+    print('[ParticipationSelection] === NAVIGATING TO MAIN APP ===');
+    print('[ParticipationSelection] Context: $context');
+    print('[ParticipationSelection] Navigator.canPop: ${Navigator.canPop(context)}');
+    try {
+      print('[ParticipationSelection] Using pushNamedAndRemoveUntil to route: /home (bypassing InitialRouteDecider)');
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+      print('[ParticipationSelection] Navigation call completed successfully');
+    } catch (e) {
+      print('[ParticipationSelection] ERROR during navigation: $e');
+    }
   }
 
   // void _showContactInfo() {

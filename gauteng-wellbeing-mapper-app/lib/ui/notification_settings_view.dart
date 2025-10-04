@@ -39,17 +39,16 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
 
   String _formatNextNotification(DateTime? nextDate) {
     if (nextDate == null) return 'Not scheduled';
-    final now = DateTime.now();
-    final difference = nextDate.difference(now);
     
-    if (difference.isNegative) {
-      return 'Overdue';
-    } else if (difference.inDays > 0) {
-      return 'In ${difference.inDays} days';
-    } else if (difference.inHours > 0) {
-      return 'In ${difference.inHours} hours';
+    final now = DateTime.now();
+    
+    // Simple date format: DD/MM/YYYY
+    final dateStr = '${nextDate.day.toString().padLeft(2, '0')}/${nextDate.month.toString().padLeft(2, '0')}/${nextDate.year}';
+    
+    if (nextDate.isBefore(now)) {
+      return '$dateStr (overdue)';
     } else {
-      return 'Soon';
+      return dateStr;
     }
   }
 
@@ -138,6 +137,7 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
     final notificationCount = _notificationStats['notificationCount'] ?? 0;
     final lastNotificationDate = _notificationStats['lastNotificationDate'] as DateTime?;
     final nextNotificationDate = _notificationStats['nextNotificationDate'] as DateTime?;
+    final consentDate = _notificationStats['consentDate'] as DateTime?;
     final hasPendingPrompt = _notificationStats['hasPendingPrompt'] ?? false;
 
     return Card(
@@ -157,9 +157,16 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                Spacer(),
+                IconButton(
+                  icon: Icon(Icons.refresh, color: Colors.blue),
+                  onPressed: _loadNotificationStats,
+                  tooltip: 'Refresh',
+                ),
               ],
             ),
             SizedBox(height: 16),
+            _buildStatRow('Consent Date', _formatDate(consentDate)),
             _buildStatRow('Total Notifications', notificationCount.toString()),
             _buildStatRow('Last Notification', _formatDate(lastNotificationDate)),
             _buildStatRow('Next Notification', _formatNextNotification(nextNotificationDate)),

@@ -630,7 +630,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             _buildBulletPoint('I have read the information sheet regarding the research project,'),
             _buildBulletPoint('The information sheet is written in a language with which I am fluent enough to understand all content,'),
             _buildBulletPoint('I have been able to ask questions and I have received enough information on the project,'),
-            _buildBulletPoint('I fulfill the inclusion criteria, and I am between at least 18 years old,'),
+            _buildBulletPoint('I fulfill the inclusion criteria, and I am at least 18 years old,'),
             _buildBulletPoint('I understand that my participation is voluntary and that I can withdraw from or opt out of the study at any time without any need to justify my decision,'),
             _buildBulletPoint('I understand that once researchers start to analyse the data (e.g., add what I answered to what everybody else answered) and/or the findings of the study are in the process of publication, I cannot withdraw the information that I contributed to the study'),
             _buildBulletPoint('I understand that I could be asked to leave the study before it has finished, if the researcher thinks it is in my best interests'),

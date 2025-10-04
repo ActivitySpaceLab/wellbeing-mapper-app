@@ -744,6 +744,7 @@ class SurveyDatabase {
         researchSite: maps[i]['research_site'] as String? ?? 'gauteng',
         submittedAt: DateTime.parse(maps[i]['submitted_at'] as String),
         encryptedLocationData: maps[i]['encrypted_location_data'] as String?,
+        synced: (maps[i]['synced'] as int? ?? 0) == 1,
       );
     });
   }

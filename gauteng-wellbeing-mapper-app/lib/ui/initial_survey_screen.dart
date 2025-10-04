@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
 import 'dart:convert';
 import '../models/survey_models.dart';
 import '../models/consent_models.dart';
@@ -20,11 +18,11 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
   bool _isSubmitting = false;
   String _researchSite = 'gauteng'; // Default to Gauteng
-  List<File> _selectedImages = [];
+  // Photo functionality removed - _selectedImages not needed
   
   // Track slider values for better UX - starts with no selection
   final Map<String, double?> _sliderValues = {};
-  final ImagePicker _picker = ImagePicker();
+  // Photo functionality removed - ImagePicker not needed
 
   @override
   void initState() {
@@ -694,7 +692,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
         copingHelp: formData['copingHelp'],
         // TODO: MULTIMEDIA ENCRYPTION - Images are stored locally, encryption to be implemented
         // voiceNoteUrls: null, // Voice notes not implemented yet
-        imageUrls: _selectedImages.isNotEmpty ? _selectedImages.map((f) => f.path).toList() : null,
+        imageUrls: null, // Photo functionality removed
         researchSite: _researchSite,
         submittedAt: DateTime.now(),
       );
@@ -753,7 +751,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Go to main app and clear stack
+              Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false); // Go to main app and clear stack
             },
             child: Text('OK'),
           ),
@@ -816,7 +814,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Go to main app and clear stack
+              Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false); // Go to main app and clear stack
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             child: Text('Got it!', style: TextStyle(color: Colors.white)),
@@ -1010,7 +1008,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
         children: [
           // First prompt - environmental challenges
           Text(
-            'What environmental challenges have you experienced recently? Please share as much detail as you can. Feel free to upload up to 3 images, along with an explanation of what they mean.',
+            'What environmental challenges have you experienced recently? Please share as much detail as you can. Feel free to upload 1 image, along with an explanation of what it means.',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           SizedBox(height: 8),
@@ -1023,11 +1021,6 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
             maxLines: 3,
             minLines: 2,
           ),
-          
-          SizedBox(height: 16),
-          
-          // Image upload section
-          _buildImageUploadSection(),
           
           SizedBox(height: 20),
           
@@ -1057,153 +1050,5 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
   }
 
   /// Build the image upload section for the digital diary
-  Widget _buildImageUploadSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.photo_camera, color: Colors.green),
-            SizedBox(width: 8),
-            Text(
-              'Photos (Optional)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-        SizedBox(height: 8),
-        Text(
-          'Upload up to 3 images related to environmental challenges you\'ve experienced.',
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-        ),
-        SizedBox(height: 12),
-        
-        // Display selected images
-        if (_selectedImages.isNotEmpty) ...[
-          Container(
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _selectedImages.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  width: 100,
-                  margin: EdgeInsets.only(right: 8),
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          _selectedImages[index],
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: GestureDetector(
-                          onTap: () => _removeImage(index),
-                          child: Container(
-                            padding: EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          SizedBox(height: 12),
-        ],
-        
-        // Add image buttons
-        Row(
-          children: [
-            if (_selectedImages.length < 3) ...[
-              ElevatedButton.icon(
-                onPressed: () => _pickImageFromGallery(),
-                icon: Icon(Icons.photo_library),
-                label: Text('Add Photo'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ],
-        ),
-        
-        if (_selectedImages.length >= 3)
-          Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.orange[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info, color: Colors.orange[700], size: 16),
-                SizedBox(width: 8),
-                Text(
-                  'Maximum of 3 images reached',
-                  style: TextStyle(color: Colors.orange[700], fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  /// Pick an image from the camera
-  /// Pick an image from the gallery
-  Future<void> _pickImageFromGallery() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1920,
-        imageQuality: 85,
-      );
-      
-      if (image != null) {
-        setState(() {
-          _selectedImages.add(File(image.path));
-        });
-        print('[Gallery] Successfully selected image: ${image.path}');
-      } else {
-        print('[Gallery] User cancelled gallery selection');
-      }
-    } catch (e) {
-      print('[Gallery] Error selecting photo: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error selecting photo. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  /// Remove an image from the selected list
-  void _removeImage(int index) {
-    setState(() {
-      _selectedImages.removeAt(index);
-    });
-  }
+  // Photo functionality removed for production reliability
 }
