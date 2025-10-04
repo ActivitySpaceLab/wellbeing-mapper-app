@@ -171,8 +171,9 @@ class MapViewState extends State<MapView>
             continue;
           }
           double accuracy = (coords['accuracy'] as num?)?.toDouble() ?? 999.0;
-          if (accuracy > 200.0) {
-            print('[map_view] 🚫 Skipping low accuracy location: ${accuracy}m accuracy');
+          // IMPROVED: More lenient accuracy filtering to reduce gaps (was 200m, now 500m)
+          if (accuracy > 500.0) {
+            print('[map_view] 🚫 Skipping extremely poor accuracy location: ${accuracy}m accuracy');
             continue;
           }
           LatLng currentPoint = LatLng(lat, lon);
@@ -286,9 +287,9 @@ class MapViewState extends State<MapView>
       // Create location point safely
       LatLng currentPoint = LatLng(location.coords.latitude, location.coords.longitude);
       
-      // Apply data quality filtering (same as in stored location display)
-      if (location.coords.accuracy > 200.0) {
-        print('[MapView] ⚠️ Rejecting real-time location with poor accuracy: ${location.coords.accuracy}m');
+      // IMPROVED: More lenient accuracy filtering for real-time display (was 200m, now 500m)
+      if (location.coords.accuracy > 500.0) {
+        print('[MapView] ⚠️ Rejecting real-time location with extremely poor accuracy: ${location.coords.accuracy}m');
         return;
       }
       
