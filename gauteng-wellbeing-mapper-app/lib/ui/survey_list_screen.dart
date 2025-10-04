@@ -13,7 +13,6 @@ class SurveyListScreen extends StatefulWidget {
 class _SurveyListScreenState extends State<SurveyListScreen> {
   final SurveyDatabase _db = SurveyDatabase();
   List<RecurringSurveyResponse> _surveys = [];
-  InitialSurveyResponse? _initialSurvey;
   bool _hasInitialSurvey = false;
   bool _initialSurveySynced = false;
   bool _consentFormSynced = false;
@@ -32,15 +31,6 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
     try {
       final surveys = await _db.getRecurringSurveys();
       final hasInitial = await _db.hasCompletedInitialSurvey();
-      
-      // Load initial survey data
-      InitialSurveyResponse? initialSurvey;
-      if (hasInitial) {
-        final initialSurveys = await _db.getInitialSurveys();
-        if (initialSurveys.isNotEmpty) {
-          initialSurvey = initialSurveys.first;
-        }
-      }
       
       // Check initial survey sync status
       bool initialSynced = false;
@@ -64,7 +54,6 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
       
       setState(() {
         _surveys = surveys;
-        _initialSurvey = initialSurvey;
         _hasInitialSurvey = hasInitial;
         _initialSurveySynced = initialSynced;
         _hasConsentForm = consentForm != null;
