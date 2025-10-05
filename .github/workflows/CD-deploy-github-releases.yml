@@ -80,7 +80,7 @@ jobs:
         echo "is_production=true" >> $GITHUB_OUTPUT
 
     - name: Extract and verify version information
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
       run: |
           # Get version from pubspec.yaml (remove build number for comparison)
           PUBSPEC_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
@@ -113,7 +113,7 @@ jobs:
 
     # CRITICAL: Clean all caches before building
     - name: Clean all build caches
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
       run: |
         echo "🧹 Cleaning all build caches to ensure correct version..."
         
@@ -139,7 +139,7 @@ jobs:
         echo "✅ All caches cleaned (Gradle clean will be done in separate step)"
 
     - name: Configure Android environment for CI
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
       run: |
         echo "🔧 Configuring Android environment for CI compatibility..."
         
@@ -160,7 +160,7 @@ jobs:
         echo "✅ Android environment configured for CI"
 
     - name: Ensure Gradle wrapper is executable
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app/android
+      working-directory: gauteng-wellbeing-mapper-app/android
       run: |
         echo "🔧 Ensuring Gradle wrapper is properly configured..."
         
@@ -184,7 +184,7 @@ jobs:
         ./gradlew --version
 
     - name: Force clean dependencies for AAR compatibility
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app/android
+      working-directory: gauteng-wellbeing-mapper-app/android
       run: |
         echo "🧹 Force cleaning dependencies to avoid AAR metadata conflicts..."
         
@@ -204,11 +204,11 @@ jobs:
 
     - name: Get flutter dependencies
       run: flutter pub get
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
 
     # Fix AAR metadata compatibility issues
     - name: Initialize Android environment
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
       run: |
         echo "🔧 Initializing Android environment for AAR compatibility..."
         
@@ -241,7 +241,7 @@ jobs:
         echo "✅ Version sync complete"
 
     - name: Verify iOS entitlements configuration
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
       run: |
         echo "🔍 Verifying iOS entitlements are properly configured..."
         
@@ -294,11 +294,11 @@ jobs:
 
     - name: Statically analyze the Dart code for any errors
       run: flutter analyze
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
     
     - name: Run tests for our flutter project
       run: flutter test --dart-define=FLUTTER_TEST_MODE=true
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
 
     - name: Generate and verify local.properties with version info
       run: |
@@ -334,7 +334,7 @@ jobs:
         
         echo "Updated gradle.properties:"
         tail -5 android/gradle.properties
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
 
     # Android Builds - Production Flavor
     - name: Build Android APKs (Production) - Multiple Architectures
@@ -406,7 +406,7 @@ jobs:
             fi
           fi
         done
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
 
     - name: Build Android App Bundle (Production)
       run: |
@@ -429,7 +429,7 @@ jobs:
         echo "✅ Production App Bundle built successfully!"
         echo "AAB location:"
         ls -la build/app/outputs/bundle/productionRelease/app-production-release.aab || echo "AAB file not found"
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
 
     # iOS Builds - Production Flavor
     - name: Install iOS dependencies
@@ -438,7 +438,7 @@ jobs:
         pod cache clean --all
         pod install --repo-update
         cd ..
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
       
     - name: Build iOS (Production) - Unsigned for Distribution
       run: |
@@ -464,15 +464,15 @@ jobs:
         
         echo "iOS app archived as wellbeing-mapper-production-ios.zip"
         echo "Note: This build is for distribution - actual App Store submission requires proper provisioning profiles and signing"
-      working-directory: gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app
     
     - name: Create a Production Release in GitHub
       uses: ncipollo/release-action@v1
       with:
         artifacts: |
-          gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app/build/app/outputs/flutter-apk/*.apk
-          gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app/build/app/outputs/bundle/productionRelease/app-production-release.aab
-          gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app/wellbeing-mapper-production-ios.zip
+          gauteng-wellbeing-mapper-app/build/app/outputs/flutter-apk/*.apk
+          gauteng-wellbeing-mapper-app/build/app/outputs/bundle/productionRelease/app-production-release.aab
+          gauteng-wellbeing-mapper-app/wellbeing-mapper-production-ios.zip
         token: ${{ secrets.GITHUB_TOKEN }}
         tag: ${{ steps.version.outputs.content }}
         name: "Wellbeing Mapper ${{ steps.version.outputs.content }} - Production Release"
