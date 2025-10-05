@@ -42,30 +42,6 @@ android {
     namespace 'com.github.activityspacelab.wellbeingmapper.gauteng'
     compileSdk 35  // Updated to support latest plugins
 
-    // Resolution strategy for androidx compatibility
-    configurations.all {
-        resolutionStrategy {
-            // Use more conservative version alignment for compatibility
-            eachDependency { details ->
-                if (details.requested.group == 'androidx.fragment') {
-                    if (details.requested.name == 'fragment' || details.requested.name == 'fragment-ktx') {
-                        details.useVersion '1.7.1'
-                    }
-                }
-                if (details.requested.group == 'androidx.work' && details.requested.name == 'work-runtime') {
-                    details.useVersion '2.8.1'
-                }
-                if (details.requested.group == 'androidx.appcompat' && details.requested.name == 'appcompat') {
-                    details.useVersion '1.6.1'
-                }
-                if (details.requested.group == 'androidx.preference' && details.requested.name == 'preference') {
-                    details.useVersion '1.2.1'
-                }
-                // Don't force androidx.core versions as they have complex interdependencies
-            }
-        }
-    }
-
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
@@ -141,19 +117,7 @@ flutter {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    
-    // Explicit androidx dependencies to ensure compatibility and resolve AAR metadata conflicts
-    implementation 'androidx.fragment:fragment:1.7.1'
-    implementation 'androidx.fragment:fragment-ktx:1.7.1'
-    implementation 'androidx.work:work-runtime:2.8.1'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.preference:preference:1.2.1'
-    implementation 'androidx.lifecycle:lifecycle-runtime:2.7.0'
-    implementation 'androidx.lifecycle:lifecycle-common:2.7.0'
-    implementation 'androidx.annotation:annotation:1.7.1'
-    // Note: androidx.core dependencies are managed automatically to avoid version conflicts
-    
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test:runner:1.5.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
 }
