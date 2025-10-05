@@ -108,6 +108,25 @@ jobs:
       run: flutter pub get
       working-directory: gauteng-wellbeing-mapper-app
 
+    # Fix AAR metadata compatibility issues
+    - name: Initialize Android environment
+      working-directory: gauteng-wellbeing-mapper-app
+      run: |
+        echo "🔧 Initializing Android environment for AAR compatibility..."
+        
+        # Ensure Flutter has initialized the Android project properly
+        flutter precache --android
+        
+        # Check that gradlew is available and executable
+        if [ -f "android/gradlew" ]; then
+          chmod +x android/gradlew
+          echo "✅ Gradle wrapper is ready"
+        else
+          echo "⚠️ Gradle wrapper not found - Flutter will create it during build"
+        fi
+        
+        echo "✅ Android environment initialized"
+
     - name: Sync version information
       run: |
         echo "🔄 Syncing version information using sync-version.sh..."
