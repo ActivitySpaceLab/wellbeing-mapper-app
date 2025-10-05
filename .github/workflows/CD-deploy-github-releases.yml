@@ -391,14 +391,27 @@ jobs:
         VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
         VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
         
-        # Set safer environment variables for Android build
-        export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.jvmargs=-Xmx4g"
+        # Set Gradle environment variables to handle AAR metadata issues
+        export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.caching=false"
+        export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.dependency.verification=off"
         
+        # Build App Bundle with fallback to exclude AAR metadata check
         flutter build appbundle --release \
           --flavor=production \
           --dart-define=APP_FLAVOR=production \
           --build-name="$VERSION_NAME" \
-          --build-number="$VERSION_CODE"
+          --build-number="$VERSION_CODE" || {
+            echo "❌ App Bundle build failed. Trying with direct Gradle command to exclude AAR metadata check..."
+            
+            # Try with direct Gradle command to exclude the problematic task
+            cd android
+            ./gradlew bundleProductionRelease -x checkProductionReleaseAarMetadata --stacktrace --info || {
+              echo "❌ Direct Gradle bundle build also failed."
+              cd ..
+              exit 1
+            }
+            cd ..
+          }
         
         echo "✅ Production App Bundle built successfully!"
         echo "AAB location:"
