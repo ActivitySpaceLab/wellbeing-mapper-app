@@ -206,17 +206,37 @@ jobs:
         
         echo "Using version: $VERSION_NAME (code: $VERSION_CODE)"
         
-        # Let Flutter handle Android setup and build process
-        # (No manual gradle clean needed - flutter build will handle this)
+        # Ensure Android environment is ready
+        echo "🔍 Checking Android environment..."
+        flutter doctor -v
         
-        # Build APKs with explicit version override and verbose output
+        # Build APKs with simplified parameters first
+        echo "🏗️ Starting APK build..."
         flutter build apk --release \
           --flavor=production \
-          --dart-define=APP_FLAVOR=production \
           --build-name="$VERSION_NAME" \
           --build-number="$VERSION_CODE" \
           --split-per-abi \
-          --verbose
+          --verbose || {
+            echo "❌ Build failed. Checking for common issues..."
+            
+            # Try without split-per-abi as fallback
+            echo "🔄 Retrying without split-per-abi..."
+            flutter build apk --release \
+              --flavor=production \
+              --build-name="$VERSION_NAME" \
+              --build-number="$VERSION_CODE" \
+              --verbose || {
+              echo "❌ Build failed completely. Dumping debug info..."
+              echo "📋 Flutter version:"
+              flutter --version
+              echo "📋 Gradle wrapper status:"
+              ls -la android/gradlew || echo "No gradlew found"
+              echo "📋 Android directory contents:"
+              ls -la android/
+              exit 1
+            }
+          }
         
         echo "✅ Production Android APKs built successfully!"
         echo "APK locations:"
