@@ -159,54 +159,38 @@ jobs:
         
         echo "✅ Android environment configured for CI"
 
-    - name: Ensure Gradle wrapper is executable
+    - name: Verify Android environment setup
       working-directory: gauteng-wellbeing-mapper-app/android
       run: |
-        echo "🔧 Ensuring Gradle wrapper is properly configured..."
+        echo "🔧 Verifying Android environment setup..."
         
-        # Check if gradlew exists, if not, generate it
-        if [ ! -f "gradlew" ]; then
-          echo "⚠️ gradlew not found - generating Gradle wrapper..."
-          # Try to generate wrapper using gradle if available
-          if command -v gradle &> /dev/null; then
-            gradle wrapper
-          else
-            echo "⚠️ Gradle not available to generate wrapper"
-            echo "Note: Flutter will generate gradlew during build if needed"
-          fi
-        fi
-        
-        # Make gradlew executable if it exists
-        if [ -f "gradlew" ]; then
-          chmod +x gradlew
-          echo "✅ Gradle wrapper is ready"
-          ./gradlew --version
+        # Check basic Android project structure
+        if [ -f "build.gradle" ]; then
+          echo "✅ Android build.gradle found"
         else
-          echo "⚠️ gradlew not available - Flutter will handle Gradle setup during build"
+          echo "❌ Android build.gradle missing"
+          exit 1
         fi
+        
+        # Note: gradlew is not required for Flutter projects
+        # Flutter will handle Gradle setup automatically during build
+        echo "✅ Android environment ready for Flutter build"
 
-    - name: Force clean dependencies for AAR compatibility
-      working-directory: gauteng-wellbeing-mapper-app/android
+    - name: Clean dependencies for AAR compatibility
+      working-directory: gauteng-wellbeing-mapper-app
       run: |
-        echo "🧹 Force cleaning dependencies to avoid AAR metadata conflicts..."
+        echo "🧹 Cleaning dependencies to avoid AAR metadata conflicts..."
         
-        # Verify we're in the right place
-        pwd
-        ls -la gradlew || echo "gradlew not found"
-        
-        # Clean all cached dependencies using gradlew if available
-        if [ -f "gradlew" ] && [ -x "gradlew" ]; then
-          ./gradlew clean --no-daemon
-          ./gradlew cleanBuildCache --no-daemon || echo "Build cache clean not available"
-        else
-          echo "⚠️ gradlew not available - skipping Gradle clean (Flutter will handle)"
-        fi
-        
-        # Remove problematic cache directories
+        # Remove problematic cache directories that can cause AAR issues
         rm -rf ~/.gradle/caches/transforms-*
         rm -rf ~/.gradle/caches/modules-2/metadata-*
         
-        echo "✅ Dependencies cleaned"
+        # Remove Android build artifacts (Flutter will rebuild them)
+        rm -rf android/.gradle
+        rm -rf android/app/build
+        rm -rf android/build
+        
+        echo "✅ Dependencies cleaned - Flutter will handle Gradle setup during build"
 
     - name: Get flutter dependencies
       run: flutter pub get
