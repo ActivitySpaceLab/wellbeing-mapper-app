@@ -34,7 +34,7 @@ jobs:
       uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
-        flutter-version: '3.27.1' # Match your fvm version
+        flutter-version: '3.24.5' # Use earlier version with compatible AndroidX dependencies
     
     - name: Get version from tag
       id: version
