@@ -14,13 +14,11 @@ jobs:
   build:
     runs-on: macos-latest # Use macOS for iOS builds
     env:
-      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2 -Dorg.gradle.configuration-cache=false -Dandroid.useAndroidX=true -Dandroid.enableJetifier=true -Dandroid.aar.check=false"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2 -Dorg.gradle.configuration-cache=false -Dandroid.useAndroidX=true -Dandroid.enableJetifier=true"
       FLUTTER_BUILD_MODE: "release"
       # Additional Android build environment variables for CI compatibility
       ANDROID_COMPILE_SDK: "35"
       ANDROID_BUILD_TOOLS: "35.0.0"
-      # Disable AAR metadata checks in CI environment
-      DISABLE_AAR_METADATA_CHECK: "true"
     steps:
     - uses: actions/checkout@v4
     
@@ -68,20 +66,32 @@ jobs:
     - name: Extract and verify version information
       working-directory: gauteng-wellbeing-mapper-app
       run: |
-          # Get version from pubspec.yaml (remove build number)
+          # Get version from pubspec.yaml (remove build number for comparison)
           PUBSPEC_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
           
-          # Get version from git tag (remove 'v' prefix)
+          # Get version from git tag (remove 'v' prefix and any build number)
           TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          TAG_VERSION=$(echo $TAG_VERSION | sed 's/-.*//')  # Remove any build number like -123
           
           echo "pubspec.yaml version: $PUBSPEC_VERSION"
           echo "Git tag version: $TAG_VERSION"
+          echo "Full tag: ${GITHUB_REF#refs/tags/}"
+          echo "Full pubspec version: $(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')"
           
           if [ "$PUBSPEC_VERSION" = "$TAG_VERSION" ]; then
-            echo "Versions match!"
+            echo "✅ Versions match!"
           else
-            echo "Version mismatch between pubspec.yaml ($PUBSPEC_VERSION) and git tag ($TAG_VERSION)"
-            echo "Please update pubspec.yaml version to match the git tag"
+            echo "❌ Version mismatch detected!"
+            echo "   pubspec.yaml has: $PUBSPEC_VERSION"
+            echo "   Git tag has: $TAG_VERSION"
+            echo ""
+            echo "📋 Debug info:"
+            echo "   Full git ref: $GITHUB_REF"
+            echo "   Raw tag: ${GITHUB_REF#refs/tags/}"
+            echo "   pubspec.yaml line: $(grep "version:" pubspec.yaml)"
+            echo ""
+            echo "⚠️  For production releases, the tag version should match pubspec.yaml base version"
+            echo "    Example: if pubspec.yaml has '1.1.36+7169', tag should be 'v1.1.36' or 'v1.1.36-7169'"
             exit 1
           fi
 
@@ -125,12 +135,10 @@ jobs:
         # CI-specific configuration to avoid AAR metadata issues
         android.useAndroidX=true
         android.enableJetifier=true
-        android.aapt2.disableResourceMetadataChecks=true
         org.gradle.parallel=false
         org.gradle.configureondemand=false
         org.gradle.daemon=false
-        # Disable AAR metadata checks that cause CI failures
-        android.disableAutomaticComponentCreation=true
+        # Disable resource validation that causes CI failures
         android.suppressUnsupportedOptionWarnings=true
         EOF
         
@@ -272,9 +280,8 @@ jobs:
         # Build APKs with simplified parameters first
         echo "🏗️ Starting APK build..."
         
-        # Set additional environment variables for Android build
-        export GRADLE_OPTS="$GRADLE_OPTS -Dandroid.aapt2.disableResourceMetadataChecks=true"
-        export ANDROID_DISABLE_AAR_METADATA_CHECK=true
+        # Set safer environment variables for Android build
+        export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.jvmargs=-Xmx4g"
         
         flutter build apk --release \
           --flavor=production \
@@ -331,9 +338,8 @@ jobs:
         VERSION_NAME=$(echo $FULL_VERSION | cut -d'+' -f1)
         VERSION_CODE=$(echo $FULL_VERSION | cut -d'+' -f2)
         
-        # Set additional environment variables for Android build
-        export GRADLE_OPTS="$GRADLE_OPTS -Dandroid.aapt2.disableResourceMetadataChecks=true"
-        export ANDROID_DISABLE_AAR_METADATA_CHECK=true
+        # Set safer environment variables for Android build
+        export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.jvmargs=-Xmx4g"
         
         flutter build appbundle --release \
           --flavor=production \
