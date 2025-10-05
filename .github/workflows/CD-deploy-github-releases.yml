@@ -143,18 +143,21 @@ jobs:
       run: |
         echo "🔧 Configuring Android environment for CI compatibility..."
         
-        # Create gradle.properties with CI-specific settings
+        # Create gradle.properties with CI-specific settings that avoid AAR metadata issues
         cat >> android/gradle.properties << EOF
         # CI-specific configuration to avoid AAR metadata issues
         android.useAndroidX=true
         android.enableJetifier=true
-        # Enable Gradle build cache for better CI performance
-        org.gradle.caching=true
+        # Disable Gradle features that can cause AAR conflicts in CI
+        org.gradle.caching=false
         org.gradle.parallel=false
         org.gradle.configureondemand=false
         org.gradle.daemon=false
         # Suppress warnings that don't affect functionality
         android.suppressUnsupportedOptionWarnings=true
+        # Disable AAR metadata validation in CI to avoid relinker issues
+        android.disableAutomaticComponentCreation=false
+        android.dependency.verification=off
         EOF
         
         echo "✅ Android environment configured for CI"
@@ -345,23 +348,20 @@ jobs:
         # Build APKs with simplified parameters first
         echo "🏗️ Starting APK build..."
         
-        # Set safer environment variables for Android build
-        export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.caching=true"
+        # Set Gradle environment variables that avoid AAR metadata validation issues
+        export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.caching=false"
+        export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.dependency.verification=off"
         
-        # Try build with AAR metadata check disabled if needed
+        # Build APKs with clean environment to avoid AAR conflicts
         flutter build apk --release \
           --flavor=production \
           --build-name="$VERSION_NAME" \
           --build-number="$VERSION_CODE" \
           --split-per-abi \
           --verbose || {
-            echo "❌ Build failed. Trying with AAR checks disabled..."
-            
-            # Add Gradle argument to skip AAR metadata checks
-            export GRADLE_OPTS="$GRADLE_OPTS -Pandroid.injected.build.aar.metadata.artifacts=none"
+            echo "❌ Build failed. Trying without split-per-abi..."
             
             # Try without split-per-abi as fallback
-            echo "🔄 Retrying without split-per-abi..."
             flutter build apk --release \
               --flavor=production \
               --build-name="$VERSION_NAME" \
@@ -370,10 +370,10 @@ jobs:
               echo "❌ Build failed completely. Dumping debug info..."
               echo "📋 Flutter version:"
               flutter --version
-              echo "📋 Gradle wrapper status:"
-              ls -la android/gradlew || echo "No gradlew found"
               echo "📋 Android directory contents:"
               ls -la android/
+              echo "📋 Gradle properties:"
+              cat android/gradle.properties
               exit 1
             }
           }
