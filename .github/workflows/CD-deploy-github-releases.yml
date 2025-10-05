@@ -143,21 +143,18 @@ jobs:
       run: |
         echo "🔧 Configuring Android environment for CI compatibility..."
         
-        # Create gradle.properties with CI-specific settings that avoid AAR metadata issues
+        # Create gradle.properties with CI-specific settings that are compatible with AGP 8.0+
         cat >> android/gradle.properties << EOF
-        # CI-specific configuration to avoid AAR metadata issues
+        # CI-specific configuration
         android.useAndroidX=true
         android.enableJetifier=true
-        # Disable Gradle features that can cause AAR conflicts in CI
+        # Gradle daemon and parallel settings for CI
         org.gradle.caching=false
         org.gradle.parallel=false
         org.gradle.configureondemand=false
         org.gradle.daemon=false
         # Suppress warnings that don't affect functionality
         android.suppressUnsupportedOptionWarnings=true
-        # Disable AAR metadata validation in CI to avoid relinker issues
-        android.disableAutomaticComponentCreation=false
-        android.dependency.verification=off
         EOF
         
         echo "✅ Android environment configured for CI"
@@ -198,33 +195,6 @@ jobs:
     - name: Get flutter dependencies
       run: flutter pub get
       working-directory: gauteng-wellbeing-mapper-app
-
-    # Fix AAR metadata compatibility issues
-    - name: Initialize Android environment
-      working-directory: gauteng-wellbeing-mapper-app
-      run: |
-        echo "🔧 Initializing Android environment for AAR compatibility..."
-        
-        # Disable Gradle build cache to avoid CI-specific issues
-        echo "org.gradle.caching=false" >> android/gradle.properties
-        echo "android.enableBuildCache=false" >> android/gradle.properties
-        
-        # Force Jetifier to be consistent in CI environment (may fix AAR transform issues)
-        echo "android.useAndroidX=true" >> android/gradle.properties  
-        echo "android.enableJetifier=true" >> android/gradle.properties
-        
-        # Ensure Flutter has initialized the Android project properly
-        flutter precache --android
-        
-        # Check that gradlew is available and executable
-        if [ -f "android/gradlew" ]; then
-          chmod +x android/gradlew
-          echo "✅ Gradle wrapper is ready"
-        else
-          echo "⚠️ Gradle wrapper not found - Flutter will create it during build"
-        fi
-        
-        echo "✅ Android environment initialized"
 
     - name: Sync version information
       run: |
