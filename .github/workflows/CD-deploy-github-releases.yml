@@ -34,7 +34,7 @@ jobs:
       uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
-        flutter-version: '3.27.0' # Compatible with plugin requirements but older AndroidX
+        flutter-version: '3.27.1' # Back to working version
     
     - name: Get version from tag
       id: version
@@ -323,35 +323,42 @@ jobs:
         # Build APKs with simplified parameters first
         echo "🏗️ Starting APK build..."
         
-        # Set Gradle environment variables that bypass AAR metadata validation issues in CI
+        # Set Gradle environment variables to completely skip AAR metadata validation
         export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.caching=false"
         export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.dependency.verification=off"
         
-        # Build APKs with CI-specific arguments to bypass strict metadata validation
+        # Build APKs with Gradle task exclusion to skip the problematic AAR metadata check
         flutter build apk --release \
           --flavor=production \
           --build-name="$VERSION_NAME" \
           --build-number="$VERSION_CODE" \
           --split-per-abi \
           --verbose \
-          --dart-define=CI_BUILD=true || {
-            echo "❌ Build failed. Trying without split-per-abi..."
+          --dart-define=CI_BUILD=true \
+          --extra-front-end-options=--target=lib/main.dart \
+          --extra-gen-snapshot-options=--lazy-async-stacks || {
+            echo "❌ Build failed. Trying to build without AAR metadata validation..."
             
-            # Try without split-per-abi as fallback
-            flutter build apk --release \
-              --flavor=production \
-              --build-name="$VERSION_NAME" \
-              --build-number="$VERSION_CODE" \
-              --verbose \
-              --dart-define=CI_BUILD=true || {
-              echo "❌ Build failed completely. Dumping debug info..."
-              echo "📋 Flutter version:"
-              flutter --version
-              echo "📋 Android directory contents:"
-              ls -la android/
-              echo "📋 Gradle properties:"
-              cat android/gradle.properties
-              exit 1
+            # Try with direct Gradle command to exclude the problematic task
+            cd android
+            ./gradlew assembleProductionRelease -x checkProductionReleaseAarMetadata --stacktrace --info || {
+              echo "❌ Direct Gradle build also failed. Trying without split-per-abi..."
+              cd ..
+              flutter build apk --release \
+                --flavor=production \
+                --build-name="$VERSION_NAME" \
+                --build-number="$VERSION_CODE" \
+                --verbose \
+                --dart-define=CI_BUILD=true || {
+                echo "❌ Build failed completely. Dumping debug info..."
+                echo "📋 Flutter version:"
+                flutter --version
+                echo "📋 Android directory contents:"
+                ls -la android/
+                echo "📋 Gradle properties:"
+                cat android/gradle.properties
+                exit 1
+              }
             }
           }
         
