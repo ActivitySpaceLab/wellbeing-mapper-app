@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import '../db/survey_database.dart';
 import '../main.dart';
 import '../services/app_mode_service.dart';
@@ -29,6 +30,17 @@ F9XaMHUHsRDFZccRlM8AR5fkUVZqiBrI7eHl4e0aSUmc7I8wX3DCA0L16sQQQl18
 ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
 64BAgUuyskUvkMsgsgzf7NcCAwEAAQ==
 -----END PUBLIC KEY-----''';
+
+  /// Get current app version from package info
+  static Future<String> _getAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      return '${packageInfo.version}+${packageInfo.buildNumber}';
+    } catch (e) {
+      print('⚠️ Error getting app version: $e');
+      return '1.0.0'; // Fallback version
+    }
+  }
 
   /// Sync all pending surveys as encrypted JSON blobs
   static Future<void> syncPendingSurveys() async {
@@ -171,6 +183,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
     try {
       print('🔐 Encrypting and syncing initial survey...');
       
+      // Get current app version
+      final appVersion = await _getAppVersion();
+      
       // Process images if they exist
       List<String>? encryptedImages;
       if (surveyData['image_urls'] != null) {
@@ -186,7 +201,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         'data': surveyData,
         'encrypted_images': encryptedImages, // Include encrypted image data
         'metadata': {
-          'app_version': '1.0.0', // TODO: Get from package info
+          'app_version': appVersion,
           'submission_method': 'encrypted_proxy',
           'has_images': encryptedImages != null && encryptedImages.isNotEmpty,
         }
@@ -220,6 +235,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       print('🔐 Encrypting and syncing biweekly survey...');
       print('🔄 Survey data keys: ${surveyData.keys.join(', ')}');
       print('🔄 Survey ID: ${surveyData['id']}');
+      
+      // Get current app version
+      final appVersion = await _getAppVersion();
       
       // Include location data if available - now as part of unified survey JSON
       Map<String, dynamic>? locationData;
@@ -266,7 +284,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         'encrypted_images': encryptedImages, // Include encrypted image data
         'location_data': locationData, // Include parsed location data directly
         'metadata': {
-          'app_version': '1.0.0',
+          'app_version': appVersion,
           'submission_method': 'encrypted_proxy',
           'encryption_unified': true, // Flag to indicate unified encryption approach
           'has_images': encryptedImages != null && encryptedImages.isNotEmpty,
@@ -305,6 +323,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
     try {
       print('🔐 Encrypting and syncing consent form...');
       
+      // Get current app version
+      final appVersion = await _getAppVersion();
+      
       final consentJson = {
         'type': 'consent_form',
         'participant_uuid': GlobalData.userUUID,
@@ -312,7 +333,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         'timestamp': DateTime.now().toIso8601String(),
         'data': consentData,
         'metadata': {
-          'app_version': '1.0.0',
+          'app_version': appVersion,
           'submission_method': 'encrypted_proxy',
         }
       };
