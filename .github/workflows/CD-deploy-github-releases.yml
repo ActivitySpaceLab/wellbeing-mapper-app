@@ -5,6 +5,8 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+' # Only trigger on production tags like v1.0.0 (no beta suffix)
       - 'v[0-9]+.[0-9]+.[0-9]+-[0-9]+' # Also support tags with build numbers like v1.0.0-123
+      - '!v*-beta*' # Explicitly exclude any beta tags
+      - '!v*beta*'  # Exclude any tags containing 'beta'
 
 permissions:
   contents: write
@@ -42,25 +44,39 @@ jobs:
       id: release_type
       run: |
         TAG="${GITHUB_REF#refs/tags/}"
-        echo "Processing tag: $TAG"
+        echo "🏷️ Processing tag: $TAG"
         
-        if [[ "$TAG" =~ -beta ]]; then
-          echo "ERROR: Beta tag detected in production workflow!"
-          echo "Tag '$TAG' contains '-beta' suffix which should not trigger this workflow."
-          echo "Beta tags should only trigger the 'CD-deploy-beta-releases.yml' workflow."
-          echo "If you see this error, the workflow trigger patterns need to be updated."
+        # More specific beta detection - only match tags ending with -beta or containing -beta-
+        if [[ "$TAG" =~ -beta$ ]] || [[ "$TAG" =~ -beta- ]]; then
+          echo "❌ ERROR: Beta tag detected in production workflow!"
+          echo "   Tag '$TAG' appears to be a beta release."
+          echo "   Beta tags should only trigger the 'CD-deploy-beta-releases.yml' workflow."
+          echo "   This workflow is for production releases only."
+          echo ""
+          echo "🔧 Expected tag formats for this workflow:"
+          echo "   - v1.0.0 (production release)"
+          echo "   - v1.0.0-123 (production release with build number)"
+          echo ""
+          echo "🔧 Beta tag formats (use different workflow):"
+          echo "   - v1.0.0-beta (beta release)"
+          echo "   - v1.0.0-beta.1 (numbered beta release)"
           exit 1
         fi
         
         # Verify tag matches expected production pattern
         if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]]; then
-          echo "ERROR: Invalid production tag format!"
-          echo "Expected format: v1.0.0 or v1.0.0-123 (semantic version with optional build number)"
-          echo "Received: $TAG"
+          echo "❌ ERROR: Invalid production tag format!"
+          echo "   Expected format: v1.0.0 or v1.0.0-123 (semantic version with optional build number)"
+          echo "   Received: $TAG"
+          echo ""
+          echo "🔧 Valid production tag examples:"
+          echo "   - v1.1.38 ✅"
+          echo "   - v1.1.38-7171 ✅"  
+          echo "   - v1.1.38-beta ❌ (use beta workflow)"
           exit 1
         fi
         
-        echo "Confirmed valid production release tag: $TAG"
+        echo "✅ Confirmed valid production release tag: $TAG"
         echo "is_production=true" >> $GITHUB_OUTPUT
 
     - name: Extract and verify version information
@@ -104,9 +120,6 @@ jobs:
         # Clean Flutter build cache
         flutter clean
         
-        # Clean Android gradle cache (recommended for AAR metadata issues)
-        cd android && ./gradlew clean && cd ..
-        
         # Remove iOS build artifacts
         rm -rf ios/Pods
         rm -rf ios/.symlinks
@@ -123,7 +136,7 @@ jobs:
         # Remove any existing local.properties
         rm -f android/local.properties
         
-        echo "✅ All caches cleaned"
+        echo "✅ All caches cleaned (Gradle clean will be done in separate step)"
 
     - name: Configure Android environment for CI
       working-directory: gauteng-wellbeing-mapper-app
@@ -146,13 +159,40 @@ jobs:
         
         echo "✅ Android environment configured for CI"
 
+    - name: Ensure Gradle wrapper is executable
+      working-directory: gauteng-wellbeing-mapper-app/android
+      run: |
+        echo "🔧 Ensuring Gradle wrapper is properly configured..."
+        
+        # Make gradlew executable
+        chmod +x gradlew
+        
+        # Verify gradlew exists and is executable
+        if [ ! -f "gradlew" ]; then
+          echo "❌ ERROR: gradlew not found in android directory"
+          ls -la
+          exit 1
+        fi
+        
+        if [ ! -x "gradlew" ]; then
+          echo "❌ ERROR: gradlew is not executable"
+          ls -la gradlew
+          exit 1
+        fi
+        
+        echo "✅ Gradle wrapper is ready"
+        ./gradlew --version
+
     - name: Force clean dependencies for AAR compatibility
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: gauteng-wellbeing-mapper-app/android
       run: |
         echo "🧹 Force cleaning dependencies to avoid AAR metadata conflicts..."
         
-        # Clean all cached dependencies
-        cd android
+        # Verify we're in the right place
+        pwd
+        ls -la gradlew || echo "gradlew not found"
+        
+        # Clean all cached dependencies using the gradlew in current directory
         ./gradlew clean --no-daemon
         ./gradlew cleanBuildCache --no-daemon || echo "Build cache clean not available"
         
