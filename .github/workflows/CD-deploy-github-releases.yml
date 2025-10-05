@@ -13,6 +13,9 @@ permissions:
 jobs:  
   build:
     runs-on: macos-latest # Use macOS for iOS builds
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
+      FLUTTER_BUILD_MODE: "release"
     steps:
     - uses: actions/checkout@v4
     
@@ -20,7 +23,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '17'
+        java-version: '17.0.7' # Pin to specific patch version
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -116,6 +119,14 @@ jobs:
       working-directory: gauteng-wellbeing-mapper-app
       run: |
         echo "🔧 Initializing Android environment for AAR compatibility..."
+        
+        # Disable Gradle build cache to avoid CI-specific issues
+        echo "org.gradle.caching=false" >> android/gradle.properties
+        echo "android.enableBuildCache=false" >> android/gradle.properties
+        
+        # Force Jetifier to be consistent in CI environment (may fix AAR transform issues)
+        echo "android.useAndroidX=true" >> android/gradle.properties  
+        echo "android.enableJetifier=true" >> android/gradle.properties
         
         # Ensure Flutter has initialized the Android project properly
         flutter precache --android
