@@ -42,6 +42,15 @@ android {
     namespace 'com.github.activityspacelab.wellbeingmapper.gauteng'
     compileSdk 35  // Updated to support latest plugins
 
+    // Force compatible androidx versions to resolve AAR metadata conflicts
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.fragment:fragment:1.7.1'
+            force 'androidx.work:work-runtime:2.8.1'
+            force 'androidx.core:core:1.12.0'
+        }
+    }
+
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
@@ -117,7 +126,7 @@ flutter {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test:runner:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }

@@ -86,6 +86,9 @@ jobs:
         # Clean Flutter build cache
         flutter clean
         
+        # Clean Android gradle cache (recommended for AAR metadata issues)
+        cd android && ./gradlew clean && cd ..
+        
         # Remove iOS build artifacts
         rm -rf ios/Pods
         rm -rf ios/.symlinks
