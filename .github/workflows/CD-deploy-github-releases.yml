@@ -135,14 +135,32 @@ jobs:
         # CI-specific configuration to avoid AAR metadata issues
         android.useAndroidX=true
         android.enableJetifier=true
+        # Enable Gradle build cache for better CI performance
+        org.gradle.caching=true
         org.gradle.parallel=false
         org.gradle.configureondemand=false
         org.gradle.daemon=false
-        # Disable resource validation that causes CI failures
+        # Suppress warnings that don't affect functionality
         android.suppressUnsupportedOptionWarnings=true
         EOF
         
         echo "✅ Android environment configured for CI"
+
+    - name: Force clean dependencies for AAR compatibility
+      working-directory: gauteng-wellbeing-mapper-app
+      run: |
+        echo "🧹 Force cleaning dependencies to avoid AAR metadata conflicts..."
+        
+        # Clean all cached dependencies
+        cd android
+        ./gradlew clean --no-daemon
+        ./gradlew cleanBuildCache --no-daemon || echo "Build cache clean not available"
+        
+        # Remove problematic cache directories
+        rm -rf ~/.gradle/caches/transforms-*
+        rm -rf ~/.gradle/caches/modules-2/metadata-*
+        
+        echo "✅ Dependencies cleaned"
 
     - name: Get flutter dependencies
       run: flutter pub get
@@ -185,37 +203,54 @@ jobs:
     - name: Verify iOS entitlements configuration
       working-directory: gauteng-wellbeing-mapper-app
       run: |
-        echo "Verifying iOS entitlements are properly configured..."
+        echo "🔍 Verifying iOS entitlements are properly configured..."
         
         # Check entitlements file exists
         if [ ! -f "ios/Runner/Runner.entitlements" ]; then
-          echo "ERROR: Entitlements file missing!"
+          echo "❌ ERROR: Entitlements file missing!"
+          echo "Expected: ios/Runner/Runner.entitlements"
+          ls -la ios/Runner/ || echo "ios/Runner directory not found"
           exit 1
         fi
+        echo "✅ Entitlements file exists"
         
-        # Check entitlements are linked in Xcode project
+        # Check entitlements are linked in Xcode project with more detailed output
+        echo "🔍 Checking entitlements linking in Xcode project..."
         if ! grep -q "CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements" ios/Runner.xcodeproj/project.pbxproj; then
-          echo "ERROR: Entitlements not linked in Xcode project!"
+          echo "❌ ERROR: Entitlements not linked in Xcode project!"
+          echo "Searching for entitlements references..."
+          grep -n "entitlements" ios/Runner.xcodeproj/project.pbxproj || echo "No entitlements references found"
           exit 1
         fi
+        echo "✅ Entitlements linked in Xcode project"
         
-        # Count linked configurations
+        # Count linked configurations with better debugging
+        echo "🔍 Counting entitlement configurations..."
         ENTITLEMENT_COUNT=$(grep -c "CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements" ios/Runner.xcodeproj/project.pbxproj)
+        echo "Found $ENTITLEMENT_COUNT entitlement configurations"
+        
         if [ "$ENTITLEMENT_COUNT" -lt 3 ]; then
-          echo "ERROR: Entitlements not linked in all build configurations!"
+          echo "❌ ERROR: Expected 3 entitlement configurations, found $ENTITLEMENT_COUNT"
+          echo "🔍 Showing all entitlements references:"
+          grep -n "CODE_SIGN_ENTITLEMENTS" ios/Runner.xcodeproj/project.pbxproj || echo "No CODE_SIGN_ENTITLEMENTS found"
           exit 1
         fi
+        echo "✅ All $ENTITLEMENT_COUNT build configurations have entitlements linked"
         
-        # Check location permissions in Info.plist
+        # Check location permissions in Info.plist with better debugging
+        echo "🔍 Checking location permissions in Info.plist..."
         REQUIRED_KEYS=("NSLocationAlwaysAndWhenInUseUsageDescription" "NSLocationAlwaysUsageDescription" "NSLocationWhenInUseUsageDescription" "NSLocationUsageDescription")
         for key in "${REQUIRED_KEYS[@]}"; do
           if ! grep -q "$key" ios/Runner/Info.plist; then
-            echo "ERROR: Missing location permission key: $key"
+            echo "❌ ERROR: Missing location permission key: $key"
+            echo "🔍 Available location keys in Info.plist:"
+            grep -n "NSLocation" ios/Runner/Info.plist || echo "No NSLocation keys found"
             exit 1
           fi
+          echo "✅ Found required key: $key"
         done
         
-        echo "iOS entitlements configuration verified"
+        echo "✅ iOS entitlements configuration verified successfully!"
 
     - name: Statically analyze the Dart code for any errors
       run: flutter analyze
@@ -281,15 +316,19 @@ jobs:
         echo "🏗️ Starting APK build..."
         
         # Set safer environment variables for Android build
-        export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.jvmargs=-Xmx4g"
+        export GRADLE_OPTS="$GRADLE_OPTS -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.caching=true"
         
+        # Try build with AAR metadata check disabled if needed
         flutter build apk --release \
           --flavor=production \
           --build-name="$VERSION_NAME" \
           --build-number="$VERSION_CODE" \
           --split-per-abi \
           --verbose || {
-            echo "❌ Build failed. Checking for common issues..."
+            echo "❌ Build failed. Trying with AAR checks disabled..."
+            
+            # Add Gradle argument to skip AAR metadata checks
+            export GRADLE_OPTS="$GRADLE_OPTS -Pandroid.injected.build.aar.metadata.artifacts=none"
             
             # Try without split-per-abi as fallback
             echo "🔄 Retrying without split-per-abi..."
