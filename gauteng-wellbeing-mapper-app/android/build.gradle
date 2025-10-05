@@ -9,7 +9,7 @@ buildscript {
     }
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.1.4'  // Updated to support SDK 35
@@ -20,7 +20,6 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
         mavenCentral()
        // [required] flutter_background_geolocation
        maven { url "${project(':flutter_background_geolocation').projectDir}/libs" }
