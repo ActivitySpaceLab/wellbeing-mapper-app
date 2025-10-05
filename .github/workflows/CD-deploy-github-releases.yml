@@ -164,24 +164,26 @@ jobs:
       run: |
         echo "🔧 Ensuring Gradle wrapper is properly configured..."
         
-        # Make gradlew executable
-        chmod +x gradlew
-        
-        # Verify gradlew exists and is executable
+        # Check if gradlew exists, if not, generate it
         if [ ! -f "gradlew" ]; then
-          echo "❌ ERROR: gradlew not found in android directory"
-          ls -la
-          exit 1
+          echo "⚠️ gradlew not found - generating Gradle wrapper..."
+          # Try to generate wrapper using gradle if available
+          if command -v gradle &> /dev/null; then
+            gradle wrapper
+          else
+            echo "⚠️ Gradle not available to generate wrapper"
+            echo "Note: Flutter will generate gradlew during build if needed"
+          fi
         fi
         
-        if [ ! -x "gradlew" ]; then
-          echo "❌ ERROR: gradlew is not executable"
-          ls -la gradlew
-          exit 1
+        # Make gradlew executable if it exists
+        if [ -f "gradlew" ]; then
+          chmod +x gradlew
+          echo "✅ Gradle wrapper is ready"
+          ./gradlew --version
+        else
+          echo "⚠️ gradlew not available - Flutter will handle Gradle setup during build"
         fi
-        
-        echo "✅ Gradle wrapper is ready"
-        ./gradlew --version
 
     - name: Force clean dependencies for AAR compatibility
       working-directory: gauteng-wellbeing-mapper-app/android
@@ -192,9 +194,13 @@ jobs:
         pwd
         ls -la gradlew || echo "gradlew not found"
         
-        # Clean all cached dependencies using the gradlew in current directory
-        ./gradlew clean --no-daemon
-        ./gradlew cleanBuildCache --no-daemon || echo "Build cache clean not available"
+        # Clean all cached dependencies using gradlew if available
+        if [ -f "gradlew" ] && [ -x "gradlew" ]; then
+          ./gradlew clean --no-daemon
+          ./gradlew cleanBuildCache --no-daemon || echo "Build cache clean not available"
+        else
+          echo "⚠️ gradlew not available - skipping Gradle clean (Flutter will handle)"
+        fi
         
         # Remove problematic cache directories
         rm -rf ~/.gradle/caches/transforms-*
