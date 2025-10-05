@@ -206,8 +206,8 @@ jobs:
         
         echo "Using version: $VERSION_NAME (code: $VERSION_CODE)"
         
-        # Clean gradle cache before build
-        cd android && ./gradlew clean && cd ..
+        # Let Flutter handle Android setup and build process
+        # (No manual gradle clean needed - flutter build will handle this)
         
         # Build APKs with explicit version override and verbose output
         flutter build apk --release \
