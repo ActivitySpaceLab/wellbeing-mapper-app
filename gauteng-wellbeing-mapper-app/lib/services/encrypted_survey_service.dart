@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:fast_rsa/fast_rsa.dart';
@@ -163,7 +164,19 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         print('[EncryptedSurveyService] ✅ No pending surveys to sync');
       } else if (totalSynced == 0) {
         print('[EncryptedSurveyService] ❌ All sync attempts failed');
-        throw Exception('All $totalAttempted sync attempts failed. Check network connection and proxy server status.');
+        
+        // iOS-specific error messaging
+        if (Platform.isIOS) {
+          print('[EncryptedSurveyService] 🍎 iOS Troubleshooting:');
+          print('[EncryptedSurveyService] 🍎   1. Check internet connection (WiFi/cellular)');
+          print('[EncryptedSurveyService] 🍎   2. Try toggling airplane mode on/off');
+          print('[EncryptedSurveyService] 🍎   3. Restart the app');
+          print('[EncryptedSurveyService] 🍎   4. Check if VPN or firewall is blocking the connection');
+          print('[EncryptedSurveyService] 🍎   5. Ensure the app has permission to use cellular data');
+          throw Exception('All 3 sync attempts failed. Check your internet connection and try again.');
+        } else {
+          throw Exception('All $totalAttempted sync attempts failed. Check network connection and proxy server status.');
+        }
       } else if (totalSynced < totalAttempted) {
         print('[EncryptedSurveyService] ⚠️ Partial sync success: $totalSynced out of $totalAttempted');
         throw Exception('Partial sync failure: Only $totalSynced out of $totalAttempted surveys uploaded successfully.');
@@ -486,11 +499,19 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       try {
         print('🌐 Sending encrypted $surveyType survey to proxy (attempt $attempt/$maxRetries)...');
         
+        // iOS-specific: Increase timeout for AWS Lambda function URLs
+        final Duration timeout = Platform.isIOS ? Duration(seconds: 45) : Duration(seconds: 30);
+        
         final response = await http.post(
           Uri.parse(_proxyServerUrl),
           headers: {
             'Content-Type': 'application/json',
             'User-Agent': 'GautengWellbeingMapper/1.0',
+            // iOS-specific: Add explicit connection headers
+            if (Platform.isIOS) ...{
+              'Connection': 'keep-alive',
+              'Accept-Encoding': 'gzip, deflate',
+            },
           },
           body: jsonEncode({
             'encrypted_data': encryptedBlob,
@@ -498,9 +519,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
             'timestamp': DateTime.now().toIso8601String(),
           }),
         ).timeout(
-          const Duration(seconds: 30),
+          timeout,
           onTimeout: () {
-            throw Exception('Request timeout after 30 seconds');
+            throw Exception('Request timeout after ${timeout.inSeconds} seconds');
           },
         );
         
@@ -539,6 +560,25 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         
       } catch (e) {
         print('❌ Network error sending to proxy (attempt $attempt): $e');
+        
+        // iOS-specific error handling
+        if (Platform.isIOS) {
+          final errorMessage = e.toString().toLowerCase();
+          if (errorMessage.contains('network is unreachable') || 
+              errorMessage.contains('no route to host') ||
+              errorMessage.contains('operation timed out') ||
+              errorMessage.contains('network connection lost') ||
+              errorMessage.contains('the request timed out')) {
+            print('🍎 iOS-specific network issue detected: $errorMessage');
+            if (attempt == maxRetries) {
+              print('🍎 iOS network troubleshooting:');
+              print('   • Check WiFi/cellular data connection');
+              print('   • Try toggling airplane mode on/off');
+              print('   • Restart the app');
+              print('   • Verify no VPN/firewall blocking connection');
+            }
+          }
+        }
         
         // Check for specific error types that shouldn't be retried
         if (e.toString().contains('certificate') || 
