@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -244,13 +245,20 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
   
   /// Encrypt and sync biweekly survey
   static Future<bool> _syncBiweeklySurveyEncrypted(Map<String, dynamic> surveyData) async {
+    developer.log('🚨 [ENTRY] _syncBiweeklySurveyEncrypted called', name: 'EncryptedSurveyService');
+    developer.log('🚨 [ENTRY] Platform: ${Platform.operatingSystem}', name: 'EncryptedSurveyService');
+    developer.log('🚨 [ENTRY] Survey data length: ${surveyData.length}', name: 'EncryptedSurveyService');
+    
     try {
+      developer.log('🚨 [TRY] Entered try block', name: 'EncryptedSurveyService');
       print('🔐 Encrypting and syncing biweekly survey...');
       print('🔄 Survey data keys: ${surveyData.keys.join(', ')}');
       print('🔄 Survey ID: ${surveyData['id']}');
       
       // Get current app version
+      developer.log('🚨 [VERSION] About to get app version', name: 'EncryptedSurveyService');
       final appVersion = await _getAppVersion();
+      developer.log('🚨 [VERSION] Successfully got app version: $appVersion', name: 'EncryptedSurveyService');
       
       // Include location data if available - now as part of unified survey JSON
       Map<String, dynamic>? locationData;
@@ -288,9 +296,13 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       }
 
       print('🔄 Creating survey JSON structure...');
+      developer.log('🚨 [UUID] About to access GlobalData.userUUID', name: 'EncryptedSurveyService');
+      final userUUID = GlobalData.userUUID;
+      developer.log('🚨 [UUID] Successfully accessed GlobalData.userUUID: $userUUID', name: 'EncryptedSurveyService');
+      
       final surveyJson = {
         'type': 'biweekly_survey',
-        'participant_uuid': GlobalData.userUUID,
+        'participant_uuid': userUUID,
         'survey_id': surveyData['id'],
         'timestamp': DateTime.now().toIso8601String(),
         'data': surveyData,
@@ -324,9 +336,11 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       return false;
       
     } catch (e) {
-      print('❌ Error encrypting biweekly survey: $e');
-      print('❌ Error type: ${e.runtimeType}');
-      print('❌ Stack trace: ${StackTrace.current}');
+      developer.log('❌ [CRITICAL] Error in _syncBiweeklySurveyEncrypted: $e', name: 'EncryptedSurveyService', error: e);
+      developer.log('❌ [CRITICAL] Error type: ${e.runtimeType}', name: 'EncryptedSurveyService');
+      developer.log('❌ [CRITICAL] Survey ID: ${surveyData['id']}', name: 'EncryptedSurveyService');
+      developer.log('❌ [CRITICAL] Platform: ${Platform.operatingSystem}', name: 'EncryptedSurveyService');
+      developer.log('❌ [CRITICAL] Stack trace: ${StackTrace.current}', name: 'EncryptedSurveyService', stackTrace: StackTrace.current);
       return false;
     }
   }
