@@ -907,14 +907,18 @@ class HomeViewState extends State<HomeView>
 
   void _onLocationError(bg.LocationError error) {
     print('[${bg.Event.LOCATION}] ERROR - $error');
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onMotionChange(bg.Location location) {
     print('[${bg.Event.MOTIONCHANGE}] - $location');
-    setState(() {
-      //_isMoving = location.isMoving;
-    });
+    if (mounted) {
+      setState(() {
+        //_isMoving = location.isMoving;
+      });
+    }
   }
 
   /// Save location data to database for survey data collection
@@ -949,9 +953,11 @@ class HomeViewState extends State<HomeView>
     print('[${bg.Event.ACTIVITYCHANGE}] - Activity: ${event.activity}, Confidence: ${event.confidence}%');
     // Activity changes help us understand user motion patterns
     // High confidence activities (walking, vehicle, cycling) indicate meaningful movement
-    setState(() {
-      // Could track current activity state here if needed
-    });
+    if (mounted) {
+      setState(() {
+        // Could track current activity state here if needed
+      });
+    }
   }
 
   /// Enhanced location processing with focus on track continuity over precision
@@ -1029,13 +1035,17 @@ class HomeViewState extends State<HomeView>
 
   void _onProviderChange(bg.ProviderChangeEvent event) {
     print('[${bg.Event.PROVIDERCHANGE}] - $event');
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onHttp(bg.HttpEvent event) async {
     print('[${bg.Event.HTTP}] - $event');
 
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onConnectivityChange(bg.ConnectivityChangeEvent event) {
@@ -1075,14 +1085,18 @@ class HomeViewState extends State<HomeView>
 
   void _onSchedule(bg.State state) {
     print('[${bg.Event.SCHEDULE}] - $state');
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onEnabledChange(bool enabled) {
     print('[${bg.Event.ENABLEDCHANGE}] - $enabled');
-    setState(() {
-      _enabled = enabled;
-    });
+    if (mounted) {
+      setState(() {
+        _enabled = enabled;
+      });
+    }
   }
 
   void _onNotificationAction(String action) {
@@ -1098,7 +1112,9 @@ class HomeViewState extends State<HomeView>
 
   void _onPowerSaveChange(bool enabled) {
     print('[${bg.Event.POWERSAVECHANGE}] - $enabled');
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -1222,6 +1238,8 @@ class HomeViewState extends State<HomeView>
   @override
   void dispose() {
     _surveyPromptTimer?.cancel();
+    // Remove background geolocation listeners to prevent setState on disposed widget
+    bg.BackgroundGeolocation.removeListeners();
     super.dispose();
   }
 }
