@@ -49,6 +49,15 @@
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
+			<key>6p7hir7licc5yisxhkner4wt2i0yhtzo.lambda-url.af-south-1.on.aws</key>
+			<dict>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<false/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
 		</dict>
 	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
