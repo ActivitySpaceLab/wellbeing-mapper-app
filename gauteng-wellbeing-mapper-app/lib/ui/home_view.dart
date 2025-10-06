@@ -3,6 +3,8 @@ import 'package:wellbeing_mapper/services/location_service.dart';
 import 'package:wellbeing_mapper/services/initial_survey_service.dart';
 import 'package:wellbeing_mapper/services/survey_navigation_service.dart';
 import 'package:wellbeing_mapper/services/storage_settings_service.dart';
+import 'package:wellbeing_mapper/services/app_mode_service.dart';
+import 'package:wellbeing_mapper/models/app_mode.dart';
 import 'package:wellbeing_mapper/ui/side_drawer.dart';
 import 'package:wellbeing_mapper/util/env.dart';
 import 'package:wellbeing_mapper/theme/south_african_theme.dart';
@@ -1169,18 +1171,35 @@ class HomeViewState extends State<HomeView>
       body: MapView(key: _mapViewKey),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          // Navigate to survey and refresh map when returning
-          await Navigator.of(context).pushNamed('/wellbeing_survey');
-          
-          // Refresh map data when returning from survey
-          print('[home_view] 🔄 Returned from survey - refreshing map data');
-          _refreshMapAfterSurvey();
+          try {
+            // Check current app mode to determine which survey to show
+            final currentMode = await AppModeService.getCurrentMode();
+            
+            if (currentMode == AppMode.research) {
+              // Research mode: Navigate to biweekly wellbeing survey
+              print('[home_view] 🔬 Research mode - navigating to biweekly survey');
+              await Navigator.of(context).pushNamed('/recurring_survey');
+            } else {
+              // Private mode or app testing: Navigate to quick happiness survey  
+              print('[home_view] 🔒 Private/testing mode - navigating to happiness survey');
+              await Navigator.of(context).pushNamed('/wellbeing_survey');
+            }
+            
+            // Refresh map data when returning from survey
+            print('[home_view] 🔄 Returned from survey - refreshing map data');
+            _refreshMapAfterSurvey();
+          } catch (e) {
+            // Fallback to original behavior if there's any error
+            print('[home_view] ⚠️ Error determining app mode, falling back to happiness survey: $e');
+            await Navigator.of(context).pushNamed('/wellbeing_survey');
+            _refreshMapAfterSurvey();
+          }
         },
         backgroundColor: SouthAfricanTheme.primaryBlue,
         foregroundColor: SouthAfricanTheme.pureWhite,
         icon: Icon(Icons.add),
         label: Text('Survey'),
-        tooltip: 'Take wellbeing survey - share how you feel in this location',
+        tooltip: 'Take wellbeing survey (research mode: full survey, private mode: quick happiness rating)',
       ),
     );
   }
