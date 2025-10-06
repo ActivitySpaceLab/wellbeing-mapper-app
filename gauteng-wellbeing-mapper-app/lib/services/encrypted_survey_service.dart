@@ -200,12 +200,13 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         print('[EncryptedSurveyService] ✅ All surveys synced successfully');
       }
       
-    } catch (e) {
+    } catch (e, stackTrace) {
       developer.log('❌ [MAIN-CRITICAL] Error in syncPendingSurveys: $e', name: 'wellbeing-mapper-debug', error: e);
       developer.log('❌ [MAIN-CRITICAL] Error type: ${e.runtimeType}', name: 'wellbeing-mapper-debug');
-      developer.log('❌ [MAIN-CRITICAL] Stack trace: ${StackTrace.current}', name: 'wellbeing-mapper-debug', stackTrace: StackTrace.current);
+      // Use the caught stackTrace instead of StackTrace.current to avoid null issues
+      developer.log('❌ [MAIN-CRITICAL] Stack trace: $stackTrace', name: 'wellbeing-mapper-debug', stackTrace: stackTrace);
       print('[EncryptedSurveyService] ❌ Error in sync: $e');
-      print('[EncryptedSurveyService] ❌ Stack trace: ${StackTrace.current}');
+      print('[EncryptedSurveyService] ❌ Stack trace: $stackTrace');
       rethrow; // Re-throw so the calling code can handle it
     }
   }
@@ -353,12 +354,12 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
       return false;
       
-    } catch (e) {
+    } catch (e, stackTrace) {
       developer.log('❌ [CRITICAL] Error in _syncBiweeklySurveyEncrypted: $e', name: 'wellbeing-mapper-debug', error: e);
       developer.log('❌ [CRITICAL] Error type: ${e.runtimeType}', name: 'wellbeing-mapper-debug');
       developer.log('❌ [CRITICAL] Survey ID: ${surveyData['id']}', name: 'wellbeing-mapper-debug');
       developer.log('❌ [CRITICAL] Platform: ${Platform.operatingSystem}', name: 'wellbeing-mapper-debug');
-      developer.log('❌ [CRITICAL] Stack trace: ${StackTrace.current}', name: 'wellbeing-mapper-debug', stackTrace: StackTrace.current);
+      developer.log('❌ [CRITICAL] Stack trace: $stackTrace', name: 'wellbeing-mapper-debug', stackTrace: stackTrace);
       return false;
     }
   }
@@ -484,7 +485,13 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
       // Encrypt AES key with RSA (use base64 for safe string transmission)
       final aesKeyBase64 = base64.encode(aesKey);
+      print('🔐 Starting RSA encryption of AES key...');
       final encryptedKey = await RSA.encryptPKCS1v15(aesKeyBase64, _publicKey);
+      
+      if (encryptedKey.isEmpty) {
+        throw Exception('RSA encryption failed: encryptedKey is empty');
+      }
+      print('🔐 RSA encryption completed successfully');
       
       // Create encrypted package
       final encryptedPackage = {
