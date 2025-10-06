@@ -1,6 +1,7 @@
 import UIKit
 import Flutter
 import CoreLocation
+import RSABridge
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, CLLocationManagerDelegate {
@@ -17,6 +18,9 @@ import CoreLocation
     }
     
     GeneratedPluginRegistrant.register(with: self)
+    
+    // Keep RSA symbols to prevent them from being stripped during iOS optimization
+    keepRSASymbols()
     
     // Set up location method channel
     let controller = window?.rootViewController as! FlutterViewController
@@ -153,5 +157,14 @@ import CoreLocation
   @available(iOS 10.0, *)
   override func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
     completionHandler()
+  }
+  
+  // Keep RSA symbols to prevent iOS linker from stripping them
+  private func keepRSASymbols() {
+    // This function forces the RSA symbols to be included in the final binary
+    // by calling them in a way that won't be optimized away by the linker
+    _ = RSABridge.RSABridgeCall(nil, nil, 0)
+    _ = RSABridge.RSAEncodeText(nil, nil)
+    _ = RSABridge.RSADecodeText(nil, 0, nil, 0, 0, 0)
   }
 }
