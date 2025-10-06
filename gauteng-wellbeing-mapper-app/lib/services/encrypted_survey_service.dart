@@ -495,35 +495,54 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
     const int maxRetries = 3;
     const Duration initialDelay = Duration(seconds: 2);
     
+    print('🔍 [DEBUG] Starting _sendToProxy for $surveyType survey');
+    print('🔍 [DEBUG] Encrypted blob length: ${encryptedBlob.length}');
+    print('🔍 [DEBUG] Proxy URL: $_proxyServerUrl');
+    print('🔍 [DEBUG] Platform: ${Platform.operatingSystem}');
+    
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         print('🌐 Sending encrypted $surveyType survey to proxy (attempt $attempt/$maxRetries)...');
+        print('🔍 [DEBUG] About to make HTTP POST request...');
         
         // iOS-specific: Increase timeout for AWS Lambda function URLs
         final Duration timeout = Platform.isIOS ? Duration(seconds: 45) : Duration(seconds: 30);
+        print('🔍 [DEBUG] Using timeout: ${timeout.inSeconds} seconds');
+        
+        final headers = {
+          'Content-Type': 'application/json',
+          'User-Agent': 'GautengWellbeingMapper/1.0',
+          // iOS-specific: Add explicit connection headers
+          if (Platform.isIOS) ...{
+            'Connection': 'keep-alive',
+            'Accept-Encoding': 'gzip, deflate',
+          },
+        };
+        print('🔍 [DEBUG] Headers: $headers');
+        
+        final body = jsonEncode({
+          'encrypted_data': encryptedBlob,
+          'survey_type': surveyType,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+        print('🔍 [DEBUG] Body length: ${body.length} characters');
         
         final response = await http.post(
           Uri.parse(_proxyServerUrl),
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'GautengWellbeingMapper/1.0',
-            // iOS-specific: Add explicit connection headers
-            if (Platform.isIOS) ...{
-              'Connection': 'keep-alive',
-              'Accept-Encoding': 'gzip, deflate',
-            },
-          },
-          body: jsonEncode({
-            'encrypted_data': encryptedBlob,
-            'survey_type': surveyType,
-            'timestamp': DateTime.now().toIso8601String(),
-          }),
+          headers: headers,
+          body: body,
         ).timeout(
           timeout,
           onTimeout: () {
+            print('⏰ [DEBUG] Request timed out after ${timeout.inSeconds} seconds');
             throw Exception('Request timeout after ${timeout.inSeconds} seconds');
           },
         );
+        
+        print('🔍 [DEBUG] HTTP request completed');
+        print('🔍 [DEBUG] Response status code: ${response.statusCode}');
+        print('🔍 [DEBUG] Response headers: ${response.headers}');
+        print('🔍 [DEBUG] Response body length: ${response.body.length}');
         
         // Check HTTP status code
         if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -560,9 +579,16 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         
       } catch (e) {
         print('❌ Network error sending to proxy (attempt $attempt): $e');
+        print('❌ Error type: ${e.runtimeType}');
+        print('❌ Detailed error: ${e.toString()}');
         
         // iOS-specific error handling
         if (Platform.isIOS) {
+          print('🍎 iOS-specific error details:');
+          print('🍎 Platform: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}');
+          print('🍎 Proxy URL: $_proxyServerUrl');
+          print('🍎 Request timeout was: ${Platform.isIOS ? 45 : 30} seconds');
+          
           final errorMessage = e.toString().toLowerCase();
           if (errorMessage.contains('network is unreachable') || 
               errorMessage.contains('no route to host') ||
