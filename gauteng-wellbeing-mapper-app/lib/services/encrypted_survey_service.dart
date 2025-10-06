@@ -46,11 +46,16 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
 
   /// Sync all pending surveys as encrypted JSON blobs
   static Future<void> syncPendingSurveys() async {
+    developer.log('🚨 [MAIN] syncPendingSurveys called', name: 'wellbeing-mapper-debug');
+    
     try {
+      developer.log('🚨 [MAIN] Entered try block', name: 'wellbeing-mapper-debug');
       print('🔐 Starting encrypted survey sync...');
       
       // CRITICAL: Check app mode before any upload operations
+      developer.log('🚨 [MAIN] About to check app mode', name: 'wellbeing-mapper-debug');
       final currentMode = await AppModeService.getCurrentMode();
+      developer.log('🚨 [MAIN] Successfully got app mode: $currentMode', name: 'wellbeing-mapper-debug');
       print('[EncryptedSurveyService] Current app mode: ${currentMode.toString()}');
       print('[EncryptedSurveyService] App flavor: ${AppModeService.appFlavor}');
       print('[EncryptedSurveyService] Is beta build: ${AppModeService.isBetaBuild}');
@@ -74,7 +79,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         return;
       }
       
+      developer.log('🚨 [MAIN] About to create SurveyDatabase', name: 'wellbeing-mapper-debug');
       final db = SurveyDatabase();
+      developer.log('🚨 [MAIN] Successfully created SurveyDatabase', name: 'wellbeing-mapper-debug');
       
       // Track counts for summary
       int initialCount = 0;
@@ -88,13 +95,17 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
       // CONSENT SAFEGUARD: Check if participant has given consent before syncing surveys
       // (Consent forms are always synced since they ARE the consent)
+      developer.log('🚨 [MAIN] About to access GlobalData.userUUID', name: 'wellbeing-mapper-debug');
       final participantUuid = GlobalData.userUUID;
+      developer.log('🚨 [MAIN] Successfully got participantUuid: ${participantUuid.length} chars', name: 'wellbeing-mapper-debug');
       print('[EncryptedSurveyService] Participant UUID: ${participantUuid.isNotEmpty ? "present (${participantUuid.length} chars)" : "MISSING"}');
       
       if (participantUuid.isNotEmpty) {
         // Check for research consent (not location sharing consent)
         // Location sharing consent is only needed for location data, not surveys
+        developer.log('🚨 [MAIN] About to check research consent', name: 'wellbeing-mapper-debug');
         final researchConsent = await db.getConsent();
+        developer.log('🚨 [MAIN] Research consent check completed', name: 'wellbeing-mapper-debug');
         print('[EncryptedSurveyService] Research consent found: ${researchConsent != null ? "YES" : "NO"}');
         
         // Sync initial and biweekly surveys if user has research consent
@@ -102,7 +113,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
           print('[EncryptedSurveyService] ✅ Research consent found, proceeding with survey sync');
           
           // Sync initial surveys
+          developer.log('🚨 [MAIN] About to get unsynced initial surveys', name: 'wellbeing-mapper-debug');
           final unsyncedInitial = await db.getUnsyncedInitialSurveys();
+          developer.log('🚨 [MAIN] Got unsynced initial surveys: ${unsyncedInitial.length}', name: 'wellbeing-mapper-debug');
           initialCount = unsyncedInitial.length;
           print('[EncryptedSurveyService] Unsynced initial surveys: $initialCount');
           for (final survey in unsyncedInitial) {
@@ -116,7 +129,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
           }
           
           // Sync biweekly surveys  
+          developer.log('🚨 [MAIN] About to get unsynced biweekly surveys', name: 'wellbeing-mapper-debug');
           final unsyncedBiweekly = await db.getUnsyncedRecurringSurveys();
+          developer.log('🚨 [MAIN] Got unsynced biweekly surveys: ${unsyncedBiweekly.length}', name: 'wellbeing-mapper-debug');
           biweeklyCount = unsyncedBiweekly.length;
           print('[EncryptedSurveyService] Unsynced biweekly surveys: $biweeklyCount');
           for (final survey in unsyncedBiweekly) {
@@ -186,6 +201,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       }
       
     } catch (e) {
+      developer.log('❌ [MAIN-CRITICAL] Error in syncPendingSurveys: $e', name: 'wellbeing-mapper-debug', error: e);
+      developer.log('❌ [MAIN-CRITICAL] Error type: ${e.runtimeType}', name: 'wellbeing-mapper-debug');
+      developer.log('❌ [MAIN-CRITICAL] Stack trace: ${StackTrace.current}', name: 'wellbeing-mapper-debug', stackTrace: StackTrace.current);
       print('[EncryptedSurveyService] ❌ Error in sync: $e');
       print('[EncryptedSurveyService] ❌ Stack trace: ${StackTrace.current}');
       rethrow; // Re-throw so the calling code can handle it
@@ -245,20 +263,20 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
   
   /// Encrypt and sync biweekly survey
   static Future<bool> _syncBiweeklySurveyEncrypted(Map<String, dynamic> surveyData) async {
-    developer.log('🚨 [ENTRY] _syncBiweeklySurveyEncrypted called', name: 'EncryptedSurveyService');
-    developer.log('🚨 [ENTRY] Platform: ${Platform.operatingSystem}', name: 'EncryptedSurveyService');
-    developer.log('🚨 [ENTRY] Survey data length: ${surveyData.length}', name: 'EncryptedSurveyService');
+    developer.log('🚨 [ENTRY] _syncBiweeklySurveyEncrypted called', name: 'wellbeing-mapper-debug');
+    developer.log('🚨 [ENTRY] Platform: ${Platform.operatingSystem}', name: 'wellbeing-mapper-debug');
+    developer.log('🚨 [ENTRY] Survey data length: ${surveyData.length}', name: 'wellbeing-mapper-debug');
     
     try {
-      developer.log('🚨 [TRY] Entered try block', name: 'EncryptedSurveyService');
+      developer.log('🚨 [TRY] Entered try block', name: 'wellbeing-mapper-debug');
       print('🔐 Encrypting and syncing biweekly survey...');
       print('🔄 Survey data keys: ${surveyData.keys.join(', ')}');
       print('🔄 Survey ID: ${surveyData['id']}');
       
       // Get current app version
-      developer.log('🚨 [VERSION] About to get app version', name: 'EncryptedSurveyService');
+      developer.log('🚨 [VERSION] About to get app version', name: 'wellbeing-mapper-debug');
       final appVersion = await _getAppVersion();
-      developer.log('🚨 [VERSION] Successfully got app version: $appVersion', name: 'EncryptedSurveyService');
+      developer.log('🚨 [VERSION] Successfully got app version: $appVersion', name: 'wellbeing-mapper-debug');
       
       // Include location data if available - now as part of unified survey JSON
       Map<String, dynamic>? locationData;
@@ -296,9 +314,9 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       }
 
       print('🔄 Creating survey JSON structure...');
-      developer.log('🚨 [UUID] About to access GlobalData.userUUID', name: 'EncryptedSurveyService');
+      developer.log('🚨 [UUID] About to access GlobalData.userUUID', name: 'wellbeing-mapper-debug');
       final userUUID = GlobalData.userUUID;
-      developer.log('🚨 [UUID] Successfully accessed GlobalData.userUUID: $userUUID', name: 'EncryptedSurveyService');
+      developer.log('🚨 [UUID] Successfully accessed GlobalData.userUUID: $userUUID', name: 'wellbeing-mapper-debug');
       
       final surveyJson = {
         'type': 'biweekly_survey',
@@ -336,11 +354,11 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       return false;
       
     } catch (e) {
-      developer.log('❌ [CRITICAL] Error in _syncBiweeklySurveyEncrypted: $e', name: 'EncryptedSurveyService', error: e);
-      developer.log('❌ [CRITICAL] Error type: ${e.runtimeType}', name: 'EncryptedSurveyService');
-      developer.log('❌ [CRITICAL] Survey ID: ${surveyData['id']}', name: 'EncryptedSurveyService');
-      developer.log('❌ [CRITICAL] Platform: ${Platform.operatingSystem}', name: 'EncryptedSurveyService');
-      developer.log('❌ [CRITICAL] Stack trace: ${StackTrace.current}', name: 'EncryptedSurveyService', stackTrace: StackTrace.current);
+      developer.log('❌ [CRITICAL] Error in _syncBiweeklySurveyEncrypted: $e', name: 'wellbeing-mapper-debug', error: e);
+      developer.log('❌ [CRITICAL] Error type: ${e.runtimeType}', name: 'wellbeing-mapper-debug');
+      developer.log('❌ [CRITICAL] Survey ID: ${surveyData['id']}', name: 'wellbeing-mapper-debug');
+      developer.log('❌ [CRITICAL] Platform: ${Platform.operatingSystem}', name: 'wellbeing-mapper-debug');
+      developer.log('❌ [CRITICAL] Stack trace: ${StackTrace.current}', name: 'wellbeing-mapper-debug', stackTrace: StackTrace.current);
       return false;
     }
   }
@@ -504,10 +522,15 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
     }
   }
   
-  /// Send encrypted blob to proxy server with enhanced error handling
+    /// Send encrypted blob to proxy server with enhanced error handling
   static Future<bool> _sendToProxy(String surveyType, String encryptedBlob) async {
     const int maxRetries = 3;
     const Duration initialDelay = Duration(seconds: 2);
+    
+    developer.log('🚨 [PROXY] Starting _sendToProxy for $surveyType survey', name: 'wellbeing-mapper-debug');
+    developer.log('🚨 [PROXY] Encrypted blob length: ${encryptedBlob.length}', name: 'wellbeing-mapper-debug');
+    developer.log('🚨 [PROXY] Proxy URL: $_proxyServerUrl', name: 'wellbeing-mapper-debug');
+    developer.log('🚨 [PROXY] Platform: ${Platform.operatingSystem}', name: 'wellbeing-mapper-debug');
     
     print('🔍 [DEBUG] Starting _sendToProxy for $surveyType survey');
     print('🔍 [DEBUG] Encrypted blob length: ${encryptedBlob.length}');
@@ -516,11 +539,13 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
     
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
+        developer.log('🚨 [PROXY] Attempt $attempt/$maxRetries starting', name: 'wellbeing-mapper-debug');
         print('🌐 Sending encrypted $surveyType survey to proxy (attempt $attempt/$maxRetries)...');
         print('🔍 [DEBUG] About to make HTTP POST request...');
         
         // iOS-specific: Increase timeout for AWS Lambda function URLs
         final Duration timeout = Platform.isIOS ? Duration(seconds: 45) : Duration(seconds: 30);
+        developer.log('🚨 [PROXY] Using timeout: ${timeout.inSeconds} seconds', name: 'wellbeing-mapper-debug');
         print('🔍 [DEBUG] Using timeout: ${timeout.inSeconds} seconds');
         
         final headers = {
@@ -532,6 +557,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
             'Accept-Encoding': 'gzip, deflate',
           },
         };
+        developer.log('🚨 [PROXY] Headers prepared: $headers', name: 'wellbeing-mapper-debug');
         print('🔍 [DEBUG] Headers: $headers');
         
         final body = jsonEncode({
@@ -539,8 +565,10 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
           'survey_type': surveyType,
           'timestamp': DateTime.now().toIso8601String(),
         });
+        developer.log('🚨 [PROXY] Body length: ${body.length} characters', name: 'wellbeing-mapper-debug');
         print('🔍 [DEBUG] Body length: ${body.length} characters');
         
+        developer.log('🚨 [PROXY] About to make HTTP POST request', name: 'wellbeing-mapper-debug');
         final response = await http.post(
           Uri.parse(_proxyServerUrl),
           headers: headers,
@@ -548,11 +576,13 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         ).timeout(
           timeout,
           onTimeout: () {
+            developer.log('🚨 [PROXY] Request timed out after ${timeout.inSeconds} seconds', name: 'wellbeing-mapper-debug');
             print('⏰ [DEBUG] Request timed out after ${timeout.inSeconds} seconds');
             throw Exception('Request timeout after ${timeout.inSeconds} seconds');
           },
         );
         
+        developer.log('🚨 [PROXY] HTTP request completed with status: ${response.statusCode}', name: 'wellbeing-mapper-debug');
         print('🔍 [DEBUG] HTTP request completed');
         print('🔍 [DEBUG] Response status code: ${response.statusCode}');
         print('🔍 [DEBUG] Response headers: ${response.headers}');
@@ -566,18 +596,22 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
             
             // Verify the proxy successfully forwarded to Qualtrics
             if (responseData['success'] == true) {
+              developer.log('🚨 [PROXY] SUCCESS: Data delivered to Qualtrics', name: 'wellbeing-mapper-debug');
               print('✅ Encrypted data confirmed delivered to Qualtrics (attempt $attempt)');
               return true;
             } else {
+              developer.log('🚨 [PROXY] FAIL: Proxy OK but Qualtrics delivery failed: ${responseData['message']}', name: 'wellbeing-mapper-debug');
               print('❌ Proxy responded OK but Qualtrics delivery failed: ${responseData['message'] ?? 'Unknown error'}');
               // This counts as a failure - retry
             }
           } catch (jsonError) {
+            developer.log('🚨 [PROXY] FAIL: Invalid JSON response: $jsonError', name: 'wellbeing-mapper-debug');
             final bodyPreview = response.body.length > 200 ? '${response.body.substring(0, 200)}...' : response.body;
             print('❌ Invalid JSON response from proxy: $bodyPreview');
             // Malformed response - retry
           }
         } else {
+          developer.log('🚨 [PROXY] FAIL: HTTP error ${response.statusCode}', name: 'wellbeing-mapper-debug');
           print('❌ Proxy server HTTP error: ${response.statusCode}');
           final bodyPreview = response.body.length > 200 ? '${response.body.substring(0, 200)}...' : response.body;
           print('❌ Response body: $bodyPreview');
@@ -585,6 +619,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
           
           // Don't retry for client errors (4xx) - these won't get better
           if (response.statusCode >= 400 && response.statusCode < 500) {
+            developer.log('🚨 [PROXY] Client error - not retrying', name: 'wellbeing-mapper-debug');
             print('🚫 Client error - not retrying');
             return false;
           }
@@ -592,12 +627,15 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         }
         
       } catch (e) {
+        developer.log('🚨 [PROXY] EXCEPTION: Network error on attempt $attempt: $e', name: 'wellbeing-mapper-debug', error: e);
+        developer.log('🚨 [PROXY] Exception type: ${e.runtimeType}', name: 'wellbeing-mapper-debug');
         print('❌ Network error sending to proxy (attempt $attempt): $e');
         print('❌ Error type: ${e.runtimeType}');
         print('❌ Detailed error: ${e.toString()}');
         
         // iOS-specific error handling
         if (Platform.isIOS) {
+          developer.log('🚨 [PROXY] iOS-specific error analysis', name: 'wellbeing-mapper-debug');
           print('🍎 iOS-specific error details:');
           print('🍎 Platform: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}');
           print('🍎 Proxy URL: $_proxyServerUrl');
@@ -609,6 +647,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
               errorMessage.contains('operation timed out') ||
               errorMessage.contains('network connection lost') ||
               errorMessage.contains('the request timed out')) {
+            developer.log('🚨 [PROXY] iOS network issue detected: $errorMessage', name: 'wellbeing-mapper-debug');
             print('🍎 iOS-specific network issue detected: $errorMessage');
             if (attempt == maxRetries) {
               print('🍎 iOS network troubleshooting:');
@@ -624,6 +663,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         if (e.toString().contains('certificate') || 
             e.toString().contains('handshake') ||
             e.toString().contains('format')) {
+          developer.log('🚨 [PROXY] Permanent error - not retrying', name: 'wellbeing-mapper-debug');
           print('🚫 Permanent error detected - not retrying');
           return false;
         }
@@ -635,12 +675,14 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         final baseDelay = initialDelay.inSeconds * (1 << (attempt - 1)); // 2^(attempt-1)
         final jitter = (DateTime.now().millisecondsSinceEpoch % 2000) / 1000; // 0-2 seconds
         final delay = Duration(milliseconds: ((baseDelay + jitter) * 1000).round());
+        developer.log('🚨 [PROXY] Waiting ${delay.inSeconds}.${(delay.inMilliseconds % 1000).toString().padLeft(3, '0')}s before retry', name: 'wellbeing-mapper-debug');
         print('⏳ Waiting ${delay.inSeconds}.${(delay.inMilliseconds % 1000).toString().padLeft(3, '0')}s before retry (exponential backoff)...');
         await Future.delayed(delay);
       }
     }
     
     // All attempts failed
+    developer.log('🚨 [PROXY] ALL ATTEMPTS FAILED after $maxRetries retries', name: 'wellbeing-mapper-debug');
     print('💀 All $maxRetries attempts failed - marking as failed for later retry');
     return false;
   }
