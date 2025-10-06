@@ -241,9 +241,9 @@ class NotificationService {
         // If navigation is not available, set a pending prompt flag
         _setPendingSurveyPrompt();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('[NotificationService] Error in notification tap handler: $e');
-      print('[NotificationService] Stack trace: ${StackTrace.current}');
+      print('[NotificationService] Stack trace: $stackTrace');
       // Fallback: set pending prompt
       _setPendingSurveyPrompt();
     }
