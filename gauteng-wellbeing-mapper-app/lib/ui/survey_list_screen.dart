@@ -52,19 +52,23 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
       if (hasInitial && !initialSynced) totalUnsynced++;
       if (consentForm != null && !consentSynced) totalUnsynced++;
       
-      setState(() {
-        _surveys = surveys;
-        _hasInitialSurvey = hasInitial;
-        _initialSurveySynced = initialSynced;
-        _hasConsentForm = consentForm != null;
-        _consentFormSynced = consentSynced;
-        _unsyncedCount = totalUnsynced;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _surveys = surveys;
+          _hasInitialSurvey = hasInitial;
+          _initialSurveySynced = initialSynced;
+          _hasConsentForm = consentForm != null;
+          _consentFormSynced = consentSynced;
+          _unsyncedCount = totalUnsynced;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
       _showErrorDialog('Failed to load surveys: $e');
     }
   }
@@ -377,7 +381,7 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
   }
 
   Future<void> _performManualSync() async {
-    if (_isSyncing) return;
+    if (_isSyncing || !mounted) return;
 
     setState(() {
       _isSyncing = true;
@@ -403,9 +407,11 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
       GlobalNotificationService.showError('Sync failed: $e');
       
     } finally {
-      setState(() {
-        _isSyncing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
     }
   }
 
