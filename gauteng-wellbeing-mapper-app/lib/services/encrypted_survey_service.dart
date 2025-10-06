@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -46,15 +47,41 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
 
   /// Sync all pending surveys as encrypted JSON blobs
   static Future<void> syncPendingSurveys() async {
+    // Use multiple logging methods to ensure visibility in iOS production
+    print('🚨 [BASIC] syncPendingSurveys METHOD ENTRY');
+    debugPrint('🚨 [DEBUG] syncPendingSurveys METHOD ENTRY');
+    print('🚨 [BASIC] Flutter kDebugMode: ${kDebugMode}');
+    print('🚨 [BASIC] Platform: ${Platform.operatingSystem}');
+    print('🚨 [BASIC] About to call developer.log');
     developer.log('🚨 [MAIN] syncPendingSurveys called', name: 'wellbeing-mapper-debug');
+    print('🚨 [BASIC] developer.log call completed');
     
     try {
+      print('🚨 [BASIC] Entered try block');
+      debugPrint('🚨 [DEBUG] Entered try block');
+      if (Platform.isIOS) {
+        // iOS-specific logging that should show in production
+        print('🍎 [iOS] Starting sync on iOS platform');
+      }
       developer.log('🚨 [MAIN] Entered try block', name: 'wellbeing-mapper-debug');
       print('🔐 Starting encrypted survey sync...');
       
+      // Test RSA functionality early
+      try {
+        print('🚨 [BASIC] Testing RSA encryption with dummy data...');
+        final testResult = await RSA.encryptPKCS1v15('test', _publicKey);
+        print('🚨 [BASIC] RSA test successful, result length: ${testResult.length}');
+      } catch (rsaTestError) {
+        print('🚨 [BASIC] RSA test failed: $rsaTestError');
+        print('🚨 [BASIC] RSA test error type: ${rsaTestError.runtimeType}');
+        throw Exception('RSA encryption not working: $rsaTestError');
+      }
+      
       // CRITICAL: Check app mode before any upload operations
+      print('🚨 [BASIC] About to check app mode');
       developer.log('🚨 [MAIN] About to check app mode', name: 'wellbeing-mapper-debug');
       final currentMode = await AppModeService.getCurrentMode();
+      print('🚨 [BASIC] Successfully got app mode: $currentMode');
       developer.log('🚨 [MAIN] Successfully got app mode: $currentMode', name: 'wellbeing-mapper-debug');
       print('[EncryptedSurveyService] Current app mode: ${currentMode.toString()}');
       print('[EncryptedSurveyService] App flavor: ${AppModeService.appFlavor}');
@@ -201,12 +228,30 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       }
       
     } catch (e, stackTrace) {
+      // Enhanced error reporting for production debugging
+      final errorDetails = {
+        'error': e.toString(),
+        'errorType': e.runtimeType.toString(),
+        'platform': Platform.operatingSystem,
+        'kDebugMode': kDebugMode,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      
       developer.log('❌ [MAIN-CRITICAL] Error in syncPendingSurveys: $e', name: 'wellbeing-mapper-debug', error: e);
       developer.log('❌ [MAIN-CRITICAL] Error type: ${e.runtimeType}', name: 'wellbeing-mapper-debug');
+      developer.log('❌ [MAIN-CRITICAL] Error details: $errorDetails', name: 'wellbeing-mapper-debug');
       // Use the caught stackTrace instead of StackTrace.current to avoid null issues
       developer.log('❌ [MAIN-CRITICAL] Stack trace: $stackTrace', name: 'wellbeing-mapper-debug', stackTrace: stackTrace);
+      
       print('[EncryptedSurveyService] ❌ Error in sync: $e');
+      print('[EncryptedSurveyService] ❌ Error details: $errorDetails');
       print('[EncryptedSurveyService] ❌ Stack trace: $stackTrace');
+      
+      // For production debugging, include more details in the exception message
+      if (!kDebugMode) {
+        throw Exception('PRODUCTION ERROR - ${e.runtimeType}: $e | Platform: ${Platform.operatingSystem} | Time: ${DateTime.now().toIso8601String()}');
+      }
+      
       rethrow; // Re-throw so the calling code can handle it
     }
   }
@@ -486,7 +531,20 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       // Encrypt AES key with RSA (use base64 for safe string transmission)
       final aesKeyBase64 = base64.encode(aesKey);
       print('🔐 Starting RSA encryption of AES key...');
-      final encryptedKey = await RSA.encryptPKCS1v15(aesKeyBase64, _publicKey);
+      print('🔐 AES key base64 length: ${aesKeyBase64.length}');
+      print('🔐 Public key length: ${_publicKey.length}');
+      
+      String encryptedKey;
+      try {
+        print('🔐 About to call RSA.encryptPKCS1v15...');
+        encryptedKey = await RSA.encryptPKCS1v15(aesKeyBase64, _publicKey);
+        print('🔐 RSA.encryptPKCS1v15 completed successfully');
+      } catch (rsaError) {
+        print('❌ RSA encryption failed: $rsaError');
+        print('❌ RSA error type: ${rsaError.runtimeType}');
+        print('❌ AES key base64 was: ${aesKeyBase64.substring(0, 20)}...');
+        rethrow;
+      }
       
       if (encryptedKey.isEmpty) {
         throw Exception('RSA encryption failed: encryptedKey is empty');
@@ -754,6 +812,17 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
     } catch (e) {
       print('❌ Critical error in enhanced survey sync: $e');
+    }
+  }
+
+  /// Test RSA encryption functionality - for debugging
+  static Future<String> testRSAEncryption() async {
+    try {
+      final testData = 'test-encryption-${DateTime.now().millisecondsSinceEpoch}';
+      final result = await RSA.encryptPKCS1v15(testData, _publicKey);
+      return 'RSA Test SUCCESS: Input length ${testData.length}, Output length ${result.length}';
+    } catch (e) {
+      return 'RSA Test FAILED: ${e.runtimeType} - $e';
     }
   }
 

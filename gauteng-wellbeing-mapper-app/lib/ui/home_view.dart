@@ -1238,8 +1238,35 @@ class HomeViewState extends State<HomeView>
   @override
   void dispose() {
     _surveyPromptTimer?.cancel();
-    // Remove background geolocation listeners to prevent setState on disposed widget
-    bg.BackgroundGeolocation.removeListeners();
+    
+    // The primary protection is the `mounted` checks in all event handlers
+    // As an additional safeguard, try to remove listeners if the API supports it
+    try {
+      // Try the newer API first
+      bg.BackgroundGeolocation.removeListeners();
+      print('[HomeView] Removed all background geolocation listeners');
+    } catch (e) {
+      // If that doesn't work, try individual removal
+      try {
+        bg.BackgroundGeolocation.removeListener(_onLocation);
+        bg.BackgroundGeolocation.removeListener(_onMotionChange);
+        bg.BackgroundGeolocation.removeListener(_onActivityChange);
+        bg.BackgroundGeolocation.removeListener(_onProviderChange);
+        bg.BackgroundGeolocation.removeListener(_onHttp);
+        bg.BackgroundGeolocation.removeListener(_onConnectivityChange);
+        bg.BackgroundGeolocation.removeListener(_onHeartbeat);
+        bg.BackgroundGeolocation.removeListener(_onGeofence);
+        bg.BackgroundGeolocation.removeListener(_onSchedule);
+        bg.BackgroundGeolocation.removeListener(_onPowerSaveChange);
+        bg.BackgroundGeolocation.removeListener(_onEnabledChange);
+        bg.BackgroundGeolocation.removeListener(_onNotificationAction);
+        print('[HomeView] Removed individual background geolocation listeners');
+      } catch (e2) {
+        print('[HomeView] Warning: Could not remove background geolocation listeners: $e2');
+        print('[HomeView] Relying on mounted checks in event handlers for protection');
+      }
+    }
+    
     super.dispose();
   }
 }
