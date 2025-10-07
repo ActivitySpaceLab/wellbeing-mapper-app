@@ -287,20 +287,20 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
 
             SizedBox(height: 16),
 
-            // Map Display Setting
-            _buildLimitedSetting(
-              title: 'Map Display Period',
-              subtitle: 'How many days of data to show on the map',
-              isLimited: _mapDisplayLimited,
-              onLimitedChanged: _updateMapDisplayLimited,
-              sliderValue: _mapDisplayDays.toDouble(),
-              sliderMin: 1.0,
-              sliderMax: 30.0,
-              onSliderChanged: _updateMapDisplayDays,
-              unit: 'days',
-            ),
+            // Map Display Setting - HIDDEN: Feature disabled, set to unlimited
+            // _buildLimitedSetting(
+            //   title: 'Map Display Period',
+            //   subtitle: 'How many days of data to show on the map',
+            //   isLimited: _mapDisplayLimited,
+            //   onLimitedChanged: _updateMapDisplayLimited,
+            //   sliderValue: _mapDisplayDays.toDouble(),
+            //   sliderMin: 1.0,
+            //   sliderMax: 30.0,
+            //   onSliderChanged: _updateMapDisplayDays,
+            //   unit: 'days',
+            // ),
 
-            SizedBox(height: 16),
+            // SizedBox(height: 16),
 
             // Max Map Markers Setting
             Card(

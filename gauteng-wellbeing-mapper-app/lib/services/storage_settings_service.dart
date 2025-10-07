@@ -6,7 +6,7 @@ import '../db/survey_database.dart';
 class StorageSettingsService {
   // Default values - balanced for research usage and performance
   static const int DEFAULT_LOCATION_RETENTION_DAYS = 60; // 2 months for research
-  static const int DEFAULT_MAP_DISPLAY_DAYS = 21; // 3 weeks display for good overview
+  static const int DEFAULT_MAP_DISPLAY_DAYS = UNLIMITED_VALUE; // Feature effectively disabled
   static const int DEFAULT_MAX_MAP_MARKERS = 2000; // Optimized for three-layer system
   static const bool DEFAULT_AUTO_CLEANUP_ENABLED = true; // Re-enabled with fix
   static const int MINIMUM_LOCATION_RETENTION_DAYS = 14; // Minimum for survey requirements
