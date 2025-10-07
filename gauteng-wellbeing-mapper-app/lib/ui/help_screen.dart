@@ -6,7 +6,7 @@ class HelpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Help & Guide'),
+        title: Text('Help'),
         backgroundColor: SouthAfricanTheme.primaryBlue,
         foregroundColor: SouthAfricanTheme.pureWhite,
       ),
@@ -24,8 +24,6 @@ class HelpScreen extends StatelessWidget {
             _buildMenuOptionsSection(),
             SizedBox(height: 20),
             _buildAppModesSection(),
-            SizedBox(height: 20),
-            _buildSurveySection(),
             SizedBox(height: 20),
             _buildPrivacySection(),
             SizedBox(height: 20),
@@ -61,7 +59,7 @@ class HelpScreen extends StatelessWidget {
             ),
             SizedBox(height: 12),
             Text(
-              'Wellbeing Mapper helps people learn more about the ways in which mental wellbeing depends on environmental conditions. You can use it privately to study your own movements and wellbeing, experience research features safely with app testing mode, or participate in the Planet4Health study on mental wellbeing if you live in Gauteng, South Africa.',
+              'Wellbeing Mapper helps people learn more about the ways in which mental wellbeing depends on environmental conditions. You can use it privately to study your own movements and wellbeing. If you have been selected for the Planet4Health study on mental wellbeing in Gauteng, South Africa, and given a participant code, then you can use the app to participate in that study.',
               style: TextStyle(fontSize: 16, height: 1.4),
             ),
           ],
@@ -122,19 +120,17 @@ class HelpScreen extends StatelessWidget {
             SizedBox(height: 16),
             
             // Survey button
+            // Survey button
             _buildFeatureItem(
               Icons.add_circle,
               'Survey Button (Blue Oval)',
               'The floating blue button in the bottom-right:',
               [
-                '• Tap anytime to take a wellbeing survey',
-                '• Available to all users (private and research mode)',
-                '• Surveys help track how you feel in different places',
-                '• Takes about 2-3 minutes to complete'
+                '• In private mode: triggers a private happiness survey',
+                '• In research mode: triggers the biweekly wellbeing survey',
+                '• Available to all users in both modes'
               ],
-            ),
-            
-            SizedBox(height: 16),
+            ),            SizedBox(height: 16),
             
             // Menu button
             _buildFeatureItem(
@@ -258,27 +254,21 @@ class HelpScreen extends StatelessWidget {
             SizedBox(height: 8),
             
             _buildMenuOptionItem(
-              Icons.share,
-              'Export Data',
-              'Export all your location and survey data as a JSON file. This creates a backup you can save or share.',
-            ),
-            
-            _buildMenuOptionItem(
               Icons.settings,
               'App Mode',
-              'Switch between Private Mode (data stays on your phone), App Testing Mode (safely experience research features), and Research Mode (contribute to studies with encrypted data sharing).',
+              'Switch between Private Mode (data stays on your phone) and Research Mode (if you have been selected for the Planet4Health mental wellbeing study in Gauteng, South Africa).',
             ),
             
             _buildMenuOptionItem(
               Icons.help,
-              'Help & Guide',
+              'Help',
               'Opens this help screen with detailed instructions for using the app.',
             ),
             
             _buildMenuOptionItem(
               Icons.web,
               'Visit Project Website',
-              'Opens the Planet4Health project website to learn more about the mental wellbeing research study.',
+              'Opens the Planet4Health project website to learn more about the mental wellbeing study.',
             ),
             
             _buildMenuOptionItem(
@@ -290,7 +280,7 @@ class HelpScreen extends StatelessWidget {
             SizedBox(height: 16),
             
             Text(
-              'App Testing & Research Mode:',
+              'Research Mode:',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: SouthAfricanTheme.researchMode),
             ),
             SizedBox(height: 8),
@@ -298,13 +288,13 @@ class HelpScreen extends StatelessWidget {
             _buildMenuOptionItem(
               Icons.assignment,
               'Initial Survey',
-              'Complete a one-time survey when you first join the research study (available in app testing mode for practice).',
+              'Complete a one-time survey when you first join the research study.',
             ),
             
             _buildMenuOptionItem(
               Icons.assignment_turned_in,
               'Wellbeing Survey',
-              'Take the bi-weekly wellbeing check-in survey. You\'ll also be reminded automatically in research mode.',
+              'Take the bi-weekly wellbeing check-in survey. You\'ll also be reminded with notifications.',
             ),
             
             _buildMenuOptionItem(
@@ -322,7 +312,7 @@ class HelpScreen extends StatelessWidget {
             _buildMenuOptionItem(
               Icons.cloud_upload,
               'Research Data Upload',
-              'Manually upload your encrypted data to research servers (research mode only - app testing mode keeps data local).',
+              'Manually upload your encrypted data to research servers (research mode only).',
             ),
           ],
         ),
@@ -381,49 +371,9 @@ class HelpScreen extends StatelessWidget {
                   Text(
                     '• All data stays on your phone only\n'
                     '• No automatic data sharing with researchers\n'
-                    '• You control all data export and sharing\n'
+                    '• You control all data sharing and privacy\n'
                     '• Perfect for personal movement tracking\n'
                     '• Can still take wellbeing surveys for yourself',
-                    style: TextStyle(height: 1.4),
-                  ),
-                ],
-              ),
-            ),
-            
-            SizedBox(height: 12),
-            
-            // App Testing Mode
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.science, color: Colors.orange),
-                      SizedBox(width: 8),
-                      Text(
-                        'App Testing Mode 🧪',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.orange.shade800,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    '• Experience the full research consent process safely\n'
-                    '• Practice taking surveys without submitting real data\n'
-                    '• Test all app features in a safe environment\n'
-                    '• Understand what research participation involves\n'
-                    '• No data is sent to researchers (stays local only)',
                     style: TextStyle(height: 1.4),
                   ),
                 ],
@@ -484,71 +434,12 @@ class HelpScreen extends StatelessWidget {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'You can switch between Private and App Testing modes anytime. App Testing mode lets you safely experience research features without submitting real data.',
+                      'You can switch between Private and Research modes. Research mode allows you to contribute to the Planet4Health study with encrypted data sharing.',
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSurveySection() {
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.quiz, color: SouthAfricanTheme.accentYellow, size: 24),
-                SizedBox(width: 8),
-                Text(
-                  'About the Surveys',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Wellbeing surveys help researchers understand how your environment affects your mood, stress, and overall wellbeing.',
-              style: TextStyle(fontSize: 16, height: 1.4),
-            ),
-            SizedBox(height: 12),
-            
-            _buildFeatureItem(
-              Icons.schedule,
-              'When to Take Surveys',
-              '',
-              [
-                '• Anytime using blue button on main screen',
-                '• Research participants get reminders every 2 weeks',
-                '• Best to take when you have 2-3 minutes',
-                '• Try to answer honestly based on how you feel'
-              ],
-            ),
-            
-            SizedBox(height: 12),
-            
-            _buildFeatureItem(
-              Icons.psychology,
-              'What Surveys Ask',
-              '',
-              [
-                '• How you\'re feeling emotionally',
-                '• Your stress and anxiety levels',
-                '• Safety and comfort in your current location',
-                '• Social connections and community feeling',
-                '• Physical health and energy levels'
-              ],
             ),
           ],
         ),
@@ -599,7 +490,6 @@ class HelpScreen extends StatelessWidget {
               [
                 '• You can stop participating anytime',
                 '• Delete your data from the study',
-                '• Export your data for personal use',
                 '• Contact researchers with privacy concerns'
               ],
             ),
@@ -668,16 +558,6 @@ class HelpScreen extends StatelessWidget {
                 '• Open "Survey Notifications" in the menu',
                 '• Ensure the app has permission to send notifications',
                 '• Try triggering a test notification'
-              ],
-            ),
-            
-            _buildTroubleshootItem(
-              'App Testing Mode Questions?',
-              [
-                '• App Testing mode is completely safe - no real data is submitted',
-                '• You can experience the full research workflow without commitment',
-                '• All testing data stays on your phone only',
-                '• Switch back to Private mode anytime through the menu'
               ],
             ),
           ],
