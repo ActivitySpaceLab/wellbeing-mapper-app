@@ -184,7 +184,7 @@ class MapViewState extends State<MapView>
             print('[map_view] 🔄 Skipping duplicate location: ${currentPoint.latitude}, ${currentPoint.longitude}');
             continue;
           }
-          mostRecentLocation = currentPoint;
+          mostRecentLocation ??= currentPoint;
           previousPoint = currentPoint;
           
           // Create CircleMarker for historical location (add to main _locations list like FBG)
