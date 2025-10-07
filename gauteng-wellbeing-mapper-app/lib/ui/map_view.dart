@@ -28,7 +28,6 @@ class MapViewState extends State<MapView>
   List<CircleMarker> _currentPosition = [];
   List<LatLng> _polyline = [];
   List<CircleMarker> _locations = [];
-  List<Polyline> _motionChangePolylines = [];
   
   List<CircleMarker> _accuracyCircles = [];
 
@@ -67,7 +66,6 @@ class MapViewState extends State<MapView>
     // Skip background geolocation setup on web platform
     if (!kIsWeb) {
       bg.BackgroundGeolocation.onLocation(_onLocation);
-      bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
       bg.BackgroundGeolocation.onEnabledChange(_onEnabledChange);
     } else {
       print('[map_view] Web platform detected - skipping background geolocation listeners');
@@ -136,7 +134,6 @@ class MapViewState extends State<MapView>
       _historicalPolyline.clear();
       _locations.clear();
       _polyline.clear();
-      _motionChangePolylines.clear();
       _accuracyCircles.clear();
       
       // Force a setState to clear the map
@@ -260,30 +257,7 @@ class MapViewState extends State<MapView>
     if (!enabled) {
 //      _locations.clear();
 //      _polyline.clear();
-//      _motionChangePolylines.clear();
       //     _stationaryMarker.clear();
-    }
-  }
-
-  void _onMotionChange(bg.Location location) async {
-    print('[MapView] 🚶 Motion change detected: ${location.isMoving ? 'moving' : 'stationary'}');
-    
-    try {
-      // Process motion changes safely without complex flutter_map operations
-      if (location.isMoving) {
-        print('[MapView] 🚶 User started moving');
-        // Could add motion-specific markers here if needed
-      } else {
-        print('[MapView] 🛑 User became stationary');
-        // Could add stationary markers here if needed
-      }
-      
-      // Update the current location regardless of motion state
-      _onLocation(location);
-      
-    } catch (error) {
-      print('[MapView] ❌ Error processing motion change: $error');
-      // Don't crash the app, just log and continue
     }
   }
 
@@ -487,9 +461,6 @@ class MapViewState extends State<MapView>
             // Remove confusing big red stationary radius circles
             // if (_stationaryMarker.isNotEmpty)
             //   CircleLayer(circles: _stationaryMarker),
-            // Motion change polylines (keep these for debugging motion changes)
-            if (_motionChangePolylines.isNotEmpty)
-              PolylineLayer(polylines: _motionChangePolylines),
             // Current position (always shown) - single clean marker on top with prominent styling
             if (_currentPosition.isNotEmpty) CircleLayer(circles: _currentPosition),
           ],
