@@ -467,7 +467,7 @@ class HomeViewState extends State<HomeView>
             geofenceProximityRadius: 1000, // FBG default (1km)
             
             // Let FBG handle elasticity with defaults
-            disableElasticity: false, // FBG default - allows speed-based distance adjustment
+            disableElasticity: true,  // Change from false to true for consistent tracking
             
             // Keep essential Android optimizations
             enableTimestampMeta: true, // Helpful for debugging timing issues
