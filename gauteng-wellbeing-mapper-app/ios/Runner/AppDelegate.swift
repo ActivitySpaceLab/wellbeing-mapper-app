@@ -1,8 +1,6 @@
 import UIKit
 import Flutter
 import CoreLocation
-// Remove the RSABridge import since we won't need it anymore
-// import RSABridge
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, CLLocationManagerDelegate {
@@ -19,9 +17,6 @@ import CoreLocation
     }
     
     GeneratedPluginRegistrant.register(with: self)
-    
-    // Remove the keepRSASymbols() call since we'll handle this at the linker level
-    // keepRSASymbols()
     
     // Set up location method channel
     let controller = window?.rootViewController as! FlutterViewController
@@ -162,7 +157,5 @@ import CoreLocation
   override func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
     completionHandler()
   }
-  
-     // Removed the entire keepRSASymbols method since we won't need it
 
 }
