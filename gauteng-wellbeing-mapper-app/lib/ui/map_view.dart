@@ -26,7 +26,6 @@ class MapViewState extends State<MapView>
   }
 
   List<CircleMarker> _currentPosition = [];
-  List<LatLng> _polyline = [];
   List<CircleMarker> _locations = [];
   
   List<CircleMarker> _accuracyCircles = [];
@@ -112,12 +111,11 @@ class MapViewState extends State<MapView>
     }
     
     try {
-      print('[map_view] 🔄 Starting _displayStoredLocations - Current markers: ${_locations.length}, polyline points: ${_polyline.length}');
+      print('[map_view] 🔄 Starting _displayStoredLocations - Current markers: ${_locations.length}');
       
       // Clear existing markers before reloading to prevent duplicates
       print('[map_view] 🗑️ Clearing existing markers before reload');
       _locations.clear();
-      _polyline.clear();
       _accuracyCircles.clear();
       
       // Simple setState to clear the map
@@ -187,9 +185,6 @@ class MapViewState extends State<MapView>
             useRadiusInMeter: true,
           ));
           
-          // Add to polylines (legacy compatibility only - no visual polyline)
-          _polyline.add(currentPoint);
-          
           print('[map_view] ✅ Successfully added location point: ${currentPoint.latitude}, ${currentPoint.longitude}');
           displayedCount++;
         } catch (e) {
@@ -227,7 +222,7 @@ class MapViewState extends State<MapView>
         print('[map_view] 📍 Auto-center disabled - keeping current map position');
       }
       
-      print('[map_view] 🎯 Map refresh complete with ${_locations.length} location markers and ${_polyline.length} polyline points');
+      print('[map_view] 🎯 Map refresh complete with ${_locations.length} location markers');
       
     } catch (error) {
       print('[map_view] ❌ Error loading stored locations: $error');
@@ -274,12 +269,7 @@ class MapViewState extends State<MapView>
         }
       }
       
-      // Add to polyline for continuity (only if moving or significant distance)
-      if (location.isMoving || _polyline.isEmpty) {
-        _polyline.add(currentPoint);
-      }
-      
-      // Add a marker for the recorded location (like FBG example)
+      // Add a marker for the recorded location (semitransparent circle with accuracy radius)
       double radius = location.coords.accuracy.clamp(10.0, 200.0);
       _locations.add(CircleMarker(
         point: currentPoint,
@@ -317,10 +307,9 @@ class MapViewState extends State<MapView>
         print('[MapView] 📍 Auto-center disabled - not centering on real-time location');
       }
       
-      // ONLY setState for current position update (like FBG example)
-      setState(() {
-        // This only rebuilds the current position marker, not all location points
-      });
+      // CRITICAL FIX: NO setState() call here!
+      // Location markers are added to persistent list without triggering rebuilds
+      // This is the key to preventing redraw of existing markers
       
       print('[MapView] ✅ Successfully added location point, total: ${_locations.length}');
       
