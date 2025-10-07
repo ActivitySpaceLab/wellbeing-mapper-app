@@ -45,6 +45,9 @@ class MapViewState extends State<MapView>
   
   // Stream controller for session points to avoid setState() when adding session points
   final StreamController<List<CircleMarker>> _sessionPointsStream = StreamController<List<CircleMarker>>.broadcast();
+  
+  // Stream controller for historical points to avoid setState() rebuilds when loading historical data
+  final StreamController<List<CircleMarker>> _historicalPointsStream = StreamController<List<CircleMarker>>.broadcast();
 
   LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
   late MapController _mapController;
@@ -141,8 +144,8 @@ class MapViewState extends State<MapView>
       _sessionPoints.clear();
       _sessionPointsStream.add(List.from(_sessionPoints));
       
-      // Force a setState to clear the map
-      setState(() {});
+      // Clear historical points and notify stream (no setState needed!)
+      _historicalPointsStream.add(List.from(_historicalPoints));
       
       // Add a small delay to ensure clearing is visible
       await Future.delayed(Duration(milliseconds: 100));
@@ -153,9 +156,7 @@ class MapViewState extends State<MapView>
       
       if (filteredLocations.isEmpty) {
         print('[map_view] ⚠️ No location data found - user may not have tracking enabled or no movement yet');
-        setState(() {
-          // Trigger rebuild even with empty data to show clean map
-        });
+        // No setState needed - streams handle empty data
         return;
       }
       
@@ -225,6 +226,9 @@ class MapViewState extends State<MapView>
       
       print('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
       
+      // Update historical points via stream (no setState needed!)
+      _historicalPointsStream.add(List.from(_historicalPoints));
+      
       // Center map on the most recent location if auto-center is enabled
       if (_autoCenter && lastLocation != null) {
         try {
@@ -245,11 +249,6 @@ class MapViewState extends State<MapView>
       } else if (!_autoCenter) {
         print('[map_view] 📍 Auto-center disabled - keeping current map position');
       }
-      
-      // Force a map refresh to ensure polylines and markers are visible
-      setState(() {
-        // Trigger rebuild to ensure map elements are displayed
-      });
       
       print('[map_view] 🎯 Map refresh complete with ${_locations.length} location markers and ${_polyline.length} polyline points');
       
@@ -378,6 +377,7 @@ class MapViewState extends State<MapView>
   void dispose() {
     _currentPositionStream.close();
     _sessionPointsStream.close();
+    _historicalPointsStream.close();
     super.dispose();
   }
 
@@ -443,9 +443,17 @@ class MapViewState extends State<MapView>
                   ),
                 ),
               ),
-            // Historical points (static - only redrawn when historical data changes)
-            if (_historicalPoints.isNotEmpty) 
-              CircleLayer(circles: _historicalPoints),
+            // Historical points with StreamBuilder (completely independent updates)
+            StreamBuilder<List<CircleMarker>>(
+              stream: _historicalPointsStream.stream,
+              initialData: _historicalPoints,
+              builder: (context, snapshot) {
+                if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  return CircleLayer(circles: snapshot.data!);
+                }
+                return SizedBox.shrink();
+              },
+            ),
             
             // Session points with StreamBuilder (updates independently when session points are added)
             StreamBuilder<List<CircleMarker>>(
