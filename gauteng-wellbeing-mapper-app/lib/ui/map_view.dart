@@ -46,11 +46,6 @@ class MapViewState extends State<MapView>
   
   // Track current location for re-center functionality (stored in _currentPosition)
   bool _autoCenter = true; // Start with auto-center enabled
-  
-  // FIXED: Add throttling to prevent excessive redraws when stationary
-  Timer? _mapUpdateTimer;
-  bool _pendingMapUpdate = false;
-  static const Duration _mapUpdateThrottle = Duration(milliseconds: 1000); // Max 1 update per second
 
   @override
   void initState() {
@@ -343,9 +338,7 @@ class MapViewState extends State<MapView>
         print('[MapView] 📍 Auto-center disabled - not centering on real-time location');
       }
       
-      // FIXED: Throttled map updates to prevent flashing when stationary
-      _scheduleThrottledMapUpdate();
-      
+      // No setState needed - flutter_map automatically redraws changed layers
       print('[MapView] ✅ Successfully added real-time location point, total: ${_locations.length}');
       
     } catch (error) {
@@ -354,22 +347,6 @@ class MapViewState extends State<MapView>
     }
   }
 
-  // FIXED: Add throttled map updates to prevent flashing
-  void _scheduleThrottledMapUpdate() {
-    if (!_pendingMapUpdate) {
-      _pendingMapUpdate = true;
-      _mapUpdateTimer?.cancel();
-      _mapUpdateTimer = Timer(_mapUpdateThrottle, () {
-        if (mounted) {
-          setState(() {
-            // Trigger rebuild to show new location
-          });
-        }
-        _pendingMapUpdate = false;
-      });
-    }
-  }
-  
   // FIXED: Add distance calculation helper for location filtering
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
     const double earthRadius = 6371000; // Earth radius in meters
@@ -384,7 +361,6 @@ class MapViewState extends State<MapView>
   
   @override
   void dispose() {
-    _mapUpdateTimer?.cancel();
     super.dispose();
   }
 
