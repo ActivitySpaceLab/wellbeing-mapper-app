@@ -184,7 +184,7 @@ class MapViewState extends State<MapView>
             print('[map_view] 🔄 Skipping duplicate location: ${currentPoint.latitude}, ${currentPoint.longitude}');
             continue;
           }
-          mostRecentLocation ??= currentPoint;
+          mostRecentLocation = currentPoint;
           previousPoint = currentPoint;
           
           // Create CircleMarker for historical location (add to main _locations list like FBG)
@@ -211,14 +211,36 @@ class MapViewState extends State<MapView>
 
       final List<CircleMarker> orderedLocations = newLocations.reversed.toList();
 
+      void applyLatestMarker() {
+        final latestPoint = mostRecentLocation;
+        if (latestPoint != null) {
+          _currentPosition
+            ..clear()
+            ..add(
+              CircleMarker(
+                point: latestPoint,
+                color: Colors.blue,
+                borderColor: Colors.white,
+                borderStrokeWidth: 3.0,
+                radius: 8.0,
+                useRadiusInMeter: false,
+              ),
+            );
+        } else {
+          _currentPosition.clear();
+        }
+      }
+
       if (mounted) {
         setState(() {
           _locations = orderedLocations;
           _maxAccuracyMeters = maxAccuracy;
+          applyLatestMarker();
         });
       } else {
         _locations = orderedLocations;
         _maxAccuracyMeters = maxAccuracy;
+        applyLatestMarker();
       }
 
       // Center map on the most recent location (latest point) if auto-center is enabled
