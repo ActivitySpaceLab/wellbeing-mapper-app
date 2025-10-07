@@ -149,10 +149,10 @@ class MapViewState extends State<MapView>
         return;
       }
       
-      int displayedCount = 0;
-      LatLng? firstLocation;
-      LatLng? lastLocation;
-      final List<CircleMarker> newLocations = [];
+  int displayedCount = 0;
+  LatLng? mostRecentLocation;
+  LatLng? previousPoint;
+  final List<CircleMarker> newLocations = [];
       
       for (var thisLocation in filteredLocations) {
         try {
@@ -178,16 +178,14 @@ class MapViewState extends State<MapView>
             continue;
           }
           LatLng currentPoint = LatLng(lat, lon);
-          if (lastLocation != null &&
-              (currentPoint.latitude - lastLocation.latitude).abs() < 0.000001 &&
-              (currentPoint.longitude - lastLocation.longitude).abs() < 0.000001) {
+          if (previousPoint != null &&
+              (currentPoint.latitude - previousPoint.latitude).abs() < 0.000001 &&
+              (currentPoint.longitude - previousPoint.longitude).abs() < 0.000001) {
             print('[map_view] 🔄 Skipping duplicate location: ${currentPoint.latitude}, ${currentPoint.longitude}');
             continue;
           }
-          if (firstLocation == null) {
-            firstLocation = currentPoint;
-          }
-          lastLocation = currentPoint;
+          mostRecentLocation ??= currentPoint;
+          previousPoint = currentPoint;
           
           // Create CircleMarker for historical location (add to main _locations list like FBG)
           double radius = accuracy.clamp(10.0, 200.0);
@@ -210,35 +208,33 @@ class MapViewState extends State<MapView>
       }
       
       print('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
-      
+
+      final List<CircleMarker> orderedLocations = newLocations.reversed.toList();
+
       if (mounted) {
         setState(() {
-          _locations = newLocations;
+          _locations = orderedLocations;
           _maxAccuracyMeters = maxAccuracy;
         });
       } else {
-        _locations = newLocations;
+        _locations = orderedLocations;
         _maxAccuracyMeters = maxAccuracy;
       }
-      
-      // Center map on the most recent location if auto-center is enabled
-      if (_autoCenter && lastLocation != null) {
+
+      // Center map on the most recent location (latest point) if auto-center is enabled
+      if (_autoCenter) {
+        LatLng? target = mostRecentLocation ?? (orderedLocations.isNotEmpty ? orderedLocations.last.point : null);
+        target ??= _locations.isNotEmpty ? _locations.last.point : null;
+        target ??= _center;
+
         try {
-          print('[map_view] 📍 Auto-centering map on most recent location: ${lastLocation.latitude}, ${lastLocation.longitude}');
+          print('[map_view] 📍 Auto-centering map on target: ${target.latitude}, ${target.longitude}');
           double zoom = _mapOptions.initialZoom;
-          _mapController.move(lastLocation, zoom);
+          _mapController.move(target, zoom);
         } catch (e) {
-          print('[map_view] ❌ Error centering map on last location: $e');
+          print('[map_view] ❌ Error centering map on target location: $e');
         }
-      } else if (_autoCenter && firstLocation != null) {
-        try {
-          print('[map_view] 📍 Auto-centering map on first available location: ${firstLocation.latitude}, ${firstLocation.longitude}');
-          double zoom = _mapOptions.initialZoom;
-          _mapController.move(firstLocation, zoom);
-        } catch (e) {
-          print('[map_view] ❌ Error centering map on first location: $e');
-        }
-      } else if (!_autoCenter) {
+      } else {
         print('[map_view] 📍 Auto-center disabled - keeping current map position');
       }
       
@@ -454,13 +450,13 @@ class MapViewState extends State<MapView>
                       centerPoint = _locations.last.point;
                     }
                     
-                    if (centerPoint != null) {
-                      try {
-                        _mapController.move(centerPoint, _mapOptions.initialZoom);
-                        print('[MapView] 🎯 Immediate centering on enabling auto-center');
-                      } catch (e) {
-                        print('[MapView] Error centering map: $e');
-                      }
+                    centerPoint ??= _center;
+
+                    try {
+                      _mapController.move(centerPoint, _mapOptions.initialZoom);
+                      print('[MapView] 🎯 Immediate centering on enabling auto-center');
+                    } catch (e) {
+                      print('[MapView] Error centering map: $e');
                     }
                   }
                   
