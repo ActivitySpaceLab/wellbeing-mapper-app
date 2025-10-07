@@ -258,7 +258,7 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Storage Settings'),
+          title: Text('Settings'),
         ),
         body: Center(
           child: CircularProgressIndicator(),
@@ -268,7 +268,7 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Storage Settings'),
+        title: Text('Settings'),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
@@ -276,12 +276,12 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Data Storage Management',
+              'Settings Overview',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             SizedBox(height: 8),
             Text(
-              'Configure how long location data is stored and displayed in the app.',
+              'Adjust data retention, map marker limits, and accuracy preferences.',
               style: TextStyle(color: Colors.grey[600]),
             ),
             SizedBox(height: 24),

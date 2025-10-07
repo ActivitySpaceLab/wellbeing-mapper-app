@@ -228,9 +228,9 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
               ),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.storage),
-                  title: Text("Storage Settings"),
-                  subtitle: Text("Manage location data storage"),
+                  leading: const Icon(Icons.tune),
+                  title: Text("Settings"),
+                  subtitle: Text("Manage storage and map display"),
                   onTap: () {
                     Navigator.of(context).pushNamed('/storage_settings');
                   },

@@ -10,7 +10,7 @@ class StorageSettingsService {
   static const int DEFAULT_MAX_MAP_MARKERS = 2000; // Optimized for three-layer system
   static const double DEFAULT_MAP_ERROR_THRESHOLD_METERS = 500.0; // Filter out extremely inaccurate fixes by default
   static const double MIN_MAP_ERROR_THRESHOLD_METERS = 10.0;
-  static const double MAX_MAP_ERROR_THRESHOLD_METERS = 1000.0;
+  static const double MAX_MAP_ERROR_THRESHOLD_METERS = 500.0; // Matches storage filter threshold
   static const bool DEFAULT_AUTO_CLEANUP_ENABLED = true; // Re-enabled with fix
   static const int MINIMUM_LOCATION_RETENTION_DAYS = 14; // Minimum for survey requirements
   

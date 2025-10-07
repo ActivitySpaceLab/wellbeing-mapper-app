@@ -23,7 +23,7 @@ class HelpScreen extends StatelessWidget {
             SizedBox(height: 20),
             _buildMenuOptionsSection(),
             SizedBox(height: 20),
-            _buildStorageSettingsSection(),
+            _buildSettingsSection(),
             SizedBox(height: 20),
             _buildAppModesSection(),
             SizedBox(height: 20),
@@ -260,6 +260,12 @@ class HelpScreen extends StatelessWidget {
               'App Mode',
               'Switch between Private Mode (data stays on your phone) and Research Mode (if you have been selected for the Planet4Health mental wellbeing study in Gauteng, South Africa).',
             ),
+
+            _buildMenuOptionItem(
+              Icons.tune,
+              'Settings',
+              'Adjust data retention, map marker limits, and accuracy thresholds. See the Settings section below for more details.',
+            ),
             
             _buildMenuOptionItem(
               Icons.help,
@@ -316,7 +322,7 @@ class HelpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStorageSettingsSection() {
+  Widget _buildSettingsSection() {
     return Card(
       child: Padding(
         padding: EdgeInsets.all(16.0),
@@ -325,10 +331,10 @@ class HelpScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.storage, color: SouthAfricanTheme.primaryBlue, size: 28),
+                Icon(Icons.tune, color: SouthAfricanTheme.primaryBlue, size: 28),
                 SizedBox(width: 12),
                 Text(
-                  'Storage Settings',
+                  'Settings',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -339,7 +345,7 @@ class HelpScreen extends StatelessWidget {
             ),
             SizedBox(height: 16),
             Text(
-              'Manage how your location data is stored and displayed on your device.',
+              'Manage how your location data is kept on the device and how it appears on the map.',
               style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 16),

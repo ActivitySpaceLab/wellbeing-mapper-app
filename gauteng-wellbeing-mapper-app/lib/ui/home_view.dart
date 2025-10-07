@@ -971,10 +971,10 @@ class HomeViewState extends State<HomeView>
       // PRIORITY 1: Track continuity over precision
       // Only reject truly terrible accuracy readings that would be misleading
       
-      // FILTER 1: Only reject extremely poor accuracy readings (>500m) 
+      // FILTER 1: Only reject extremely poor accuracy readings (>configured max)
       // This is much more lenient than before to avoid gaps
-      if (location.coords.accuracy > 500.0) {
-        print('[LocationFilter] 🚫 REJECTED: Extremely poor accuracy ${location.coords.accuracy.toStringAsFixed(1)}m (threshold: 500m)');
+      if (location.coords.accuracy > StorageSettingsService.MAX_MAP_ERROR_THRESHOLD_METERS) {
+        print('[LocationFilter] 🚫 REJECTED: Extremely poor accuracy ${location.coords.accuracy.toStringAsFixed(1)}m (threshold: ${StorageSettingsService.MAX_MAP_ERROR_THRESHOLD_METERS.toStringAsFixed(0)}m)');
         return;
       }
       
