@@ -40,6 +40,12 @@ class MapViewState extends State<MapView>
   List<CircleMarker> _sessionPoints = [];
   List<LatLng> _sessionPolyline = [];
 
+  // Stream controller for current position updates to avoid setState() on location changes
+  final StreamController<List<CircleMarker>> _currentPositionStream = StreamController<List<CircleMarker>>.broadcast();
+  
+  // Stream controller for session points to avoid setState() when adding session points
+  final StreamController<List<CircleMarker>> _sessionPointsStream = StreamController<List<CircleMarker>>.broadcast();
+
   LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
   late MapController _mapController;
   late MapOptions _mapOptions;
@@ -130,6 +136,10 @@ class MapViewState extends State<MapView>
       _locations.clear();
       _polyline.clear();
       _accuracyCircles.clear();
+      
+      // Clear session points and notify stream
+      _sessionPoints.clear();
+      _sessionPointsStream.add(List.from(_sessionPoints));
       
       // Force a setState to clear the map
       setState(() {});
@@ -302,6 +312,9 @@ class MapViewState extends State<MapView>
           useRadiusInMeter: true,
         ));
         _sessionPolyline.add(previousPoint);
+        
+        // Update session points via stream (no setState!)
+        _sessionPointsStream.add(List.from(_sessionPoints));
       }
       
       // Add to polyline for continuity (only if moving or significant distance)
@@ -324,6 +337,9 @@ class MapViewState extends State<MapView>
         ),
       );
       
+      // Send current position update through stream (no setState needed!)
+      _currentPositionStream.add(List.from(_currentPosition));
+      
       // Auto-center map if enabled (without setState to avoid full rebuild)
       if (_autoCenter) {
         try {
@@ -338,15 +354,7 @@ class MapViewState extends State<MapView>
         print('[MapView] 📍 Auto-center disabled - not centering on real-time location');
       }
       
-      // setState() is required for flutter_map to display the new location markers
-      if (mounted) {
-        setState(() {
-          // The lists have already been modified above
-          // This setState just triggers the rebuild to show new markers
-        });
-      }
-      
-      print('[MapView] ✅ Successfully added real-time location point, total: ${_locations.length}');
+      print('[MapView] ✅ Successfully added real-time location point via stream, total: ${_locations.length}');
       
     } catch (error) {
       print('[MapView] ❌ Error processing real-time location: $error');
@@ -368,6 +376,8 @@ class MapViewState extends State<MapView>
   
   @override
   void dispose() {
+    _currentPositionStream.close();
+    _sessionPointsStream.close();
     super.dispose();
   }
 
@@ -433,19 +443,33 @@ class MapViewState extends State<MapView>
                   ),
                 ),
               ),
-            // Historical points (loaded when map opened, before current session)
+            // Historical points (static - only redrawn when historical data changes)
             if (_historicalPoints.isNotEmpty) 
               CircleLayer(circles: _historicalPoints),
             
-            // Session points (collected since map was opened, excluding current)
-            if (_sessionPoints.isNotEmpty) 
-              CircleLayer(circles: _sessionPoints),
+            // Session points with StreamBuilder (updates independently when session points are added)
+            StreamBuilder<List<CircleMarker>>(
+              stream: _sessionPointsStream.stream,
+              initialData: _sessionPoints,
+              builder: (context, snapshot) {
+                if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  return CircleLayer(circles: snapshot.data!);
+                }
+                return SizedBox.shrink();
+              },
+            ),
             
-            // Remove confusing big red stationary radius circles
-            // if (_stationaryMarker.isNotEmpty)
-            //   CircleLayer(circles: _stationaryMarker),
-            // Current position (always shown) - single clean marker on top with prominent styling
-            if (_currentPosition.isNotEmpty) CircleLayer(circles: _currentPosition),
+            // Current position with StreamBuilder (updates independently without rebuilding other layers)
+            StreamBuilder<List<CircleMarker>>(
+              stream: _currentPositionStream.stream,
+              initialData: _currentPosition,
+              builder: (context, snapshot) {
+                if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  return CircleLayer(circles: snapshot.data!);
+                }
+                return SizedBox.shrink();
+              },
+            ),
           ],
         ),
         
