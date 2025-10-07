@@ -8,6 +8,9 @@ class StorageSettingsService {
   static const int DEFAULT_LOCATION_RETENTION_DAYS = 60; // 2 months for research
   static const int DEFAULT_MAP_DISPLAY_DAYS = UNLIMITED_VALUE; // Feature effectively disabled
   static const int DEFAULT_MAX_MAP_MARKERS = 2000; // Optimized for three-layer system
+  static const double DEFAULT_MAP_ERROR_THRESHOLD_METERS = 500.0; // Filter out extremely inaccurate fixes by default
+  static const double MIN_MAP_ERROR_THRESHOLD_METERS = 10.0;
+  static const double MAX_MAP_ERROR_THRESHOLD_METERS = 1000.0;
   static const bool DEFAULT_AUTO_CLEANUP_ENABLED = true; // Re-enabled with fix
   static const int MINIMUM_LOCATION_RETENTION_DAYS = 14; // Minimum for survey requirements
   
@@ -22,6 +25,7 @@ class StorageSettingsService {
   static const String PREF_LAST_CLEANUP_DATE = 'last_cleanup_date';
   static const String PREF_LOCATION_RETENTION_LIMITED = 'location_retention_limited';
   static const String PREF_MAP_DISPLAY_LIMITED = 'map_display_limited';
+  static const String PREF_MAP_ERROR_THRESHOLD_METERS = 'map_error_threshold_meters';
 
   /// Get how many days to retain location data in local storage
   static Future<int> getLocationRetentionDays() async {
@@ -106,6 +110,21 @@ class StorageSettingsService {
     await prefs.setInt(PREF_MAX_MAP_MARKERS, maxMarkers);
   }
 
+  /// Get maximum acceptable accuracy (error) for markers displayed on the map (in meters)
+  static Future<double> getMapErrorThresholdMeters() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(PREF_MAP_ERROR_THRESHOLD_METERS) ?? DEFAULT_MAP_ERROR_THRESHOLD_METERS;
+  }
+
+  /// Set maximum acceptable accuracy (error) for markers displayed on the map (in meters)
+  static Future<void> setMapErrorThresholdMeters(double meters) async {
+    final prefs = await SharedPreferences.getInstance();
+  final clamped = meters
+    .clamp(MIN_MAP_ERROR_THRESHOLD_METERS, MAX_MAP_ERROR_THRESHOLD_METERS)
+    .toDouble();
+    await prefs.setDouble(PREF_MAP_ERROR_THRESHOLD_METERS, clamped);
+  }
+
   /// Get whether automatic cleanup is enabled
   static Future<bool> getAutoCleanupEnabled() async {
     final prefs = await SharedPreferences.getInstance();
@@ -184,10 +203,11 @@ class StorageSettingsService {
     if (kIsWeb) return [];
     
     final displayDays = await getMapDisplayDays();
-    final retentionDays = await getLocationRetentionDays();
-    final maxMarkers = await getMaxMapMarkers();
+  final retentionDays = await getLocationRetentionDays();
+  final maxMarkers = await getMaxMapMarkers();
+  final maxErrorThreshold = await getMapErrorThresholdMeters();
     
-    print('[StorageSettingsService] Map filtering - Display days: $displayDays, Retention days: $retentionDays, Max markers: $maxMarkers');
+  print('[StorageSettingsService] Map filtering - Display days: $displayDays, Retention days: $retentionDays, Max markers: $maxMarkers, Max error: ${maxErrorThreshold.toStringAsFixed(1)}m');
     
     try {
       // FIXED: Load from app's database instead of FBG's internal storage that auto-purges
@@ -197,21 +217,30 @@ class StorageSettingsService {
       print('[StorageSettingsService] 🗃️ Loaded ${locationTracks.length} location tracks from app database');
       
       // Convert LocationTrack objects to FBG-compatible format for map
-      List<Map<String, dynamic>> allLocations = locationTracks.map((track) {
-        return {
+      List<Map<String, dynamic>> allLocations = [];
+      for (final track in locationTracks) {
+        final accuracy = track.accuracy ?? 0.0;
+        if (accuracy > maxErrorThreshold) {
+          if (kDebugMode) {
+            print('[StorageSettingsService] 🚫 Skipping LocationTrack at ${track.timestamp.toIso8601String()} due to accuracy ${accuracy.toStringAsFixed(1)}m');
+          }
+          continue;
+        }
+
+        allLocations.add({
           'timestamp': track.timestamp.toIso8601String(),
           'coords': {
             'latitude': track.latitude,
             'longitude': track.longitude,
-            'accuracy': track.accuracy ?? 0.0,
+            'accuracy': accuracy,
             'altitude': track.altitude ?? 0.0,
             'speed': track.speed ?? 0.0,
           },
           'activity': {
             'type': track.activity ?? 'unknown',
           },
-        };
-      }).toList();
+        });
+      }
       
       // If unlimited display, just limit by max markers
       if (displayDays == UNLIMITED_VALUE) {

@@ -355,6 +355,12 @@ class HelpScreen extends StatelessWidget {
               'Map Display Markers',
               'Set the maximum number of location points to show on the map (up to 10,000). More markers provide more detail but may impact performance on older devices.',
             ),
+
+            _buildMenuOptionItem(
+              Icons.my_location,
+              'Maximum GPS Error',
+              'Choose the highest GPS error (in meters) that should be shown on the map. Points with worse accuracy are hidden to keep the map clean.',
+            ),
             
             _buildMenuOptionItem(
               Icons.cleaning_services,

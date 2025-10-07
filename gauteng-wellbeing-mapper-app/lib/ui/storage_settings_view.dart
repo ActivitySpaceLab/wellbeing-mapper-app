@@ -9,10 +9,13 @@ class StorageSettingsView extends StatefulWidget {
 class _StorageSettingsViewState extends State<StorageSettingsView> {
   // Current settings
   int _locationRetentionDays = StorageSettingsService.DEFAULT_LOCATION_RETENTION_DAYS;
+  // ignore: unused_field
   int _mapDisplayDays = StorageSettingsService.DEFAULT_MAP_DISPLAY_DAYS;
   int _maxMapMarkers = StorageSettingsService.DEFAULT_MAX_MAP_MARKERS;
+  double _mapErrorThresholdMeters = StorageSettingsService.DEFAULT_MAP_ERROR_THRESHOLD_METERS;
   bool _autoCleanupEnabled = StorageSettingsService.DEFAULT_AUTO_CLEANUP_ENABLED;
   bool _locationRetentionLimited = true;
+  // ignore: unused_field
   bool _mapDisplayLimited = true;
   
   // Loading states
@@ -30,7 +33,8 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
       final locationRetention = await StorageSettingsService.getLocationRetentionDays();
       final mapDisplay = await StorageSettingsService.getMapDisplayDays();
       final maxMarkers = await StorageSettingsService.getMaxMapMarkers();
-      final autoCleanup = await StorageSettingsService.getAutoCleanupEnabled();
+  final autoCleanup = await StorageSettingsService.getAutoCleanupEnabled();
+  final maxErrorThreshold = await StorageSettingsService.getMapErrorThresholdMeters();
       final locationLimited = await StorageSettingsService.getLocationRetentionLimited();
       final mapLimited = await StorageSettingsService.getMapDisplayLimited();
 
@@ -40,6 +44,7 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
         _mapDisplayDays = mapDisplay == StorageSettingsService.UNLIMITED_VALUE 
             ? StorageSettingsService.DEFAULT_MAP_DISPLAY_DAYS : mapDisplay;
         _maxMapMarkers = maxMarkers;
+  _mapErrorThresholdMeters = maxErrorThreshold;
         _autoCleanupEnabled = autoCleanup;
         _locationRetentionLimited = locationLimited;
         _mapDisplayLimited = mapLimited;
@@ -68,6 +73,7 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
     await StorageSettingsService.setLocationRetentionLimited(limited);
   }
 
+  // ignore: unused_element
   Future<void> _updateMapDisplayDays(double value) async {
     final days = value.toInt();
     setState(() {
@@ -76,6 +82,7 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
     await StorageSettingsService.setMapDisplayDays(days);
   }
 
+  // ignore: unused_element
   Future<void> _updateMapDisplayLimited(bool limited) async {
     setState(() {
       _mapDisplayLimited = limited;
@@ -89,6 +96,13 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
       _maxMapMarkers = markers;
     });
     await StorageSettingsService.setMaxMapMarkers(markers);
+  }
+
+  Future<void> _updateMapErrorThreshold(double value) async {
+    setState(() {
+      _mapErrorThresholdMeters = value;
+    });
+    await StorageSettingsService.setMapErrorThresholdMeters(value);
   }
 
   Future<void> _updateAutoCleanup(bool value) async {
@@ -314,6 +328,23 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
                   10000.0,
                   _updateMaxMapMarkers,
                   'markers',
+                ),
+              ),
+            ),
+
+            SizedBox(height: 16),
+
+            Card(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: _buildSliderSetting(
+                  'Maximum GPS Error',
+                  'Hide map points recorded with accuracy worse than this threshold',
+                  _mapErrorThresholdMeters,
+                  StorageSettingsService.MIN_MAP_ERROR_THRESHOLD_METERS,
+                  StorageSettingsService.MAX_MAP_ERROR_THRESHOLD_METERS,
+                  _updateMapErrorThreshold,
+                  'm',
                 ),
               ),
             ),

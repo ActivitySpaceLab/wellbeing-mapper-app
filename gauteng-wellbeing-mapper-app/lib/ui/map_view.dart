@@ -27,6 +27,9 @@ class MapViewState extends State<MapView>
 
   List<CircleMarker> _currentPosition = [];
   List<CircleMarker> _locations = [];
+  double _maxAccuracyMeters = StorageSettingsService.DEFAULT_MAP_ERROR_THRESHOLD_METERS;
+  DateTime? _lastAccuracyThresholdFetch;
+  static const Duration _accuracyThresholdCacheDuration = Duration(seconds: 30);
 
   LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
   late MapController _mapController;
@@ -101,6 +104,20 @@ class MapViewState extends State<MapView>
     _displayStoredLocations();
   }
 
+  Future<double> _getAccuracyThreshold({bool forceRefresh = false}) async {
+    final now = DateTime.now();
+    if (!forceRefresh &&
+        _lastAccuracyThresholdFetch != null &&
+        now.difference(_lastAccuracyThresholdFetch!) < _accuracyThresholdCacheDuration) {
+      return _maxAccuracyMeters;
+    }
+
+    final newThreshold = await StorageSettingsService.getMapErrorThresholdMeters();
+    _lastAccuracyThresholdFetch = now;
+    _maxAccuracyMeters = newThreshold;
+    return newThreshold;
+  }
+
   void _displayStoredLocations() async {
     // Skip background geolocation operations on web platform
     if (kIsWeb) {
@@ -112,17 +129,22 @@ class MapViewState extends State<MapView>
       print('[map_view] 🔄 Starting _displayStoredLocations - Current markers: ${_locations.length}');
       
       // Clear existing markers before reloading to prevent duplicates
-      print('[map_view] 🗑️ Clearing existing markers before reload');
-      // Use filtered location data to improve performance
-      List filteredLocations = await StorageSettingsService.getFilteredLocationDataForMap();
-      print('[map_view] ✅ Found ${filteredLocations.length} filtered location points to display');
+  print('[map_view] 🗑️ Clearing existing markers before reload');
+  final maxAccuracy = await _getAccuracyThreshold(forceRefresh: true);
+  // Use filtered location data to improve performance
+  List filteredLocations = await StorageSettingsService.getFilteredLocationDataForMap();
+  print('[map_view] ✅ Found ${filteredLocations.length} filtered location points (<= ${maxAccuracy.toStringAsFixed(1)}m error) to display');
       
       if (filteredLocations.isEmpty) {
         print('[map_view] ⚠️ No location data found - user may not have tracking enabled or no movement yet');
         if (mounted) {
           setState(() {
             _locations = [];
+            _maxAccuracyMeters = maxAccuracy;
           });
+        } else {
+          _maxAccuracyMeters = maxAccuracy;
+          _locations = [];
         }
         return;
       }
@@ -151,9 +173,8 @@ class MapViewState extends State<MapView>
             continue;
           }
           double accuracy = (coords['accuracy'] as num?)?.toDouble() ?? 999.0;
-          // IMPROVED: More lenient accuracy filtering to reduce gaps (was 200m, now 500m)
-          if (accuracy > 500.0) {
-            print('[map_view] 🚫 Skipping extremely poor accuracy location: ${accuracy}m accuracy');
+          if (accuracy > maxAccuracy) {
+            print('[map_view] 🚫 Skipping location with accuracy ${accuracy.toStringAsFixed(1)}m above threshold ${maxAccuracy.toStringAsFixed(1)}m');
             continue;
           }
           LatLng currentPoint = LatLng(lat, lon);
@@ -193,7 +214,11 @@ class MapViewState extends State<MapView>
       if (mounted) {
         setState(() {
           _locations = newLocations;
+          _maxAccuracyMeters = maxAccuracy;
         });
+      } else {
+        _locations = newLocations;
+        _maxAccuracyMeters = maxAccuracy;
       }
       
       // Center map on the most recent location if auto-center is enabled
@@ -229,16 +254,17 @@ class MapViewState extends State<MapView>
     // Markers should remain visible on the map even when tracking is disabled
   }
 
-  void _onLocation(bg.Location location) {
+  void _onLocation(bg.Location location) async {
     print('[MapView] 📍 Real-time location received: ${location.coords.latitude}, ${location.coords.longitude}');
     
     try {
+      final maxAccuracy = await _getAccuracyThreshold();
+
       // Create location point safely
       LatLng currentPoint = LatLng(location.coords.latitude, location.coords.longitude);
-      
-      // IMPROVED: More lenient accuracy filtering for real-time display (was 200m, now 500m)
-      if (location.coords.accuracy > 500.0) {
-        print('[MapView] ⚠️ Rejecting real-time location with extremely poor accuracy: ${location.coords.accuracy}m');
+      double accuracy = (location.coords.accuracy as num?)?.toDouble() ?? 999.0;
+      if (accuracy > maxAccuracy) {
+        print('[MapView] ⚠️ Rejecting real-time location with accuracy ${accuracy.toStringAsFixed(1)}m above threshold ${maxAccuracy.toStringAsFixed(1)}m');
         return;
       }
       
@@ -262,28 +288,7 @@ class MapViewState extends State<MapView>
       }
       
       // Add a marker for the recorded location (semitransparent circle with accuracy radius)
-      double radius = location.coords.accuracy.clamp(10.0, 200.0);
-      _locations.add(CircleMarker(
-        point: currentPoint,
-        color: Colors.blue.withValues(alpha: 0.3),
-        borderColor: Colors.blue.withValues(alpha: 0.5),
-        borderStrokeWidth: 1.0,
-        radius: radius,
-        useRadiusInMeter: true,
-      ));
-      
-      // Update current position marker (like FBG example)
-      _currentPosition.clear();
-      _currentPosition.add(
-        CircleMarker(
-          point: currentPoint,
-          color: Colors.blue,
-          borderColor: Colors.white,
-          borderStrokeWidth: 3.0,
-          radius: 8.0,
-          useRadiusInMeter: false,
-        ),
-      );
+      double radius = accuracy.clamp(10.0, 200.0);
       
       // Auto-center map if enabled (like FBG example)
       if (_autoCenter) {
@@ -321,6 +326,8 @@ class MapViewState extends State<MapView>
               useRadiusInMeter: false,
             ),
           );
+
+        _maxAccuracyMeters = maxAccuracy;
       });
       
       print('[MapView] ✅ Successfully added location point, total: ${_locations.length}');
