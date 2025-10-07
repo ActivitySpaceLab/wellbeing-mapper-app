@@ -23,6 +23,8 @@ class HelpScreen extends StatelessWidget {
             SizedBox(height: 20),
             _buildMenuOptionsSection(),
             SizedBox(height: 20),
+            _buildStorageSettingsSection(),
+            SizedBox(height: 20),
             _buildAppModesSection(),
             SizedBox(height: 20),
             _buildPrivacySection(),
@@ -314,6 +316,63 @@ class HelpScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildStorageSettingsSection() {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.storage, color: SouthAfricanTheme.primaryBlue, size: 28),
+                SizedBox(width: 12),
+                Text(
+                  'Storage Settings',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: SouthAfricanTheme.primaryBlue,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Manage how your location data is stored and displayed on your device.',
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(height: 16),
+            
+            _buildMenuOptionItem(
+              Icons.history,
+              'Location Data Retention',
+              'Control how long location data is kept on your device before being automatically deleted. Default is 60 days, but you can set it to unlimited or a custom period.',
+            ),
+            
+            _buildMenuOptionItem(
+              Icons.map_outlined,
+              'Map Display Markers',
+              'Set the maximum number of location points to show on the map (up to 10,000). More markers provide more detail but may impact performance on older devices.',
+            ),
+            
+            _buildMenuOptionItem(
+              Icons.cleaning_services,
+              'Automatic Cleanup',
+              'Enable automatic deletion of old location data based on your retention settings. Helps keep your device storage optimized.',
+            ),
+            
+            _buildMenuOptionItem(
+              Icons.info_outline,
+              'Storage Information',
+              'View how much storage space your location data is using and get recommendations for optimal settings.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAppModesSection() {
     return Card(
       child: Padding(
@@ -468,10 +527,8 @@ class HelpScreen extends StatelessWidget {
               'Data Protection',
               '',
               [
-                '• All data is encrypted on your device',
-                '• Location data never includes personal identifiers',
-                '• You control what data to share and when',
-                '• Research data is anonymous and aggregated'
+                '• No data from this app is shared when in Private Mode',
+                '• In Research Mode, you control what data to share and when, and anything you choose to share is encrypted before being sent from you device'
               ],
             ),
             
@@ -482,9 +539,8 @@ class HelpScreen extends StatelessWidget {
               'Your Privacy Rights',
               '',
               [
-                '• You can stop participating anytime',
-                '• Delete your data from the study',
-                '• Contact researchers with privacy concerns'
+                '• You can stop participating in Research Mode at anytime',
+                '• You can request that any data you sent to the research server be deleted by contacting the researchers with this request and including your user UUID (which can be found and copied from the bottom of the side drawer menu'
               ],
             ),
           ],
