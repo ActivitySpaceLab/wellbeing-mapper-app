@@ -28,7 +28,6 @@ class MapViewState extends State<MapView>
   List<CircleMarker> _currentPosition = [];
   List<LatLng> _polyline = [];
   List<CircleMarker> _locations = [];
-  List<CircleMarker> _stopLocations = [];
   List<Polyline> _motionChangePolylines = [];
   
   List<CircleMarker> _accuracyCircles = [];
@@ -41,9 +40,6 @@ class MapViewState extends State<MapView>
   // Points collected during current session (since map opened)
   List<CircleMarker> _sessionPoints = [];
   List<LatLng> _sessionPolyline = [];
-  
-  // Track when map session started
-  DateTime? _mapSessionStart;
 
   LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
   late MapController _mapController;
@@ -60,7 +56,6 @@ class MapViewState extends State<MapView>
   @override
   void initState() {
     super.initState();
-    _mapSessionStart = DateTime.now(); // Track when this map session started
     print('[map_view] 📍 MapView initState called');
     _mapOptions = new MapOptions(
       onMapEvent: _onPositionChanged, // Changed from onPositionChanged
@@ -141,7 +136,6 @@ class MapViewState extends State<MapView>
       _historicalPolyline.clear();
       _locations.clear();
       _polyline.clear();
-      _stopLocations.clear();
       _motionChangePolylines.clear();
       _accuracyCircles.clear();
       
@@ -266,7 +260,6 @@ class MapViewState extends State<MapView>
     if (!enabled) {
 //      _locations.clear();
 //      _polyline.clear();
-//      _stopLocations.clear();
 //      _motionChangePolylines.clear();
       //     _stationaryMarker.clear();
     }
@@ -497,8 +490,6 @@ class MapViewState extends State<MapView>
             // Motion change polylines (keep these for debugging motion changes)
             if (_motionChangePolylines.isNotEmpty)
               PolylineLayer(polylines: _motionChangePolylines),
-            // Simplified stop locations (smaller, less confusing)
-            if (_stopLocations.isNotEmpty) CircleLayer(circles: _stopLocations),
             // Current position (always shown) - single clean marker on top with prominent styling
             if (_currentPosition.isNotEmpty) CircleLayer(circles: _currentPosition),
           ],
