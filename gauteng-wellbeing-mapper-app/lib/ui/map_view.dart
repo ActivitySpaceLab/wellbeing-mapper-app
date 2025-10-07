@@ -31,24 +31,6 @@ class MapViewState extends State<MapView>
   
   List<CircleMarker> _accuracyCircles = [];
 
-  // NEW: Separate layers for improved performance and UX
-  // Historical points loaded when map opens (before current session)
-  List<CircleMarker> _historicalPoints = [];
-  List<LatLng> _historicalPolyline = [];
-  
-  // Points collected during current session (since map opened)
-  List<CircleMarker> _sessionPoints = [];
-  List<LatLng> _sessionPolyline = [];
-
-  // Stream controller for current position updates to avoid setState() on location changes
-  final StreamController<List<CircleMarker>> _currentPositionStream = StreamController<List<CircleMarker>>.broadcast();
-  
-  // Stream controller for session points to avoid setState() when adding session points
-  final StreamController<List<CircleMarker>> _sessionPointsStream = StreamController<List<CircleMarker>>.broadcast();
-  
-  // Stream controller for historical points to avoid setState() rebuilds when loading historical data
-  final StreamController<List<CircleMarker>> _historicalPointsStream = StreamController<List<CircleMarker>>.broadcast();
-
   LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
   late MapController _mapController;
   late MapOptions _mapOptions;
@@ -134,18 +116,12 @@ class MapViewState extends State<MapView>
       
       // Clear existing markers before reloading to prevent duplicates
       print('[map_view] 🗑️ Clearing existing markers before reload');
-      _historicalPoints.clear();
-      _historicalPolyline.clear();
       _locations.clear();
       _polyline.clear();
       _accuracyCircles.clear();
       
-      // Clear session points and notify stream
-      _sessionPoints.clear();
-      _sessionPointsStream.add(List.from(_sessionPoints));
-      
-      // Clear historical points and notify stream (no setState needed!)
-      _historicalPointsStream.add(List.from(_historicalPoints));
+      // Simple setState to clear the map
+      setState(() {});
       
       // Add a small delay to ensure clearing is visible
       await Future.delayed(Duration(milliseconds: 100));
@@ -200,9 +176,9 @@ class MapViewState extends State<MapView>
           }
           lastLocation = currentPoint;
           
-          // Create CircleMarker for historical location (semitransparent blue with accuracy radius)
+          // Create CircleMarker for historical location (add to main _locations list like FBG)
           double radius = accuracy.clamp(10.0, 200.0);
-          _historicalPoints.add(CircleMarker(
+          _locations.add(CircleMarker(
             point: currentPoint,
             color: Colors.blue.withValues(alpha: 0.3),
             borderColor: Colors.blue.withValues(alpha: 0.5),
@@ -212,7 +188,6 @@ class MapViewState extends State<MapView>
           ));
           
           // Add to polylines (legacy compatibility only - no visual polyline)
-          _historicalPolyline.add(currentPoint);
           _polyline.add(currentPoint);
           
           print('[map_view] ✅ Successfully added location point: ${currentPoint.latitude}, ${currentPoint.longitude}');
@@ -226,8 +201,10 @@ class MapViewState extends State<MapView>
       
       print('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
       
-      // Update historical points via stream (no setState needed!)
-      _historicalPointsStream.add(List.from(_historicalPoints));
+      // Simple setState to refresh the map (like FBG example)
+      setState(() {
+        // All location points have been added to _locations list
+      });
       
       // Center map on the most recent location if auto-center is enabled
       if (_autoCenter && lastLocation != null) {
@@ -297,34 +274,24 @@ class MapViewState extends State<MapView>
         }
       }
       
-      // If we have a previous current position, move it to session points with accuracy-based styling
-      if (_currentPosition.isNotEmpty) {
-        LatLng previousPoint = _currentPosition.first.point;
-        // Get accuracy from location data for radius
-        double radius = location.coords.accuracy.clamp(10.0, 200.0);
-        _sessionPoints.add(CircleMarker(
-          point: previousPoint,
-          color: Colors.blue.withValues(alpha: 0.3),
-          borderColor: Colors.blue.withValues(alpha: 0.5),
-          borderStrokeWidth: 1.0,
-          radius: radius,
-          useRadiusInMeter: true,
-        ));
-        _sessionPolyline.add(previousPoint);
-        
-        // Update session points via stream (no setState!)
-        _sessionPointsStream.add(List.from(_sessionPoints));
-      }
-      
       // Add to polyline for continuity (only if moving or significant distance)
       if (location.isMoving || _polyline.isEmpty) {
         _polyline.add(currentPoint);
       }
       
-      // Update current position marker safely (most recent, prominent styling)
-      _currentPosition.clear();
+      // Add a marker for the recorded location (like FBG example)
+      double radius = location.coords.accuracy.clamp(10.0, 200.0);
+      _locations.add(CircleMarker(
+        point: currentPoint,
+        color: Colors.blue.withValues(alpha: 0.3),
+        borderColor: Colors.blue.withValues(alpha: 0.5),
+        borderStrokeWidth: 1.0,
+        radius: radius,
+        useRadiusInMeter: true,
+      ));
       
-      // Google Maps style blue marker with white perimeter
+      // Update current position marker (like FBG example)
+      _currentPosition.clear();
       _currentPosition.add(
         CircleMarker(
           point: currentPoint,
@@ -336,10 +303,7 @@ class MapViewState extends State<MapView>
         ),
       );
       
-      // Send current position update through stream (no setState needed!)
-      _currentPositionStream.add(List.from(_currentPosition));
-      
-      // Auto-center map if enabled (without setState to avoid full rebuild)
+      // Auto-center map if enabled (like FBG example)
       if (_autoCenter) {
         try {
           double zoom = _mapOptions.initialZoom;
@@ -353,7 +317,12 @@ class MapViewState extends State<MapView>
         print('[MapView] 📍 Auto-center disabled - not centering on real-time location');
       }
       
-      print('[MapView] ✅ Successfully added real-time location point via stream, total: ${_locations.length}');
+      // ONLY setState for current position update (like FBG example)
+      setState(() {
+        // This only rebuilds the current position marker, not all location points
+      });
+      
+      print('[MapView] ✅ Successfully added location point, total: ${_locations.length}');
       
     } catch (error) {
       print('[MapView] ❌ Error processing real-time location: $error');
@@ -375,9 +344,6 @@ class MapViewState extends State<MapView>
   
   @override
   void dispose() {
-    _currentPositionStream.close();
-    _sessionPointsStream.close();
-    _historicalPointsStream.close();
     super.dispose();
   }
 
@@ -443,41 +409,13 @@ class MapViewState extends State<MapView>
                   ),
                 ),
               ),
-            // Historical points with StreamBuilder (completely independent updates)
-            StreamBuilder<List<CircleMarker>>(
-              stream: _historicalPointsStream.stream,
-              initialData: _historicalPoints,
-              builder: (context, snapshot) {
-                if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  return CircleLayer(circles: snapshot.data!);
-                }
-                return SizedBox.shrink();
-              },
-            ),
+            // All location points (historical + real-time) in one simple layer
+            if (_locations.isNotEmpty) 
+              CircleLayer(circles: _locations),
             
-            // Session points with StreamBuilder (updates independently when session points are added)
-            StreamBuilder<List<CircleMarker>>(
-              stream: _sessionPointsStream.stream,
-              initialData: _sessionPoints,
-              builder: (context, snapshot) {
-                if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  return CircleLayer(circles: snapshot.data!);
-                }
-                return SizedBox.shrink();
-              },
-            ),
-            
-            // Current position with StreamBuilder (updates independently without rebuilding other layers)
-            StreamBuilder<List<CircleMarker>>(
-              stream: _currentPositionStream.stream,
-              initialData: _currentPosition,
-              builder: (context, snapshot) {
-                if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  return CircleLayer(circles: snapshot.data!);
-                }
-                return SizedBox.shrink();
-              },
-            ),
+            // Current position (blue dot like FBG example)
+            if (_currentPosition.isNotEmpty) 
+              CircleLayer(circles: _currentPosition),
           ],
         ),
         
@@ -503,13 +441,9 @@ class MapViewState extends State<MapView>
                     if (_currentPosition.isNotEmpty) {
                       centerPoint = _currentPosition.first.point;
                     } 
-                    // Fall back to last session point
-                    else if (_sessionPoints.isNotEmpty) {
-                      centerPoint = _sessionPoints.last.point;
-                    }
-                    // Fall back to last historical point
-                    else if (_historicalPoints.isNotEmpty) {
-                      centerPoint = _historicalPoints.last.point;
+                    // Fall back to last recorded location
+                    else if (_locations.isNotEmpty) {
+                      centerPoint = _locations.last.point;
                     }
                     
                     if (centerPoint != null) {
