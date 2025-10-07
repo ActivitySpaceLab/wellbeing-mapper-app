@@ -115,14 +115,16 @@ class MapViewState extends State<MapView>
       
       // Clear existing markers before reloading to prevent duplicates
       print('[map_view] 🗑️ Clearing existing markers before reload');
+      bool hadMarkers = _locations.isNotEmpty;
       _locations.clear();
       _accuracyCircles.clear();
       
-      // Simple setState to clear the map
-      setState(() {});
-      
-      // Add a small delay to ensure clearing is visible
-      await Future.delayed(Duration(milliseconds: 100));
+      // Only setState if there were actually markers to clear
+      if (hadMarkers) {
+        setState(() {});
+        // Add a small delay to ensure clearing is visible
+        await Future.delayed(Duration(milliseconds: 100));
+      }
       
       // Use filtered location data to improve performance
       List filteredLocations = await StorageSettingsService.getFilteredLocationDataForMap();
@@ -196,10 +198,8 @@ class MapViewState extends State<MapView>
       
       print('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
       
-      // Simple setState to refresh the map (like FBG example)
-      setState(() {
-        // All location points have been added to _locations list
-      });
+      // NO setState() call here either! Historical data is loaded into persistent list
+      // The map will automatically show the new markers without rebuilding existing ones
       
       // Center map on the most recent location if auto-center is enabled
       if (_autoCenter && lastLocation != null) {
@@ -231,9 +231,9 @@ class MapViewState extends State<MapView>
 
   void _onEnabledChange(bool enabled) {
     if (!enabled) {
-//      _locations.clear();
-//      _polyline.clear();
-      //     _stationaryMarker.clear();
+      // Clear location data when tracking is disabled
+      _locations.clear();
+      _accuracyCircles.clear();
     }
   }
 
