@@ -324,7 +324,7 @@ class MapViewState extends State<MapView>
         ),
       );
       
-      // Auto-center map if enabled (with protection against null errors)
+      // Auto-center map if enabled (without setState to avoid full rebuild)
       if (_autoCenter) {
         try {
           double zoom = _mapOptions.initialZoom;
@@ -338,7 +338,14 @@ class MapViewState extends State<MapView>
         print('[MapView] 📍 Auto-center disabled - not centering on real-time location');
       }
       
-      // No setState needed - flutter_map automatically redraws changed layers
+      // setState() is required for flutter_map to display the new location markers
+      if (mounted) {
+        setState(() {
+          // The lists have already been modified above
+          // This setState just triggers the rebuild to show new markers
+        });
+      }
+      
       print('[MapView] ✅ Successfully added real-time location point, total: ${_locations.length}');
       
     } catch (error) {
@@ -454,34 +461,38 @@ class MapViewState extends State<MapView>
                 mini: true,
                 heroTag: "auto_center_toggle",
                 onPressed: () {
-                  setState(() {
-                    _autoCenter = !_autoCenter;
+                  final newAutoCenter = !_autoCenter;
+                  
+                  // Do the centering first if enabling (before setState to avoid rebuild during centering)
+                  if (newAutoCenter) {
+                    LatLng? centerPoint;
                     
-                    // IMMEDIATE CENTER when enabling auto-center
-                    if (_autoCenter) {
-                      LatLng? centerPoint;
-                      
-                      // Try current position first
-                      if (_currentPosition.isNotEmpty) {
-                        centerPoint = _currentPosition.first.point;
-                      } 
-                      // Fall back to last session point
-                      else if (_sessionPoints.isNotEmpty) {
-                        centerPoint = _sessionPoints.last.point;
-                      }
-                      // Fall back to last historical point
-                      else if (_historicalPoints.isNotEmpty) {
-                        centerPoint = _historicalPoints.last.point;
-                      }
-                      
-                      if (centerPoint != null) {
-                        try {
-                          _mapController.move(centerPoint, _mapOptions.initialZoom);
-                        } catch (e) {
-                          print('[MapView] Error centering map: $e');
-                        }
+                    // Try current position first
+                    if (_currentPosition.isNotEmpty) {
+                      centerPoint = _currentPosition.first.point;
+                    } 
+                    // Fall back to last session point
+                    else if (_sessionPoints.isNotEmpty) {
+                      centerPoint = _sessionPoints.last.point;
+                    }
+                    // Fall back to last historical point
+                    else if (_historicalPoints.isNotEmpty) {
+                      centerPoint = _historicalPoints.last.point;
+                    }
+                    
+                    if (centerPoint != null) {
+                      try {
+                        _mapController.move(centerPoint, _mapOptions.initialZoom);
+                        print('[MapView] 🎯 Immediate centering on enabling auto-center');
+                      } catch (e) {
+                        print('[MapView] Error centering map: $e');
                       }
                     }
+                  }
+                  
+                  // Then update the state for the button color (minimal setState)
+                  setState(() {
+                    _autoCenter = newAutoCenter;
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
