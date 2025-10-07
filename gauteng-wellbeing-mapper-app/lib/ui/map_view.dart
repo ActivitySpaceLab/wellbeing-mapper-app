@@ -27,8 +27,6 @@ class MapViewState extends State<MapView>
 
   List<CircleMarker> _currentPosition = [];
   List<CircleMarker> _locations = [];
-  
-  List<CircleMarker> _accuracyCircles = [];
 
   LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
   late MapController _mapController;
@@ -115,30 +113,24 @@ class MapViewState extends State<MapView>
       
       // Clear existing markers before reloading to prevent duplicates
       print('[map_view] 🗑️ Clearing existing markers before reload');
-      bool hadMarkers = _locations.isNotEmpty;
-      _locations.clear();
-      _accuracyCircles.clear();
-      
-      // Only setState if there were actually markers to clear
-      if (hadMarkers) {
-        setState(() {});
-        // Add a small delay to ensure clearing is visible
-        await Future.delayed(Duration(milliseconds: 100));
-      }
-      
       // Use filtered location data to improve performance
       List filteredLocations = await StorageSettingsService.getFilteredLocationDataForMap();
       print('[map_view] ✅ Found ${filteredLocations.length} filtered location points to display');
       
       if (filteredLocations.isEmpty) {
         print('[map_view] ⚠️ No location data found - user may not have tracking enabled or no movement yet');
-        // No setState needed - streams handle empty data
+        if (mounted) {
+          setState(() {
+            _locations = [];
+          });
+        }
         return;
       }
       
       int displayedCount = 0;
       LatLng? firstLocation;
       LatLng? lastLocation;
+      final List<CircleMarker> newLocations = [];
       
       for (var thisLocation in filteredLocations) {
         try {
@@ -178,7 +170,7 @@ class MapViewState extends State<MapView>
           
           // Create CircleMarker for historical location (add to main _locations list like FBG)
           double radius = accuracy.clamp(10.0, 200.0);
-          _locations.add(CircleMarker(
+          newLocations.add(CircleMarker(
             point: currentPoint,
             color: Colors.blue.withValues(alpha: 0.3),
             borderColor: Colors.blue.withValues(alpha: 0.5),
@@ -198,8 +190,11 @@ class MapViewState extends State<MapView>
       
       print('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
       
-      // NO setState() call here either! Historical data is loaded into persistent list
-      // The map will automatically show the new markers without rebuilding existing ones
+      if (mounted) {
+        setState(() {
+          _locations = newLocations;
+        });
+      }
       
       // Center map on the most recent location if auto-center is enabled
       if (_autoCenter && lastLocation != null) {
@@ -304,9 +299,29 @@ class MapViewState extends State<MapView>
         print('[MapView] 📍 Auto-center disabled - not centering on real-time location');
       }
       
-      // CRITICAL FIX: NO setState() call here!
-      // Location markers are added to persistent list without triggering rebuilds
-      // This is the key to preventing redraw of existing markers
+      setState(() {
+        _locations.add(CircleMarker(
+          point: currentPoint,
+          color: Colors.blue.withValues(alpha: 0.3),
+          borderColor: Colors.blue.withValues(alpha: 0.5),
+          borderStrokeWidth: 1.0,
+          radius: radius,
+          useRadiusInMeter: true,
+        ));
+
+        _currentPosition
+          ..clear()
+          ..add(
+            CircleMarker(
+              point: currentPoint,
+              color: Colors.blue,
+              borderColor: Colors.white,
+              borderStrokeWidth: 3.0,
+              radius: 8.0,
+              useRadiusInMeter: false,
+            ),
+          );
+      });
       
       print('[MapView] ✅ Successfully added location point, total: ${_locations.length}');
       
