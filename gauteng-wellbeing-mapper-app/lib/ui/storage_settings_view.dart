@@ -311,7 +311,7 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
                   'Limit markers displayed to improve performance',
                   _maxMapMarkers.toDouble(),
                   100.0,
-                  2000.0,
+                  10000.0,
                   _updateMaxMapMarkers,
                   'markers',
                 ),
