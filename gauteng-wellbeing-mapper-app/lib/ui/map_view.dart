@@ -33,6 +33,18 @@ class MapViewState extends State<MapView>
   
   List<CircleMarker> _accuracyCircles = [];
 
+  // NEW: Separate layers for improved performance and UX
+  // Historical points loaded when map opens (before current session)
+  List<CircleMarker> _historicalPoints = [];
+  List<LatLng> _historicalPolyline = [];
+  
+  // Points collected during current session (since map opened)
+  List<CircleMarker> _sessionPoints = [];
+  List<LatLng> _sessionPolyline = [];
+  
+  // Track when map session started
+  DateTime? _mapSessionStart;
+
   LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
   late MapController _mapController;
   late MapOptions _mapOptions;
@@ -48,6 +60,7 @@ class MapViewState extends State<MapView>
   @override
   void initState() {
     super.initState();
+    _mapSessionStart = DateTime.now(); // Track when this map session started
     print('[map_view] 📍 MapView initState called');
     _mapOptions = new MapOptions(
       onMapEvent: _onPositionChanged, // Changed from onPositionChanged
@@ -124,6 +137,8 @@ class MapViewState extends State<MapView>
       
       // Clear existing markers before reloading to prevent duplicates
       print('[map_view] 🗑️ Clearing existing markers before reload');
+      _historicalPoints.clear();
+      _historicalPolyline.clear();
       _locations.clear();
       _polyline.clear();
       _stopLocations.clear();
@@ -188,22 +203,21 @@ class MapViewState extends State<MapView>
           }
           lastLocation = currentPoint;
           
-          // Add accuracy circles for all points except the last (live) one
-          bool isLast = false;
-          if (displayedCount == filteredLocations.length - 1) {
-            isLast = true;
-          }
-          if (!isLast) {
-            double radius = accuracy.clamp(10.0, 200.0);
-            _accuracyCircles.add(CircleMarker(
-              point: currentPoint,
-              color: Colors.blue.withValues(alpha: 0.2),
-              borderColor: Colors.blue.withValues(alpha: 0.5),
-              borderStrokeWidth: 1.0,
-              radius: radius,
-              useRadiusInMeter: true,
-            ));
-          }
+          // Create CircleMarker for historical location (semitransparent blue with accuracy radius)
+          double radius = accuracy.clamp(10.0, 200.0);
+          _historicalPoints.add(CircleMarker(
+            point: currentPoint,
+            color: Colors.blue.withOpacity(0.3),
+            borderColor: Colors.blue.withOpacity(0.5),
+            borderStrokeWidth: 1.0,
+            radius: radius,
+            useRadiusInMeter: true,
+          ));
+          
+          // Add to polylines (legacy compatibility only - no visual polyline)
+          _historicalPolyline.add(currentPoint);
+          _polyline.add(currentPoint);
+          
           print('[map_view] ✅ Successfully added location point: ${currentPoint.latitude}, ${currentPoint.longitude}');
           displayedCount++;
         } catch (e) {
@@ -312,19 +326,35 @@ class MapViewState extends State<MapView>
         }
       }
       
+      // If we have a previous current position, move it to session points with accuracy-based styling
+      if (_currentPosition.isNotEmpty) {
+        LatLng previousPoint = _currentPosition.first.point;
+        // Get accuracy from location data for radius
+        double radius = location.coords.accuracy.clamp(10.0, 200.0);
+        _sessionPoints.add(CircleMarker(
+          point: previousPoint,
+          color: Colors.blue.withOpacity(0.3),
+          borderColor: Colors.blue.withOpacity(0.5),
+          borderStrokeWidth: 1.0,
+          radius: radius,
+          useRadiusInMeter: true,
+        ));
+        _sessionPolyline.add(previousPoint);
+      }
+      
       // Add to polyline for continuity (only if moving or significant distance)
       if (location.isMoving || _polyline.isEmpty) {
         _polyline.add(currentPoint);
       }
       
-      // Update current position marker safely
+      // Update current position marker safely (most recent, prominent styling)
       _currentPosition.clear();
       
-      // Simple blue marker for point view
+      // Google Maps style blue marker with white perimeter
       _currentPosition.add(
         CircleMarker(
           point: currentPoint,
-          color: Colors.blue.withValues(alpha: 0.8),
+          color: Colors.blue,
           borderColor: Colors.white,
           borderStrokeWidth: 3.0,
           radius: 8.0,
@@ -453,19 +483,23 @@ class MapViewState extends State<MapView>
                   ),
                 ),
               ),
-            // Point view: show accuracy circles
-            if (_accuracyCircles.isNotEmpty)
-              CircleLayer(circles: _accuracyCircles),
+            // Historical points (loaded when map opened, before current session)
+            if (_historicalPoints.isNotEmpty) 
+              CircleLayer(circles: _historicalPoints),
+            
+            // Session points (collected since map was opened, excluding current)
+            if (_sessionPoints.isNotEmpty) 
+              CircleLayer(circles: _sessionPoints),
             
             // Remove confusing big red stationary radius circles
             // if (_stationaryMarker.isNotEmpty)
             //   CircleLayer(circles: _stationaryMarker),
-            // Polyline joining last stationary location to motionchange:true location.
+            // Motion change polylines (keep these for debugging motion changes)
             if (_motionChangePolylines.isNotEmpty)
               PolylineLayer(polylines: _motionChangePolylines),
             // Simplified stop locations (smaller, less confusing)
             if (_stopLocations.isNotEmpty) CircleLayer(circles: _stopLocations),
-            // Current position (always shown) - single clean marker
+            // Current position (always shown) - single clean marker on top with prominent styling
             if (_currentPosition.isNotEmpty) CircleLayer(circles: _currentPosition),
           ],
         ),
@@ -484,6 +518,32 @@ class MapViewState extends State<MapView>
                 onPressed: () {
                   setState(() {
                     _autoCenter = !_autoCenter;
+                    
+                    // IMMEDIATE CENTER when enabling auto-center
+                    if (_autoCenter) {
+                      LatLng? centerPoint;
+                      
+                      // Try current position first
+                      if (_currentPosition.isNotEmpty) {
+                        centerPoint = _currentPosition.first.point;
+                      } 
+                      // Fall back to last session point
+                      else if (_sessionPoints.isNotEmpty) {
+                        centerPoint = _sessionPoints.last.point;
+                      }
+                      // Fall back to last historical point
+                      else if (_historicalPoints.isNotEmpty) {
+                        centerPoint = _historicalPoints.last.point;
+                      }
+                      
+                      if (centerPoint != null) {
+                        try {
+                          _mapController.move(centerPoint, _mapOptions.initialZoom);
+                        } catch (e) {
+                          print('[MapView] Error centering map: $e');
+                        }
+                      }
+                    }
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
