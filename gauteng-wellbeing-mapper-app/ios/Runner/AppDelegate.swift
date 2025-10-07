@@ -1,7 +1,8 @@
 import UIKit
 import Flutter
 import CoreLocation
-import RSABridge
+// Remove the RSABridge import since we won't need it anymore
+// import RSABridge
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, CLLocationManagerDelegate {
@@ -19,8 +20,8 @@ import RSABridge
     
     GeneratedPluginRegistrant.register(with: self)
     
-    // Keep RSA symbols to prevent them from being stripped during iOS optimization
-    keepRSASymbols()
+    // Remove the keepRSASymbols() call since we'll handle this at the linker level
+    // keepRSASymbols()
     
     // Set up location method channel
     let controller = window?.rootViewController as! FlutterViewController
@@ -36,6 +37,9 @@ import RSABridge
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
   
+  
+
+
   private func handleLocationMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case "initializeLocationManager":
@@ -159,12 +163,6 @@ import RSABridge
     completionHandler()
   }
   
-  // Keep RSA symbols to prevent iOS linker from stripping them
-  private func keepRSASymbols() {
-    // This function forces the RSA symbols to be included in the final binary
-    // by calling them in a way that won't be optimized away by the linker
-    _ = RSABridge.RSABridgeCall(nil, nil, 0)
-    _ = RSABridge.RSAEncodeText(nil, nil)
-    _ = RSABridge.RSADecodeText(nil, 0, nil, 0, 0, 0)
-  }
+     // Removed the entire keepRSASymbols method since we won't need it
+
 }
