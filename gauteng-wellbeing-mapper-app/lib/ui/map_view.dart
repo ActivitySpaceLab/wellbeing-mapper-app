@@ -198,8 +198,8 @@ class MapViewState extends State<MapView>
           double radius = accuracy.clamp(10.0, 200.0);
           _historicalPoints.add(CircleMarker(
             point: currentPoint,
-            color: Colors.blue.withOpacity(0.3),
-            borderColor: Colors.blue.withOpacity(0.5),
+            color: Colors.blue.withValues(alpha: 0.3),
+            borderColor: Colors.blue.withValues(alpha: 0.5),
             borderStrokeWidth: 1.0,
             radius: radius,
             useRadiusInMeter: true,
@@ -300,8 +300,8 @@ class MapViewState extends State<MapView>
         double radius = location.coords.accuracy.clamp(10.0, 200.0);
         _sessionPoints.add(CircleMarker(
           point: previousPoint,
-          color: Colors.blue.withOpacity(0.3),
-          borderColor: Colors.blue.withOpacity(0.5),
+          color: Colors.blue.withValues(alpha: 0.3),
+          borderColor: Colors.blue.withValues(alpha: 0.5),
           borderStrokeWidth: 1.0,
           radius: radius,
           useRadiusInMeter: true,
