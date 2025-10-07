@@ -308,12 +308,6 @@ class HelpScreen extends StatelessWidget {
               'Survey Notifications',
               'Manage when and how often you receive survey reminder notifications (research mode only).',
             ),
-            
-            _buildMenuOptionItem(
-              Icons.cloud_upload,
-              'Research Data Upload',
-              'Manually upload your encrypted data to research servers (research mode only).',
-            ),
           ],
         ),
       ),
