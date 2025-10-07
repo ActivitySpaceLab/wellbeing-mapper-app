@@ -230,11 +230,8 @@ class MapViewState extends State<MapView>
   }
 
   void _onEnabledChange(bool enabled) {
-    if (!enabled) {
-      // Clear location data when tracking is disabled
-      _locations.clear();
-      _accuracyCircles.clear();
-    }
+    print("[home] - _onEnabledChange: $enabled");
+    // Markers should remain visible on the map even when tracking is disabled
   }
 
   void _onLocation(bg.Location location) {
