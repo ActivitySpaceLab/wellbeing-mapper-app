@@ -1,36 +1,21 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:fast_rsa/fast_rsa.dart';
-import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import '../db/survey_database.dart';
 import '../main.dart';
 import '../services/app_mode_service.dart';
 import '../models/app_mode.dart';
+import '../util/env.dart';
+import 'barcelona_server_service.dart';
 
 /// Service for encrypting complete survey responses and sending to proxy server
 class EncryptedSurveyService {
   
-  // AWS Lambda Function URL for encrypted survey proxy (Cape Town region)
-  static const String _proxyServerUrl = 'https://6p7hir7licc5yisxhkner4wt2i0yhtzo.lambda-url.af-south-1.on.aws/submit';
-  
-  // Use the same public key as location encryption for consistency
-  static const String _publicKey = '''-----BEGIN PUBLIC KEY-----
-MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAvzeHQfOYDT8XgiDyHsTG
-80/lQY1+AQa2NLIJERK6WuYxVrveDoY5V99V9rlFTRXdYcD5iBDL3WGHQmkOUDQL
-PMZ6YjTlU5ACcBf43+yo09Nyt1g7Ib3E95USml2jws7vjZMydhaEcJcBJXb0ty99
-EQvis5gJ1GI99BDRzJIArvFTCwsPCm7zan+ai5QPz78SE5RuDwrXloR1vYkf54hN
-eyMpUKXFlp3PHKudoE1XlPh9yKkVPPmJkWkl9wECHG+fF8ia/c0/d7IIr1gUWLM1
-/IAm6EFnRJLruBOjPK8/3fry9FcDIRv3I8WxVXar8qfVN2mbNtInJ3T2MPXVizqh
-VWEWZTYqXiQHQkWjKpbzpVLXzIT7fs3ABk4oBbkH563JSeZHVuv6Xt3DgN7ZzL/Z
-QeBb1Gt2dHHGpApT64TTFPv/DFC8CvCauyWEFaAcr3yUr0ah9uGzFtWg/fOWFkDs
-lhxw98hOu+mhHVCitzGjLp54zmUASnQfjQLaOEPJITXlX5UYbgbCiH0B4w9NE6o6
-F9XaMHUHsRDFZccRlM8AR5fkUVZqiBrI7eHl4e0aSUmc7I8wX3DCA0L16sQQQl18
-ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
-64BAgUuyskUvkMsgsgzf7NcCAwEAAQ==
------END PUBLIC KEY-----''';
+  static String get _publicKey => ENV.barcelonaPublicKey;
 
   /// Get current app version from package info
   static Future<String> _getAppVersion() async {
@@ -214,7 +199,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         'encrypted_images': encryptedImages, // Include encrypted image data
         'metadata': {
           'app_version': appVersion,
-          'submission_method': 'encrypted_proxy',
+          'submission_method': 'barcelona_direct',
           'has_images': encryptedImages != null && encryptedImages.isNotEmpty,
         }
       };
@@ -226,7 +211,8 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
 
       // Send to proxy server
       print('🌐 Sending to proxy server...');
-      final success = await _sendToProxy('initial', encryptedBlob);      if (success) {
+  final success = await _sendToBarcelona('initial', encryptedBlob);
+  if (success) {
         final db = SurveyDatabase();
         await db.markInitialSurveySynced(surveyData['id']);
         print('✅ Initial survey encrypted and synced');
@@ -289,7 +275,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         'location_data': locationData, // Include parsed location data directly
         'metadata': {
           'app_version': appVersion,
-          'submission_method': 'encrypted_proxy',
+          'submission_method': 'barcelona_direct',
           'encryption_unified': true, // Flag to indicate unified encryption approach
           'has_images': encryptedImages != null && encryptedImages.isNotEmpty,
         }
@@ -303,7 +289,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       
       // Send to proxy server
       print('🌐 Sending to proxy server...');
-      final success = await _sendToProxy('biweekly', encryptedBlob);
+  final success = await _sendToBarcelona('biweekly', encryptedBlob);
       
       if (success) {
         final db = SurveyDatabase();
@@ -336,12 +322,12 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         'data': consentData,
         'metadata': {
           'app_version': appVersion,
-          'submission_method': 'encrypted_proxy',
+          'submission_method': 'barcelona_direct',
         }
       };
       
       final encryptedBlob = await _encryptSurveyData(consentJson);
-      final success = await _sendToProxy('consent', encryptedBlob);
+  final success = await _sendToBarcelona('consent', encryptedBlob);
       
       if (success) {
         final db = SurveyDatabase();
@@ -459,7 +445,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         'encryptedData': base64.encode(encryptedData),
         'encryptedKey': encryptedKey,
         'algorithm': 'AES-256-GCM + RSA-PKCS1',
-        'researchSite': 'gauteng',
+  'researchSite': 'barcelona',
         'timestamp': DateTime.now().toIso8601String(),
       };
       
@@ -491,104 +477,26 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
   }
   
     /// Send encrypted blob to proxy server with enhanced error handling
-  static Future<bool> _sendToProxy(String surveyType, String encryptedBlob) async {
-    const int maxRetries = 3;
-    const Duration initialDelay = Duration(seconds: 2);
-    
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        print('🌐 Sending encrypted $surveyType survey to proxy (attempt $attempt/$maxRetries)...');
-        
-        // iOS-specific: Increase timeout for AWS Lambda function URLs
-        final Duration timeout = Platform.isIOS ? Duration(seconds: 45) : Duration(seconds: 30);
-        
-        final headers = {
-          'Content-Type': 'application/json',
-          'User-Agent': 'GautengWellbeingMapper/1.0',
-          // iOS-specific: Add explicit connection headers
-          if (Platform.isIOS) ...{
-            'Connection': 'keep-alive',
-            'Accept-Encoding': 'gzip, deflate',
-          },
-        };
-        
-        final body = jsonEncode({
-          'encrypted_data': encryptedBlob,
-          'survey_type': surveyType,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
-        
-        final response = await http.post(
-          Uri.parse(_proxyServerUrl),
-          headers: headers,
-          body: body,
-        ).timeout(
-          timeout,
-          onTimeout: () {
-            print('⏰ Request timed out after ${timeout.inSeconds} seconds');
-            throw Exception('Request timeout after ${timeout.inSeconds} seconds');
-          },
+  static Future<bool> _sendToBarcelona(String surveyType, String encryptedBlob) async {
+    switch (surveyType) {
+      case 'initial':
+      case 'biweekly':
+      case 'wellbeing':
+        return BarcelonaServerService.submitEncryptedSurvey(
+          surveyType: surveyType,
+          encryptedBlob: encryptedBlob,
         );
-        
-        // Check HTTP status code
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          // Parse response to verify Qualtrics delivery
-          try {
-            final responseData = jsonDecode(response.body);
-            
-            // Verify the proxy successfully forwarded to Qualtrics
-            if (responseData['success'] == true) {
-              print('✅ Encrypted data confirmed delivered to Qualtrics (attempt $attempt)');
-              return true;
-            } else {
-              print('❌ Proxy responded OK but Qualtrics delivery failed: ${responseData['message'] ?? 'Unknown error'}');
-              // This counts as a failure - retry
-            }
-          } catch (jsonError) {
-            final bodyPreview = response.body.length > 200 ? '${response.body.substring(0, 200)}...' : response.body;
-            print('❌ Invalid JSON response from proxy: $bodyPreview');
-            // Malformed response - retry
-          }
-        } else {
-          print('❌ Proxy server HTTP error: ${response.statusCode}');
-          final bodyPreview = response.body.length > 200 ? '${response.body.substring(0, 200)}...' : response.body;
-          print('❌ Response body: $bodyPreview');
-          print('❌ Request size: ${encryptedBlob.length} characters');
-          
-          // Don't retry for client errors (4xx) - these won't get better
-          if (response.statusCode >= 400 && response.statusCode < 500) {
-            print('🚫 Client error - not retrying');
-            return false;
-          }
-          // Server errors (5xx) - retry after delay
-        }
-        
-      } catch (e) {
-        print('❌ Network error sending to proxy (attempt $attempt): $e');
-        
-        // Check for specific error types that shouldn't be retried
-        if (e.toString().contains('certificate') || 
-            e.toString().contains('handshake') ||
-            e.toString().contains('format')) {
-          print('🚫 Permanent error detected - not retrying');
-          return false;
-        }
-      }
-      
-      // If we reach here, the attempt failed - wait before retry
-      if (attempt < maxRetries) {
-        // Exponential backoff with jitter: 2s, 4s, 8s + random 0-2s
-        final baseDelay = initialDelay.inSeconds * (1 << (attempt - 1)); // 2^(attempt-1)
-        final jitter = (DateTime.now().millisecondsSinceEpoch % 2000) / 1000; // 0-2 seconds
-        final delay = Duration(milliseconds: ((baseDelay + jitter) * 1000).round());
-        print('⏳ Waiting ${delay.inSeconds}.${(delay.inMilliseconds % 1000).toString().padLeft(3, '0')}s before retry (exponential backoff)...');
-        await Future.delayed(delay);
-      }
+      case 'consent':
+        return BarcelonaServerService.submitEncryptedConsent(
+          encryptedBlob: encryptedBlob,
+        );
+      default:
+        print('❓ Unknown survey type "$surveyType" for encrypted submission');
+        return BarcelonaServerService.submitEncryptedSurvey(
+          surveyType: surveyType,
+          encryptedBlob: encryptedBlob,
+        );
     }
-    
-    // All attempts failed
-    print('💀 All $maxRetries attempts failed - marking as failed for later retry');
-    return false;
   }
   
   /// Enhanced sync method with better error tracking

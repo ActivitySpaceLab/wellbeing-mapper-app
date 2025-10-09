@@ -431,7 +431,7 @@ class SurveyDatabase {
         SELECT 
           age, ethnicity, gender, sexuality, birth_place, lives_in_barcelona,
           building_type, household_items, education, climate_activism,
-          submitted_at, synced, created_at, 'gauteng'
+          submitted_at, synced, created_at, 'barcelona'
         FROM initial_survey_backup
       ''');
       
@@ -440,7 +440,7 @@ class SurveyDatabase {
     }
     
     if (oldVersion < 9) {
-      // Add Gauteng-specific consent fields to consent_responses table
+  // Add Barcelona-specific consent fields to consent_responses table
       await db.execute('ALTER TABLE consent_responses ADD COLUMN consent_participate INTEGER DEFAULT 1');
       await db.execute('ALTER TABLE consent_responses ADD COLUMN consent_qualtrics_data INTEGER DEFAULT 1');
       await db.execute('ALTER TABLE consent_responses ADD COLUMN consent_race_ethnicity INTEGER DEFAULT 1');
@@ -649,7 +649,7 @@ class SurveyDatabase {
         // TODO: MULTIMEDIA ENCRYPTION - Images are stored as local file paths, encryption to be implemented
         // voiceNoteUrls: maps[i]['voice_note_urls'] != null ? List<String>.from(jsonDecode(maps[i]['voice_note_urls'] as String)) : null,
         imageUrls: maps[i]['image_urls'] != null ? List<String>.from(jsonDecode(maps[i]['image_urls'] as String)) : null,
-        researchSite: maps[i]['research_site'] as String? ?? 'gauteng',
+  researchSite: maps[i]['research_site'] as String? ?? 'barcelona',
         submittedAt: DateTime.parse(maps[i]['submitted_at'] as String),
       );
     });
@@ -741,7 +741,7 @@ class SurveyDatabase {
         imageUrls: maps[i]['image_urls'] != null 
             ? List<String>.from(jsonDecode(maps[i]['image_urls'] as String))
             : null,
-        researchSite: maps[i]['research_site'] as String? ?? 'gauteng',
+  researchSite: maps[i]['research_site'] as String? ?? 'barcelona',
         submittedAt: DateTime.parse(maps[i]['submitted_at'] as String),
         encryptedLocationData: maps[i]['encrypted_location_data'] as String?,
         synced: (maps[i]['synced'] as int? ?? 0) == 1,

@@ -7,7 +7,7 @@ import '../main.dart'; // Import to access existing navigatorKey
 
 /// iOS-specific location service to fix permission registration issues
 class IosLocationFixService {
-  static const _channel = MethodChannel('com.github.activityspacelab.wellbeingmapper.gauteng/ios_location');
+  static const _channel = MethodChannel('com.github.activityspacelab.wellbeingmapper.barcelona/ios_location');
   
   // Flag to track if comprehensive fix has already been completed successfully
   static bool _comprehensiveFixCompleted = false;

@@ -106,7 +106,7 @@ class RouteGenerator {
             settings: settings,
             builder: (_) => ConsentFormScreen(
               participantCode: args['participantCode'] ?? '',
-              researchSite: args['researchSite'] ?? 'gauteng',
+              researchSite: args['researchSite'] ?? 'barcelona',
               isTestingMode: args['isTestingMode'] ?? false,
             ),
           );
@@ -147,7 +147,7 @@ class RouteGenerator {
           return MaterialPageRoute(
             settings: settings,
             builder: (_) => ParticipantCodeEntryScreen(
-              researchSite: args['researchSite'] ?? 'gauteng',
+              researchSite: args['researchSite'] ?? 'barcelona',
             ),
           );
         }

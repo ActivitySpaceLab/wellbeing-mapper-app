@@ -2,15 +2,11 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'package:http/http.dart' as http;
+import 'barcelona_server_service.dart';
 
 /// Service for validating participant codes against a secure server-side list
 /// Uses SHA-256 hashing for security - codes are never transmitted in plain text
 class ParticipantValidationService {
-  // Production server endpoints (Lambda Function URL - more reliable than API Gateway)
-  static const String _baseUrl = 'https://6p7hir7licc5yisxhkner4wt2i0yhtzo.lambda-url.af-south-1.on.aws';
-  static const String _validateEndpoint = '/api/v1/participants/validate';
-  
   // Local storage keys
   static const String _validatedParticipantKey = 'validated_participant_code';
   static const String _validationTimestampKey = 'validation_timestamp';
@@ -55,17 +51,11 @@ class ParticipantValidationService {
       
       // Try server validation first
       try {
-        final response = await http.post(
-          Uri.parse('$_baseUrl$_validateEndpoint'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: jsonEncode({
-            'hashed_code': hashedCode,
-            'timestamp': DateTime.now().toIso8601String(),
-          }),
-        ).timeout(Duration(seconds: 10));
+        final response = await BarcelonaServerService
+            .validateParticipant({
+          'hashed_code': hashedCode,
+          'timestamp': DateTime.now().toIso8601String(),
+        }).timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);

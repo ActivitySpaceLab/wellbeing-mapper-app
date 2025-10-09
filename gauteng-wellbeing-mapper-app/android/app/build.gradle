@@ -39,7 +39,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace 'com.github.activityspacelab.wellbeingmapper.gauteng'
+    namespace 'com.github.activityspacelab.wellbeingmapper.barcelona'
     compileSdk 35  // Updated to support latest plugins
 
     sourceSets {
@@ -61,7 +61,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.github.activityspacelab.wellbeingmapper.gauteng"
+    applicationId "com.github.activityspacelab.wellbeingmapper.barcelona"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion 35  // Updated to support latest plugins
         versionCode flutterVersionCode.toInteger()
@@ -74,15 +74,15 @@ android {
     productFlavors {
         production {
             dimension "version"
-            applicationId "com.github.activityspacelab.wellbeingmapper.gauteng"
+            applicationId "com.github.activityspacelab.wellbeingmapper.barcelona"
             versionNameSuffix ""
-            resValue "string", "app_name", "Gauteng Wellbeing Mapper"
+            resValue "string", "app_name", "Barcelona Wellbeing Mapper"
         }
         beta {
             dimension "version"
-            applicationId "com.github.activityspacelab.wellbeingmapper.gauteng.beta"
+            applicationId "com.github.activityspacelab.wellbeingmapper.barcelona.beta"
             versionNameSuffix "-beta"
-            resValue "string", "app_name", "Gauteng Wellbeing Mapper Beta"
+            resValue "string", "app_name", "Barcelona Wellbeing Mapper Beta"
         }
     }
 

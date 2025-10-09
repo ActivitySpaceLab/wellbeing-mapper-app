@@ -54,7 +54,7 @@ Widget reportIssueBody(BuildContext context) {
           ),
           customButtonWithUrl(
               AppLocalizations.of(context)?.translate("github_button") ?? "",
-              "https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/issues",
+              "https://github.com/ActivitySpaceLab/barcelona-wellbeing-mapper-app/issues",
               ReportAnIssueStyle.requestFeatureColor,
               context),
           Container(

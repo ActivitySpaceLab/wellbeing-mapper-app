@@ -21,7 +21,7 @@ import CoreLocation
     // Set up location method channel
     let controller = window?.rootViewController as! FlutterViewController
     locationChannel = FlutterMethodChannel(
-      name: "com.github.activityspacelab.wellbeingmapper.gauteng/ios_location",
+  name: "com.github.activityspacelab.wellbeingmapper.barcelona/ios_location",
       binaryMessenger: controller.binaryMessenger
     )
     

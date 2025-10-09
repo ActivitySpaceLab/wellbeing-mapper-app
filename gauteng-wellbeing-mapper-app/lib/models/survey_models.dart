@@ -6,12 +6,12 @@ class InitialSurveyResponse {
   final String? sexuality;
   final String? birthPlace;
   final String? livesInBarcelona; // For Barcelona site only
-  final String? suburb; // For Gauteng site only
+  final String? suburb; // For site-specific customisations
   final String? buildingType;
   final List<String> householdItems;
   final String? education;
   final String? climateActivism;
-  final String? generalHealth; // For Gauteng site only
+  final String? generalHealth; // For site-specific customisations
   
   // Additional fields from biweekly survey (for baseline measurement)
   final List<String> activities;
@@ -53,7 +53,7 @@ class InitialSurveyResponse {
   // final List<String>? voiceNoteUrls; // URLs to uploaded audio files
   final List<String>? imageUrls; // URLs to uploaded image files
   
-  final String researchSite; // Currently only 'gauteng'
+  final String researchSite; // E.g. 'barcelona'
   final DateTime submittedAt;
 
   InitialSurveyResponse({
@@ -209,7 +209,7 @@ class RecurringSurveyResponse {
   final List<String> activities;
   final String? livingArrangement;
   final String? relationshipStatus;
-  final String? generalHealth; // For Gauteng site only
+  final String? generalHealth; // For site-specific customisations
   
   // Wellbeing questions (0-5 scale)
   final int? cheerfulSpirits;
@@ -245,7 +245,7 @@ class RecurringSurveyResponse {
   // final List<String>? voiceNoteUrls;
   final List<String>? imageUrls;
   
-  final String researchSite; // Currently only 'gauteng'
+  final String researchSite; // E.g. 'barcelona'
   final DateTime submittedAt;
   final String? encryptedLocationData; // Encrypted location data captured at submission time
   final bool synced; // Whether this survey has been uploaded to the server

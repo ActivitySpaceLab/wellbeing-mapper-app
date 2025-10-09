@@ -22,10 +22,10 @@
 	<string>upload</string>
 	<key>provisioningProfiles</key>
 	<dict>
-		<key>com.github.activityspacelab.wellbeingmapper.gauteng</key>
-		<string>match AppStore com.github.activityspacelab.wellbeingmapper.gauteng</string>
-		<key>com.github.activityspacelab.wellbeingmapper.gauteng.beta</key>
-		<string>match AppStore com.github.activityspacelab.wellbeingmapper.gauteng.beta</string>
+	<key>com.github.activityspacelab.wellbeingmapper.barcelona</key>
+	<string>match AppStore com.github.activityspacelab.wellbeingmapper.barcelona</string>
+	<key>com.github.activityspacelab.wellbeingmapper.barcelona.beta</key>
+	<string>match AppStore com.github.activityspacelab.wellbeingmapper.barcelona.beta</string>
 	</dict>
 </dict>
 </plist>

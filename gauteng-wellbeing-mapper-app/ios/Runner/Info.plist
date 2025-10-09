@@ -13,15 +13,15 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Gauteng Wellbeing Mapper</string>
+	<string>Barcelona Wellbeing Mapper</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.github.activityspacelab.wellbeingmapper.gauteng</string>
+	<string>com.github.activityspacelab.wellbeingmapper.barcelona</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Gauteng Wellbeing Mapper</string>
+	<string>Barcelona Wellbeing Mapper</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -61,21 +61,21 @@
 		</dict>
 	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Gauteng Wellbeing Mapper uses your location to track where you spend time so you can map your activity spaces and compare them to your wellbeing responses. This helps you understand how different places affect your mental health.</string>
+	<string>Barcelona Wellbeing Mapper uses your location to track where you spend time so you can map your activity spaces and compare them to your wellbeing responses. This helps you understand how different places affect your mental health.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Gauteng Wellbeing Mapper uses your location to track where you spend time so you can map your activity spaces and compare them to your wellbeing responses. This helps you understand how different places affect your mental health.</string>
+	<string>Barcelona Wellbeing Mapper uses your location to track where you spend time so you can map your activity spaces and compare them to your wellbeing responses. This helps you understand how different places affect your mental health.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Gauteng Wellbeing Mapper uses your location to track where you spend time so you can map your activity spaces and compare them to your wellbeing responses. This helps you understand how different places affect your mental health.</string>
+	<string>Barcelona Wellbeing Mapper uses your location to track where you spend time so you can map your activity spaces and compare them to your wellbeing responses. This helps you understand how different places affect your mental health.</string>
 	<key>NSLocationUsageDescription</key>
-	<string>Gauteng Wellbeing Mapper uses your location to track where you spend time so you can map your activity spaces and compare them to your wellbeing responses. This helps you understand how different places affect your mental health.</string>
+	<string>Barcelona Wellbeing Mapper uses your location to track where you spend time so you can map your activity spaces and compare them to your wellbeing responses. This helps you understand how different places affect your mental health.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>Gauteng Wellbeing Mapper accesses your motion data to improve location tracking of your activity spaces. The motion and location data it collects does not leave your phone unless you choose to share it by participating in research or by exporting it manually.</string>
+	<string>Barcelona Wellbeing Mapper accesses your motion data to improve location tracking of your activity spaces. The motion and location data it collects does not leave your phone unless you choose to share it by participating in research or by exporting it manually.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Gauteng Wellbeing Mapper uses your camera to make it possible for you to join research projects by scanning their QR codes.</string>
+	<string>Barcelona Wellbeing Mapper uses your camera to make it possible for you to join research projects by scanning their QR codes.</string>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>Gauteng Wellbeing Mapper sends you periodic reminders to participate in research surveys. These notifications help improve research participation and data quality.</string>
+	<string>Barcelona Wellbeing Mapper sends you periodic reminders to participate in research surveys. These notifications help improve research participation and data quality.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Gauteng Wellbeing Mapper may access your photo library to attach images to survey responses or export data visualizations.</string>
+	<string>Barcelona Wellbeing Mapper may access your photo library to attach images to survey responses or export data visualizations.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

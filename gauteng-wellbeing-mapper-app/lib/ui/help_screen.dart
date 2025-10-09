@@ -61,7 +61,7 @@ class HelpScreen extends StatelessWidget {
             ),
             SizedBox(height: 12),
             Text(
-              'Wellbeing Mapper helps people learn more about the ways in which mental wellbeing depends on environmental conditions. You can use it privately to study your own movements and wellbeing. If you have been selected for the Planet4Health study on mental wellbeing in Gauteng, South Africa, and given a participant code, then you can use the app to participate in that study.',
+              'Wellbeing Mapper helps people learn more about the ways in which mental wellbeing depends on environmental conditions. You can use it privately to study your own movements and wellbeing. If you have been selected for the Planet4Health study on mental wellbeing in Barcelona, Spain, and given a participant code, then you can use the app to participate in that study.',
               style: TextStyle(fontSize: 16, height: 1.4),
             ),
           ],
@@ -258,7 +258,7 @@ class HelpScreen extends StatelessWidget {
             _buildMenuOptionItem(
               Icons.settings,
               'App Mode',
-              'Switch between Private Mode (data stays on your phone) and Research Mode (if you have been selected for the Planet4Health mental wellbeing study in Gauteng, South Africa).',
+              'Switch between Private Mode (data stays on your phone) and Research Mode (if you have been selected for the Planet4Health mental wellbeing study in Barcelona, Spain).',
             ),
 
             _buildMenuOptionItem(
@@ -669,7 +669,7 @@ class HelpScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Thank you for using Gauteng Wellbeing Mapper! Your participation helps researchers understand how communities and environments affect wellbeing in South Africa.',
+                'Thank you for using Barcelona Wellbeing Mapper! Your participation helps researchers understand how communities and environments affect wellbeing in Barcelona.',
                 style: TextStyle(
                   fontSize: 14,
                   fontStyle: FontStyle.italic,
