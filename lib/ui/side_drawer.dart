@@ -111,6 +111,9 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
       print('[SideDrawer] Starting data export...');
       var now = DateTime.now();
       
+      // Check if this is a demo build
+      final isDemoMode = currentMode == AppMode.appTesting;
+      
       // Show loading indicator
       showDialog(
         context: context,
