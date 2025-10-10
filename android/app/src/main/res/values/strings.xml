@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wellbeing Mapper</string>
+    
+    <!-- Background location permission rationale -->
+    <string name="background_location_rationale">Wellbeing Mapper uses the device\'s location to track your movement even when you have the app closed so that you build up a clear map of where you spend time, which you can compare to your wellbeing responses.</string>
+</resources>

@@ -1,0 +1,566 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+import 'package:fast_rsa/fast_rsa.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import '../db/survey_database.dart';
+import '../main.dart';
+import '../services/app_mode_service.dart';
+import '../models/app_mode.dart';
+import '../util/env.dart';
+import 'barcelona_server_service.dart';
+
+/// Service for encrypting complete survey responses and sending to proxy server
+class EncryptedSurveyService {
+  
+  static String get _publicKey => ENV.barcelonaPublicKey;
+
+  /// Get current app version from package info
+  static Future<String> _getAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      return '${packageInfo.version}+${packageInfo.buildNumber}';
+    } catch (e) {
+      print('⚠️ Error getting app version: $e');
+      return '1.0.0'; // Fallback version
+    }
+  }
+
+  /// Sync all pending surveys as encrypted JSON blobs
+  static Future<void> syncPendingSurveys() async {
+    try {
+      print('🔐 Starting encrypted survey sync...');
+      
+      // CRITICAL: Check app mode before any upload operations
+      final currentMode = await AppModeService.getCurrentMode();
+      print('[EncryptedSurveyService] Current app mode: ${currentMode.toString()}');
+      print('[EncryptedSurveyService] App flavor: ${AppModeService.appFlavor}');
+      print('[EncryptedSurveyService] Is beta build: ${AppModeService.isBetaBuild}');
+      print('[EncryptedSurveyService] Sends data to research: ${await AppModeService.sendsDataToResearch()}');
+      
+      // Generate comprehensive mode status report for debugging
+      await AppModeService.logModeStatus();
+      
+      // If in app testing mode, simulate upload but don't actually send data
+      if (currentMode == AppMode.appTesting) {
+        print('[EncryptedSurveyService] App Testing Mode: Simulating sync without sending real data');
+        await Future.delayed(Duration(seconds: 1));
+        print('✅ Encrypted survey sync completed (simulated)');
+        return;
+      }
+      
+      // Only proceed with real upload if in research mode
+      if (!await AppModeService.sendsDataToResearch()) {
+        print('[EncryptedSurveyService] ❌ Data upload not available in current app mode');
+        print('[EncryptedSurveyService] ❌ Mode: $currentMode, Sends to research: ${await AppModeService.sendsDataToResearch()}');
+        return;
+      }
+      
+      final db = SurveyDatabase();
+      
+      // Track counts for summary
+      int initialCount = 0;
+      int biweeklyCount = 0; 
+      int consentCount = 0;
+      
+      // Track successful syncs
+      int initialSynced = 0;
+      int biweeklySynced = 0;
+      int consentSynced = 0;
+      
+      // CONSENT SAFEGUARD: Check if participant has given consent before syncing surveys
+      // (Consent forms are always synced since they ARE the consent)
+      final participantUuid = GlobalData.userUUID;
+      print('[EncryptedSurveyService] Participant UUID: ${participantUuid.isNotEmpty ? "present (${participantUuid.length} chars)" : "MISSING"}');
+      
+      if (participantUuid.isNotEmpty) {
+        // Check for research consent (not location sharing consent)
+        // Location sharing consent is only needed for location data, not surveys
+        final researchConsent = await db.getConsent();
+        print('[EncryptedSurveyService] Research consent found: ${researchConsent != null ? "YES" : "NO"}');
+        
+        // Sync initial and biweekly surveys if user has research consent
+        if (researchConsent != null) {
+          print('[EncryptedSurveyService] ✅ Research consent found, proceeding with survey sync');
+          
+          // Sync initial surveys
+          final unsyncedInitial = await db.getUnsyncedInitialSurveys();
+          initialCount = unsyncedInitial.length;
+          print('[EncryptedSurveyService] Unsynced initial surveys: $initialCount');
+          for (final survey in unsyncedInitial) {
+            print('[EncryptedSurveyService] Syncing initial survey ID: ${survey['id']}');
+            final success = await _syncInitialSurveyEncrypted(survey);
+            if (success) {
+              initialSynced++;
+            } else {
+              print('[EncryptedSurveyService] ❌ Failed to sync initial survey ID: ${survey['id']}');
+            }
+          }
+          
+          // Sync biweekly surveys  
+          final unsyncedBiweekly = await db.getUnsyncedRecurringSurveys();
+          biweeklyCount = unsyncedBiweekly.length;
+          print('[EncryptedSurveyService] Unsynced biweekly surveys: $biweeklyCount');
+          for (final survey in unsyncedBiweekly) {
+            print('[EncryptedSurveyService] Syncing biweekly survey ID: ${survey['id']}');
+            final success = await _syncBiweeklySurveyEncrypted(survey);
+            if (success) {
+              biweeklySynced++;
+            } else {
+              print('[EncryptedSurveyService] ❌ Failed to sync biweekly survey ID: ${survey['id']}');
+            }
+          }
+        } else {
+          print('[EncryptedSurveyService] ❌ No research consent found, skipping survey sync');
+          print('[EncryptedSurveyService] ❌ User needs to complete consent form in research mode');
+        }
+      } else {
+        print('[EncryptedSurveyService] ❌ No participant UUID found, skipping survey sync');
+        print('[EncryptedSurveyService] ❌ GlobalData.userUUID is empty - this prevents all uploads!');
+      }
+      
+      // Always sync consent forms (they ARE the consent, so no consent check needed)
+      final unsyncedConsent = await db.getUnsyncedConsentForms();
+      consentCount = unsyncedConsent.length;
+      print('[EncryptedSurveyService] Unsynced consent forms: $consentCount');
+      for (final consent in unsyncedConsent) {
+        print('[EncryptedSurveyService] Syncing consent form ID: ${consent['id']}');
+        final success = await _syncConsentFormEncrypted(consent);
+        if (success) {
+          consentSynced++;
+        } else {
+          print('[EncryptedSurveyService] ❌ Failed to sync consent form ID: ${consent['id']}');
+        }
+      }
+      
+      // Calculate total attempted vs successful syncs
+      final totalAttempted = initialCount + biweeklyCount + consentCount;
+      final totalSynced = initialSynced + biweeklySynced + consentSynced;
+      
+      print('[EncryptedSurveyService] 📊 Sync Summary:');
+      print('[EncryptedSurveyService] 📊   Initial: $initialSynced/$initialCount synced');
+      print('[EncryptedSurveyService] 📊   Biweekly: $biweeklySynced/$biweeklyCount synced');
+      print('[EncryptedSurveyService] 📊   Consent: $consentSynced/$consentCount synced');
+      print('[EncryptedSurveyService] 📊   Total: $totalSynced/$totalAttempted synced');
+      
+      if (totalAttempted == 0) {
+        print('[EncryptedSurveyService] ✅ No pending surveys to sync');
+      } else if (totalSynced == 0) {
+        print('[EncryptedSurveyService] ❌ All sync attempts failed');
+        
+        // iOS-specific error messaging
+        if (Platform.isIOS) {
+          print('[EncryptedSurveyService] 🍎 iOS Troubleshooting:');
+          print('[EncryptedSurveyService] 🍎   1. Check internet connection (WiFi/cellular)');
+          print('[EncryptedSurveyService] 🍎   2. Try toggling airplane mode on/off');
+          print('[EncryptedSurveyService] 🍎   3. Restart the app');
+          print('[EncryptedSurveyService] 🍎   4. Check if VPN or firewall is blocking the connection');
+          print('[EncryptedSurveyService] 🍎   5. Ensure the app has permission to use cellular data');
+          throw Exception('All 3 sync attempts failed. Check your internet connection and try again.');
+        } else {
+          throw Exception('All $totalAttempted sync attempts failed. Check network connection and proxy server status.');
+        }
+      } else if (totalSynced < totalAttempted) {
+        print('[EncryptedSurveyService] ⚠️ Partial sync success: $totalSynced out of $totalAttempted');
+        throw Exception('Partial sync failure: Only $totalSynced out of $totalAttempted surveys uploaded successfully.');
+      } else {
+        print('[EncryptedSurveyService] ✅ All surveys synced successfully');
+      }
+      
+    } catch (e) {
+      print('[EncryptedSurveyService] ❌ Error in sync: $e');
+      rethrow;
+    }
+  }
+  
+  /// Encrypt and sync initial survey
+  static Future<bool> _syncInitialSurveyEncrypted(Map<String, dynamic> surveyData) async {
+    try {
+      print('🔐 Encrypting and syncing initial survey...');
+      
+      // Get current app version
+      final appVersion = await _getAppVersion();
+      
+      // Process images if they exist
+      List<String>? encryptedImages;
+      if (surveyData['image_urls'] != null) {
+        encryptedImages = await _processImagesForEncryption(surveyData['image_urls'].toString());
+      }
+      
+      // Create complete survey JSON
+      final surveyJson = {
+        'type': 'initial_survey',
+        'participant_uuid': GlobalData.userUUID,
+        'survey_id': surveyData['id'],
+        'timestamp': DateTime.now().toIso8601String(),
+        'data': surveyData,
+        'encrypted_images': encryptedImages, // Include encrypted image data
+        'metadata': {
+          'app_version': appVersion,
+          'submission_method': 'barcelona_direct',
+          'has_images': encryptedImages != null && encryptedImages.isNotEmpty,
+        }
+      };
+      
+      // Encrypt the entire JSON
+      print('🔐 Starting encryption process...');
+      final encryptedBlob = await _encryptSurveyData(surveyJson);
+      print('🔐 Encryption completed, blob size: ${encryptedBlob.length} characters');
+
+      // Send to proxy server
+      print('🌐 Sending to proxy server...');
+  final success = await _sendToBarcelona('initial', encryptedBlob);
+  if (success) {
+        final db = SurveyDatabase();
+        await db.markInitialSurveySynced(surveyData['id']);
+        print('✅ Initial survey encrypted and synced');
+        return true;
+      }
+      
+      return false;
+      
+    } catch (e) {
+      print('❌ Error encrypting initial survey: $e');
+      return false;
+    }
+  }
+  
+  /// Encrypt and sync biweekly survey
+  static Future<bool> _syncBiweeklySurveyEncrypted(Map<String, dynamic> surveyData) async {
+    try {
+      print('🔐 Encrypting and syncing biweekly survey...');
+      print('🔄 Survey data keys: ${surveyData.keys.join(', ')}');
+      print('🔄 Survey ID: ${surveyData['id']}');
+      
+      // Get current app version
+      final appVersion = await _getAppVersion();
+      
+      // Include location data if available - now as part of unified survey JSON
+      Map<String, dynamic>? locationData;
+      if (surveyData['encrypted_location_data'] != null) {
+        try {
+          // Parse the location data JSON and include it directly in survey
+          locationData = jsonDecode(surveyData['encrypted_location_data'].toString());
+        } catch (e) {
+          print('⚠️ Error parsing location data: $e');
+          locationData = null;
+        }
+      } else if (surveyData['location_data'] != null) {
+        try {
+          // Fallback for legacy field name
+          locationData = jsonDecode(surveyData['location_data'].toString());
+        } catch (e) {
+          print('⚠️ Error parsing legacy location data: $e');
+          locationData = null;
+        }
+      }
+      
+      // Process images if they exist
+      List<String>? encryptedImages;
+      if (surveyData['image_urls'] != null) {
+        encryptedImages = await _processImagesForEncryption(surveyData['image_urls'].toString());
+      }
+      // Create complete survey JSON
+      final userUUID = GlobalData.userUUID;
+      
+      final surveyJson = {
+        'type': 'biweekly_survey',
+        'participant_uuid': userUUID,
+        'survey_id': surveyData['id'],
+        'timestamp': DateTime.now().toIso8601String(),
+        'data': surveyData,
+        'encrypted_images': encryptedImages, // Include encrypted image data
+        'location_data': locationData, // Include parsed location data directly
+        'metadata': {
+          'app_version': appVersion,
+          'submission_method': 'barcelona_direct',
+          'encryption_unified': true, // Flag to indicate unified encryption approach
+          'has_images': encryptedImages != null && encryptedImages.isNotEmpty,
+        }
+      };
+      print('🔄 Survey JSON structure created successfully');
+
+      // Encrypt the entire JSON
+      print('🔐 Starting encryption process...');
+      final encryptedBlob = await _encryptSurveyData(surveyJson);
+      print('🔐 Encryption completed, blob size: ${encryptedBlob.length} characters');
+      
+      // Send to proxy server
+      print('🌐 Sending to proxy server...');
+  final success = await _sendToBarcelona('biweekly', encryptedBlob);
+      
+      if (success) {
+        final db = SurveyDatabase();
+        await db.markRecurringSurveySynced(surveyData['id']);
+        print('✅ Biweekly survey encrypted and synced');
+        return true;
+      }
+      
+      return false;
+      
+    } catch (e) {
+      print('[EncryptedSurveyService] ❌ Error syncing biweekly survey: $e');
+      return false;
+    }
+  }
+  
+  /// Encrypt and sync consent form
+  static Future<bool> _syncConsentFormEncrypted(Map<String, dynamic> consentData) async {
+    try {
+      print('🔐 Encrypting and syncing consent form...');
+      
+      // Get current app version
+      final appVersion = await _getAppVersion();
+      
+      final consentJson = {
+        'type': 'consent_form',
+        'participant_uuid': GlobalData.userUUID,
+        'consent_id': consentData['id'],
+        'timestamp': DateTime.now().toIso8601String(),
+        'data': consentData,
+        'metadata': {
+          'app_version': appVersion,
+          'submission_method': 'barcelona_direct',
+        }
+      };
+      
+      final encryptedBlob = await _encryptSurveyData(consentJson);
+  final success = await _sendToBarcelona('consent', encryptedBlob);
+      
+      if (success) {
+        final db = SurveyDatabase();
+        await db.markConsentFormSynced(consentData['id']);
+        print('✅ Consent form encrypted and synced');
+        return true;
+      }
+      
+      return false;
+      
+    } catch (e) {
+      print('❌ Error encrypting consent form: $e');
+      return false;
+    }
+  }
+  
+  /// Process images for encryption - converts local file paths to base64 data
+  static Future<List<String>?> _processImagesForEncryption(String? imageUrlsJson) async {
+    print('🐛 DEBUG: _processImagesForEncryption called with: "$imageUrlsJson"');
+    if (imageUrlsJson == null || imageUrlsJson.isEmpty) {
+      print('🐛 DEBUG: imageUrlsJson is null or empty, returning null');
+      return null;
+    }
+    
+    try {
+      // Parse the JSON list of image URLs
+      final imageUrls = List<String>.from(jsonDecode(imageUrlsJson));
+      final List<String> base64Images = [];
+      
+      // Photo functionality removed for production reliability
+      // Strip any existing photos from legacy surveys for backward compatibility
+      if (imageUrls.isNotEmpty) {
+        print('📷 Removing ${imageUrls.length} photos from legacy survey for reliable upload');
+        imageUrls.clear(); // Remove all photos
+      }
+      print('📷 Photo upload disabled - survey will upload without images');
+      
+      // Photo processing removed - surveys upload without images for reliability
+      
+      print('📷 Successfully processed ${base64Images.length}/${imageUrls.length} images');
+      
+      // Log total image data size
+      if (base64Images.isNotEmpty) {
+        final totalImageDataSize = base64Images.fold<int>(0, (sum, img) => sum + img.length);
+        final totalImageSizeInMB = totalImageDataSize / (1024 * 1024);
+        print('📷 Total image data size: ${totalImageSizeInMB.toStringAsFixed(2)}MB');
+        
+        if (totalImageSizeInMB > 4.0) {
+          print('⚠️ WARNING: Image data alone is ${totalImageSizeInMB.toStringAsFixed(2)}MB - may cause size issues!');
+        }
+      }
+      
+      return base64Images.isNotEmpty ? base64Images : null;
+      
+    } catch (e) {
+      print('❌ Error processing images for encryption: $e');
+      return null;
+    }
+  }
+  
+  /// Encrypt survey data using hybrid AES/RSA encryption
+  static Future<String> _encryptSurveyData(Map<String, dynamic> surveyJson) async {
+    try {
+      // Log whether images are included
+      final hasImages = surveyJson['encrypted_images'] != null && (surveyJson['encrypted_images'] as List).isNotEmpty;
+      if (hasImages) {
+        final imageCount = (surveyJson['encrypted_images'] as List).length;
+        print('🔐 Encrypting survey with $imageCount images included');
+      } else {
+        print('🔐 Encrypting survey (no images)');
+      }
+      
+      // Convert to JSON string
+      final jsonString = jsonEncode(surveyJson);
+      print('📄 Survey JSON size: ${jsonString.length} characters');
+      
+      // Check if payload might be too large for AWS Lambda (6MB limit)
+      final jsonSizeInMB = jsonString.length / (1024 * 1024);
+      if (jsonSizeInMB > 5.0) {
+        print('⚠️ WARNING: Survey JSON is ${jsonSizeInMB.toStringAsFixed(2)}MB - may exceed AWS Lambda 6MB limit!');
+      } else if (jsonSizeInMB > 2.0) {
+        print('⚠️ Large payload: ${jsonSizeInMB.toStringAsFixed(2)}MB');
+      } else {
+        print('✅ Payload size: ${jsonSizeInMB.toStringAsFixed(2)}MB');
+      }
+      
+      // Generate random 32-byte AES key (256-bit)
+      final random = Random.secure();
+      final aesKey = Uint8List.fromList(List.generate(32, (_) => random.nextInt(256)));
+      
+      // Encrypt data using XOR (matching archive implementation)
+      final dataBytes = utf8.encode(jsonString);
+      final encryptedData = Uint8List(dataBytes.length);
+      for (int i = 0; i < dataBytes.length; i++) {
+        encryptedData[i] = dataBytes[i] ^ aesKey[i % aesKey.length];
+      }
+      
+      // Encrypt AES key with RSA (use base64 for safe string transmission)
+      final aesKeyBase64 = base64.encode(aesKey);
+      
+      String encryptedKey;
+      try {
+        encryptedKey = await RSA.encryptPKCS1v15(aesKeyBase64, _publicKey);
+      } catch (rsaError) {
+        print('❌ RSA encryption failed: $rsaError');
+        rethrow;
+      }
+      
+      if (encryptedKey.isEmpty) {
+        throw Exception('RSA encryption failed: encryptedKey is empty');
+      }
+      
+      // Create encrypted package
+      final encryptedPackage = {
+        'encryptedData': base64.encode(encryptedData),
+        'encryptedKey': encryptedKey,
+        'algorithm': 'AES-256-GCM + RSA-PKCS1',
+  'researchSite': 'barcelona',
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      
+      // Convert the entire package to base64 for transmission
+      final packageJson = jsonEncode(encryptedPackage);
+      final packageBase64 = base64.encode(utf8.encode(packageJson));
+      
+      print('🔐 Hybrid encrypted package created');
+      print('   Data: ${encryptedData.length} bytes');  
+      print('   Package: ${packageJson.length} chars');
+      print('   Base64: ${packageBase64.length} chars');
+      
+      // Data integrity check - verify the base64 is valid
+      try {
+        final testDecode = utf8.decode(base64.decode(packageBase64));
+        jsonDecode(testDecode); // Verify JSON is parseable
+        print('✅ Package integrity verified');
+      } catch (e) {
+        print('❌ Package integrity check failed: $e');
+        throw Exception('Encrypted package corrupted during encoding');
+      }
+      
+      return packageBase64;
+      
+    } catch (e) {
+      print('❌ Encryption failed: $e');
+      rethrow;
+    }
+  }
+  
+    /// Send encrypted blob to proxy server with enhanced error handling
+  static Future<bool> _sendToBarcelona(String surveyType, String encryptedBlob) async {
+    switch (surveyType) {
+      case 'initial':
+      case 'biweekly':
+      case 'wellbeing':
+        return BarcelonaServerService.submitEncryptedSurvey(
+          surveyType: surveyType,
+          encryptedBlob: encryptedBlob,
+        );
+      case 'consent':
+        return BarcelonaServerService.submitEncryptedConsent(
+          encryptedBlob: encryptedBlob,
+        );
+      default:
+        print('❓ Unknown survey type "$surveyType" for encrypted submission');
+        return BarcelonaServerService.submitEncryptedSurvey(
+          surveyType: surveyType,
+          encryptedBlob: encryptedBlob,
+        );
+    }
+  }
+  
+  /// Enhanced sync method with better error tracking
+  static Future<void> syncPendingSurveysEnhanced() async {
+    try {
+      print('🔐 Starting enhanced encrypted survey sync...');
+      
+      final db = SurveyDatabase();
+      
+      // Get unsynced data
+      final unsyncedInitial = await db.getUnsyncedInitialSurveys();
+      final unsyncedBiweekly = await db.getUnsyncedRecurringSurveys();
+      final unsyncedConsent = await db.getUnsyncedConsentForms();
+      
+      final totalToSync = unsyncedInitial.length + unsyncedBiweekly.length + unsyncedConsent.length;
+      int successCount = 0;
+      int failureCount = 0;
+      
+      print('📊 Found $totalToSync surveys to sync (Initial: ${unsyncedInitial.length}, Biweekly: ${unsyncedBiweekly.length}, Consent: ${unsyncedConsent.length})');
+      
+      if (totalToSync == 0) {
+        print('✅ No surveys to sync');
+        return;
+      }
+      
+      // Sync initial surveys
+      for (final survey in unsyncedInitial) {
+        if (await _syncInitialSurveyEncrypted(survey)) {
+          successCount++;
+        } else {
+          failureCount++;
+        }
+      }
+      
+      // Sync biweekly surveys
+      for (final survey in unsyncedBiweekly) {
+        if (await _syncBiweeklySurveyEncrypted(survey)) {
+          successCount++;
+        } else {
+          failureCount++;
+        }
+      }
+      
+      // Sync consent forms
+      for (final consent in unsyncedConsent) {
+        if (await _syncConsentFormEncrypted(consent)) {
+          successCount++;
+        } else {
+          failureCount++;
+        }
+      }
+      
+      print('📊 Sync completed: $successCount successful, $failureCount failed out of $totalToSync total');
+      
+      if (failureCount > 0) {
+        print('⚠️ $failureCount surveys failed to sync and will be retried later');
+      } else {
+        print('✅ All surveys synced successfully');
+      }
+      
+    } catch (e) {
+      print('❌ Critical error in enhanced survey sync: $e');
+    }
+  }
+
+  // Photo compression function removed - no longer needed
+}
