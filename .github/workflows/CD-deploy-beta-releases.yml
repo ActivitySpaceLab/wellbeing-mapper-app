@@ -46,7 +46,7 @@ jobs:
     - name: Validate version consistency
       run: |
         # Get version from pubspec.yaml (remove build number)
-        PUBSPEC_VERSION=$(grep "version:" gauteng-wellbeing-mapper-app/pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
+        PUBSPEC_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
         
         # Get version from git tag (remove 'v' prefix and beta suffix for comparison)
         TAG_VERSION=${GITHUB_REF#refs/tags/v}
@@ -66,7 +66,6 @@ jobs:
 
     - name: Get flutter dependencies
       run: flutter pub get
-      working-directory: gauteng-wellbeing-mapper-app
 
     - name: Verify iOS entitlements configuration
       run: |
@@ -101,15 +100,12 @@ jobs:
         done
         
         echo "iOS entitlements configuration verified"
-      working-directory: gauteng-wellbeing-mapper-app
 
     - name: Statically analyze the Dart code for any errors
       run: flutter analyze
-      working-directory: gauteng-wellbeing-mapper-app
     
     - name: Run tests for our flutter project
       run: flutter test --dart-define=FLUTTER_TEST_MODE=true
-      working-directory: gauteng-wellbeing-mapper-app
 
     - name: Generate correct local.properties with version info
       run: |
@@ -136,7 +132,6 @@ jobs:
         
         echo "Generated local.properties:"
         cat android/local.properties
-      working-directory: gauteng-wellbeing-mapper-app
 
     # Android Builds - Beta Flavor
     - name: Build Android APKs (Beta) - Multiple Architectures
@@ -163,7 +158,6 @@ jobs:
         find build/app/outputs/flutter-apk/ -name "*.apk" -type f | sort
         echo "Listing all APK files:"
         ls -la build/app/outputs/flutter-apk/ || echo "APK directory not found"
-      working-directory: gauteng-wellbeing-mapper-app
 
     - name: Build Android App Bundle (Beta)
       run: |
@@ -183,58 +177,55 @@ jobs:
         echo "Beta App Bundle built successfully!"
         echo "AAB location:"
         ls -la build/app/outputs/bundle/betaRelease/app-beta-release.aab || echo "AAB file not found"
-      working-directory: gauteng-wellbeing-mapper-app
 
     # iOS Builds - Beta Flavor
     - name: Install iOS dependencies
       run: cd ios && pod install && cd ..
-      working-directory: gauteng-wellbeing-mapper-app
       
     - name: Build iOS (Beta) - Unsigned for Distribution
       run: |
         echo "Building iOS Beta without code signing for distribution..."
-        
+
         # Set the appropriate Info.plist for beta flavor
         cp ios/Runner/Info-Beta.plist ios/Runner/Info.plist
-        echo "Using Beta Info.plist with bundle ID: com.github.activityspacelab.wellbeingmapper.gauteng.beta"
-        
+        echo "Using Beta Info.plist with bundle ID: com.github.activityspacelab.wellbeingmapper.barcelona.beta"
+
         # Build iOS without code signing (for distribution only)
         flutter build ios --release \
           --dart-define=APP_FLAVOR=beta \
           --no-codesign
-        
+
         echo "iOS Beta build complete (unsigned)!"
         echo "iOS build location:"
         ls -la build/ios/iphoneos/ || echo "iOS build directory not found"
-        
+
         # Create a zip archive of the iOS app for distribution
         cd build/ios/iphoneos/
         zip -r ../../../wellbeing-mapper-beta-ios.zip Runner.app/
         cd ../../../
-        
+
         echo "iOS app archived as wellbeing-mapper-beta-ios.zip"
         echo "Note: This build is for distribution - actual device installation requires proper provisioning profiles"
-      working-directory: gauteng-wellbeing-mapper-app
-    
+
     - name: Create a Beta Release in GitHub
       uses: ncipollo/release-action@v1
       with:
         artifacts: |
-          gauteng-wellbeing-mapper-app/build/app/outputs/flutter-apk/*.apk
-          gauteng-wellbeing-mapper-app/build/app/outputs/bundle/betaRelease/app-beta-release.aab
-          gauteng-wellbeing-mapper-app/wellbeing-mapper-beta-ios.zip
+          build/app/outputs/flutter-apk/*.apk
+          build/app/outputs/bundle/betaRelease/app-beta-release.aab
+          wellbeing-mapper-beta-ios.zip
         token: ${{ secrets.GITHUB_TOKEN }}
         tag: ${{ steps.version.outputs.content }}
-        name: "Wellbeing Mapper ${{ steps.version.outputs.content }} - Beta Release"
+        name: "Wellbeing Mapper Barcelona ${{ steps.version.outputs.content }} - Beta Release"
         body: |
-          # Wellbeing Mapper Beta Release ${{ steps.version.outputs.content }}
+          # Wellbeing Mapper Barcelona Beta Release ${{ steps.version.outputs.content }}
           
           **This is a beta testing release - help us improve Wellbeing Mapper!**
           
-          Thank you for helping us test and improve this privacy-focused app for mapping your mental wellbeing.
+          Thank you for helping us test and improve the Barcelona edition of this privacy-focused app for mapping your mental wellbeing.
           
           ## What is Wellbeing Mapper?
-          Wellbeing Mapper helps you track your mental wellbeing and movement patterns. This beta version includes the latest features and improvements that need testing before the next production release.
+          Wellbeing Mapper helps you track your mental wellbeing and movement patterns across Barcelona. This beta version includes the latest features and improvements that need testing before the next production release.
           
           ## Beta Testing Features
           - Latest experimental features and improvements
@@ -270,7 +261,7 @@ jobs:
           - iOS builds in this release are unsigned (for distribution purposes)
           - For device testing, contact the research team for TestFlight access
           - Beta testers can re-sign builds with their own developer profiles
-          - Bundle ID for beta: `com.github.activityspacelab.wellbeingmapper.gauteng.beta`
+          - Bundle ID for beta: `com.github.activityspacelab.wellbeingmapper.barcelona.beta`
           
           ## 🔒 Privacy & Beta Testing
           - **Private Mode**: All data stays securely on your device during testing
@@ -298,7 +289,7 @@ jobs:
           
           ## Beta Support & Feedback
           - Email: john.palmer@upf.edu (include "BETA" in subject)
-          - Beta Guide: [Beta Testing Guide](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/blob/main/docs/BETA_TESTING_GUIDE.md)
+          - Beta Guide: [Beta Testing Checklist](https://github.com/ActivitySpaceLab/barcelona-wellbeing-mapper-app/blob/main/docs/testing/beta-testing-checklist.md)
           - Report Issues: Use GitHub Issues with "beta" label
           - In-app feedback: Use the built-in feedback system
           

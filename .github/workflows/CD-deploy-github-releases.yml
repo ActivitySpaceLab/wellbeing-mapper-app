@@ -80,40 +80,33 @@ jobs:
         echo "is_production=true" >> $GITHUB_OUTPUT
 
     - name: Extract and verify version information
-      working-directory: gauteng-wellbeing-mapper-app
       run: |
-          # Get version from pubspec.yaml (remove build number for comparison)
-          PUBSPEC_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
-          
-          # Get version from git tag (remove 'v' prefix and any build number)
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
-          TAG_VERSION=$(echo $TAG_VERSION | sed 's/-.*//')  # Remove any build number like -123
-          
-          echo "pubspec.yaml version: $PUBSPEC_VERSION"
-          echo "Git tag version: $TAG_VERSION"
-          echo "Full tag: ${GITHUB_REF#refs/tags/}"
-          echo "Full pubspec version: $(grep "version:" pubspec.yaml | sed 's/version: //' | tr -d ' ')"
-          
-          if [ "$PUBSPEC_VERSION" = "$TAG_VERSION" ]; then
-            echo "✅ Versions match!"
-          else
-            echo "❌ Version mismatch detected!"
-            echo "   pubspec.yaml has: $PUBSPEC_VERSION"
-            echo "   Git tag has: $TAG_VERSION"
-            echo ""
-            echo "📋 Debug info:"
-            echo "   Full git ref: $GITHUB_REF"
-            echo "   Raw tag: ${GITHUB_REF#refs/tags/}"
-            echo "   pubspec.yaml line: $(grep "version:" pubspec.yaml)"
-            echo ""
-            echo "⚠️  For production releases, the tag version should match pubspec.yaml base version"
-            echo "    Example: if pubspec.yaml has '1.1.36+7169', tag should be 'v1.1.36' or 'v1.1.36-7169'"
-            exit 1
-          fi
+        echo "🔍 Validating tag against pubspec.yaml version..."
+
+        # Get version from pubspec.yaml (remove build number for comparison)
+        PUBSPEC_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
+
+        # Get version from git tag (remove 'v' prefix and any build number)
+        TAG_VERSION=${GITHUB_REF#refs/tags/v}
+        TAG_VERSION=$(echo "$TAG_VERSION" | sed 's/-.*//')
+
+        echo "pubspec.yaml version: $PUBSPEC_VERSION"
+        echo "Git tag version: $TAG_VERSION"
+        echo "Full tag: ${GITHUB_REF#refs/tags/}"
+        echo "Full pubspec version: $(grep \"version:\" pubspec.yaml | sed 's/version: //' | tr -d ' ')"
+
+        if [ "$PUBSPEC_VERSION" = "$TAG_VERSION" ]; then
+          echo "✅ Versions match!"
+        else
+          echo "❌ Version mismatch detected!"
+          echo "   pubspec.yaml has: $PUBSPEC_VERSION"
+          echo "   Git tag has: $TAG_VERSION"
+          echo "⚠️  Update pubspec.yaml before tagging a production release."
+          exit 1
+        fi
 
     # CRITICAL: Clean all caches before building
     - name: Clean all build caches
-      working-directory: gauteng-wellbeing-mapper-app
       run: |
         echo "🧹 Cleaning all build caches to ensure correct version..."
         
@@ -139,7 +132,6 @@ jobs:
         echo "✅ All caches cleaned (Gradle clean will be done in separate step)"
 
     - name: Configure Android environment for CI
-      working-directory: gauteng-wellbeing-mapper-app
       run: |
         echo "🔧 Configuring Android environment for CI compatibility..."
         
@@ -165,24 +157,19 @@ jobs:
         echo "✅ Android environment configured for CI"
 
     - name: Verify Android environment setup
-      working-directory: gauteng-wellbeing-mapper-app/android
       run: |
         echo "🔧 Verifying Android environment setup..."
-        
-        # Check basic Android project structure
-        if [ -f "build.gradle" ]; then
-          echo "✅ Android build.gradle found"
+
+        if [ -f "android/build.gradle" ]; then
+          echo "✅ android/build.gradle found"
         else
-          echo "❌ Android build.gradle missing"
+          echo "❌ android/build.gradle missing"
           exit 1
         fi
-        
-        # Note: gradlew is not required for Flutter projects
-        # Flutter will handle Gradle setup automatically during build
+
         echo "✅ Android environment ready for Flutter build"
 
     - name: Clean dependencies for AAR compatibility
-      working-directory: gauteng-wellbeing-mapper-app
       run: |
         echo "🧹 Cleaning dependencies to avoid AAR metadata conflicts..."
         
@@ -199,7 +186,6 @@ jobs:
 
     - name: Get flutter dependencies
       run: flutter pub get
-      working-directory: gauteng-wellbeing-mapper-app
 
     - name: Sync version information
       run: |
@@ -209,11 +195,9 @@ jobs:
         echo "✅ Version sync complete"
 
     - name: Verify iOS entitlements configuration
-      working-directory: gauteng-wellbeing-mapper-app
       run: |
         echo "🔍 Verifying iOS entitlements are properly configured..."
-        
-        # Check entitlements file exists
+
         if [ ! -f "ios/Runner/Runner.entitlements" ]; then
           echo "❌ ERROR: Entitlements file missing!"
           echo "Expected: ios/Runner/Runner.entitlements"
@@ -221,8 +205,7 @@ jobs:
           exit 1
         fi
         echo "✅ Entitlements file exists"
-        
-        # Check entitlements are linked in Xcode project with more detailed output
+
         echo "🔍 Checking entitlements linking in Xcode project..."
         if ! grep -q "CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements" ios/Runner.xcodeproj/project.pbxproj; then
           echo "❌ ERROR: Entitlements not linked in Xcode project!"
@@ -231,12 +214,10 @@ jobs:
           exit 1
         fi
         echo "✅ Entitlements linked in Xcode project"
-        
-        # Count linked configurations with better debugging
-        echo "🔍 Counting entitlement configurations..."
+
         ENTITLEMENT_COUNT=$(grep -c "CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements" ios/Runner.xcodeproj/project.pbxproj)
         echo "Found $ENTITLEMENT_COUNT entitlement configurations"
-        
+
         if [ "$ENTITLEMENT_COUNT" -lt 3 ]; then
           echo "❌ ERROR: Expected 3 entitlement configurations, found $ENTITLEMENT_COUNT"
           echo "🔍 Showing all entitlements references:"
@@ -244,8 +225,7 @@ jobs:
           exit 1
         fi
         echo "✅ All $ENTITLEMENT_COUNT build configurations have entitlements linked"
-        
-        # Check location permissions in Info.plist with better debugging
+
         echo "🔍 Checking location permissions in Info.plist..."
         REQUIRED_KEYS=("NSLocationAlwaysAndWhenInUseUsageDescription" "NSLocationAlwaysUsageDescription" "NSLocationWhenInUseUsageDescription" "NSLocationUsageDescription")
         for key in "${REQUIRED_KEYS[@]}"; do
@@ -257,16 +237,14 @@ jobs:
           fi
           echo "✅ Found required key: $key"
         done
-        
+
         echo "✅ iOS entitlements configuration verified successfully!"
 
     - name: Statically analyze the Dart code for any errors
       run: flutter analyze
-      working-directory: gauteng-wellbeing-mapper-app
     
     - name: Run tests for our flutter project
       run: flutter test --dart-define=FLUTTER_TEST_MODE=true
-      working-directory: gauteng-wellbeing-mapper-app
 
     - name: Generate and verify local.properties with version info
       run: |
@@ -302,7 +280,6 @@ jobs:
         
         echo "Updated gradle.properties:"
         tail -5 android/gradle.properties
-      working-directory: gauteng-wellbeing-mapper-app
 
     # Android Builds - Production Flavor
     - name: Build Android APKs (Production) - Multiple Architectures
@@ -380,8 +357,6 @@ jobs:
             fi
           fi
         done
-      working-directory: gauteng-wellbeing-mapper-app
-
     - name: Build Android App Bundle (Production)
       run: |
         echo "📦 Building Production Android App Bundle..."
@@ -416,16 +391,13 @@ jobs:
         echo "✅ Production App Bundle built successfully!"
         echo "AAB location:"
         ls -la build/app/outputs/bundle/productionRelease/app-production-release.aab || echo "AAB file not found"
-      working-directory: gauteng-wellbeing-mapper-app
-
     # iOS Builds - Production Flavor
     - name: Install iOS dependencies
       run: |
-        cd ios 
+        cd ios
         pod cache clean --all
         pod install --repo-update
         cd ..
-      working-directory: gauteng-wellbeing-mapper-app
       
     - name: Build iOS (Production) - Unsigned for Distribution
       run: |
@@ -433,7 +405,7 @@ jobs:
         
         # Set the appropriate Info.plist for production flavor
         cp ios/Runner/Info-Production.plist ios/Runner/Info.plist
-        echo "Using Production Info.plist with bundle ID: com.github.activityspacelab.wellbeingmapper.gauteng"
+        echo "Using Production Info.plist with bundle ID: com.github.activityspacelab.wellbeingmapper.barcelona"
         
         # Build iOS without code signing (for distribution only)
         flutter build ios --release \
@@ -451,81 +423,56 @@ jobs:
         
         echo "iOS app archived as wellbeing-mapper-production-ios.zip"
         echo "Note: This build is for distribution - actual App Store submission requires proper provisioning profiles and signing"
-      working-directory: gauteng-wellbeing-mapper-app
     
     - name: Create a Production Release in GitHub
       uses: ncipollo/release-action@v1
       with:
         artifacts: |
-          gauteng-wellbeing-mapper-app/build/app/outputs/flutter-apk/*.apk
-          gauteng-wellbeing-mapper-app/build/app/outputs/bundle/productionRelease/app-production-release.aab
-          gauteng-wellbeing-mapper-app/wellbeing-mapper-production-ios.zip
+          build/app/outputs/flutter-apk/*.apk
+          build/app/outputs/bundle/productionRelease/app-production-release.aab
+          wellbeing-mapper-production-ios.zip
         token: ${{ secrets.GITHUB_TOKEN }}
         tag: ${{ steps.version.outputs.content }}
-        name: "Wellbeing Mapper ${{ steps.version.outputs.content }} - Production Release"
+        name: "Wellbeing Mapper Barcelona ${{ steps.version.outputs.content }} - Production Release"
         body: |
-          # Wellbeing Mapper Production Release ${{ steps.version.outputs.content }}
-          
-          **This is the official production release of Wellbeing Mapper!**
-          
-          ## What is Wellbeing Mapper?
-          Wellbeing Mapper helps you track your mental wellbeing and movement patterns. This production version offers both private personal use and research participation options.
-          
-          ## What's New in This Release
-          - Stable production build with full testing
-          - Enhanced privacy controls and data protection
-          - Improved user interface and experience
-          - Comprehensive location and survey features
-          - Research participation capabilities (optional)
-          
-          ## How to Download and Install
-          
-          ### Android Users
-          **Download one of the production APK files below:**
-          - Choose any `app-production-*.apk` file (Flutter automatically optimizes for your device architecture)
-          - All APK variants work on modern Android devices - download any one
-          
-          **Installation steps:**
-          1. Download any APK file from the Assets section below
-          2. Enable "Install unknown apps" in your device's security settings
-          3. Tap the APK file and follow the installation prompts
-          4. Open Wellbeing Mapper and choose your preferred mode
-          
-          ### Android App Bundle
-          The `app-production-release.aab` file is for Google Play Store distribution.
-          
-          ### iOS Users
-          **iOS builds are included but require proper signing for installation:**
-          - Download `wellbeing-mapper-production-ios.zip` which contains the unsigned iOS app
-          - iOS builds in this release are unsigned (for distribution purposes)
-          - For device installation, contact the research team for TestFlight access
-          - App Store distribution requires additional signing and review process
-          - Developers can re-sign the build with their own provisioning profiles
-          
-          ## Privacy & Data Protection
-          - **Private Mode**: All data stays securely on your device
-          - **Research Mode**: Optional data sharing with explicit consent
-          - **No Tracking**: No advertising or third-party analytics
-          - **Your Control**: Delete all data anytime from app settings
-          
-          ## Production vs Beta
-          This is the **stable production release** - recommended for:
-          - Regular users wanting reliable functionality
-          - Research participants in official studies
-          - Long-term personal wellbeing tracking
-          
-          For testing new features, see our beta releases with `-beta` tags.
-          
-          ## Support & Feedback
+          # Wellbeing Mapper Barcelona Production Release ${{ steps.version.outputs.content }}
+
+          **This is the stable Barcelona build of Wellbeing Mapper, ready for day-to-day use.**
+
+          ## Barcelona Release Highlights
+          - City-tuned wellbeing maps and timeline overlays
+          - Hardened privacy tooling across Catalan, Spanish, and English locales
+          - Production-ready survey flows with localization fixes
+          - Performance improvements validated on Barcelona tester cohorts
+          - Updated encryption pipeline aligned with the DigitalOcean backend rollout
+
+          ## How to Install
+
+          ### Android
+          - Download any `app-production-*.apk` asset below (Flutter optimizes per architecture).
+          - Enable installation from trusted external sources on your device.
+          - Launch the app, choose **Private** or **Research** mode, and follow the onboarding prompts.
+          - For Play Store submission, use the provided `app-production-release.aab` bundle.
+
+          ### iOS
+          - Download `wellbeing-mapper-production-ios.zip` for the unsigned app archive.
+          - Re-sign with your Apple developer credentials or request TestFlight distribution from the research team.
+          - Production App Store uploads require provisioning, signing, and review—coordinate with the Barcelona operations team.
+
+          ## Privacy Commitments
+          - Private mode keeps data on-device with wipe controls under Settings → Advanced.
+          - Research mode collects consent-backed data with encrypted uploads to the Barcelona server stack.
+          - No third-party analytics or ad trackers are bundled with this build.
+
+          ## Need Help?
           - Email: john.palmer@upf.edu
-          - Full Documentation: [User Guide](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/blob/main/docs/USER_GUIDE.md)
-          - Report Issues: Use GitHub Issues or in-app feedback
-          
-          ## What's Included
-          - Multiple Production Android APKs (automatically optimized for different devices)
-          - Android App Bundle for Play Store
-          - iOS app archive ready for App Store submission or re-signing
-          - Full test coverage and quality assurance
-          - Complete privacy and security implementations
+          - Documentation hub: [Barcelona Docs Index](https://github.com/ActivitySpaceLab/barcelona-wellbeing-mapper-app/blob/main/docs/README.md)
+          - Report issues: open a GitHub issue with the `production` label or use the in-app feedback form.
+
+          ## Release Contents
+          - Multi-architecture Android APKs for direct installs
+          - Production Android App Bundle for Play Store delivery
+          - Unsigned iOS archive for TestFlight/App Store workflows
+          - All automated tests and static analysis checks passing for this tag
         draft: false
         prerelease: false
