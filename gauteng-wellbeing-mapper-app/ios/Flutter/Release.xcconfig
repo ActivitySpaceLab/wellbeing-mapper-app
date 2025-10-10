@@ -1,7 +1,0 @@
-#include "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
-#include "Generated.xcconfig"
-
-// Prevent symbol stripping for RSA functions
-STRIP_INSTALLED_PRODUCT = NO
-DEPLOYMENT_POSTPROCESSING = NO
-COPY_PHASE_STRIP = NO
