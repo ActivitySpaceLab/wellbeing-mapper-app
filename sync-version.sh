@@ -6,7 +6,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="$SCRIPT_DIR/gauteng-wellbeing-mapper-app"
+APP_DIR="$SCRIPT_DIR"
 
 echo "🔄 Syncing local.properties with pubspec.yaml version..."
 
