@@ -138,6 +138,7 @@ class _ChangeModeScreenState extends State<ChangeModeScreen> {
     return await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
+        final isDemoBuild = AppModeService.isDemoBuild;
         return AlertDialog(
           title: Text('Switch to ${newMode.displayName} Mode'),
           content: Column(
@@ -185,9 +186,14 @@ class _ChangeModeScreenState extends State<ChangeModeScreen> {
                      '• Perfect for personal tracking'),
               ],
               if (newMode == AppMode.research) ...[
-                Text('• You will participate in real research\n'
-                     '• Anonymous data shared with researchers\n'
-                     '• Help advance scientific knowledge'),
+                if (isDemoBuild)
+                  Text('• Demo build only - safe for demonstrations\n'
+                       '• Explore research features with any code\n'
+                       '• No information is uploaded to servers'),
+                if (!isDemoBuild)
+                  Text('• You will participate in real research\n'
+                       '• Anonymous data shared with researchers\n'
+                       '• Help advance scientific knowledge'),
               ],
             ],
           ),

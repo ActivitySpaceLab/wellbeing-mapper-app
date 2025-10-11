@@ -11,6 +11,8 @@ This application offers three modes of use:
 - **🔬 Research Mode**: Participate in the Planet4Health study in Gauteng, South Africa with secure data sharing
 - **🧪 App Testing Mode**: Test all research features safely - no real research data is collected
 
+> **Beta/demo builds**: When the app is built with the `beta` flavor, Research Mode is available purely for demonstrations. Any participant code will unlock the flow, and all surveys, consents and location data remain on-device without transmitting to research servers.
+
 ### About the Research
 The app enables participants to map the routes they take and places where they spend time while tracking their mental wellbeing through surveys and digital diary entries. Research participants can securely share this information with researchers studying how environmental and climate factors impact mental wellbeing.
 

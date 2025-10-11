@@ -219,6 +219,19 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
       case AppMode.private:
         return Text('Use the app privately for your own wellbeing tracking. No data will be shared.');
       case AppMode.research:
+        if (AppModeService.isDemoBuild) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Explore the full research experience safely in this demo build.'),
+              SizedBox(height: 4),
+              Text(
+                '• Enter any participant code to continue\n• No data leaves this device in demo mode',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          );
+        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

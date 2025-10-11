@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wellbeing_mapper/services/app_mode_service.dart';
 import 'package:wellbeing_mapper/services/participant_validation_service.dart';
 import 'package:wellbeing_mapper/theme/south_african_theme.dart';
 
@@ -77,6 +78,25 @@ class _ParticipantCodeEntryScreenState extends State<ParticipantCodeEntryScreen>
                         ),
                         textAlign: TextAlign.center,
                       ),
+                      if (AppModeService.isDemoBuild) ...[
+                        SizedBox(height: 12),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            'Demo build: any code will work here and no data will be uploaded.',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.orange.shade800,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -197,6 +217,17 @@ class _ParticipantCodeEntryScreenState extends State<ParticipantCodeEntryScreen>
                           height: 1.4,
                         ),
                       ),
+                      if (AppModeService.isDemoBuild) ...[
+                        SizedBox(height: 8),
+                        Text(
+                          'Demo reminder: validation happens locally so you can explore without sending data.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.orange.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -14,6 +14,11 @@ class AppModeService {
   
   /// Check if this is a beta build
   static bool get isBetaBuild => appFlavor == 'beta';
+
+  /// Demo builds behave like beta builds but with research uploads disabled
+  /// Keeping this separate makes it easy to extend in the future if other
+  /// demo-specific behaviours are required.
+  static bool get isDemoBuild => isBetaBuild;
   
   /// Check if this is a production build
   static bool get isProductionBuild => appFlavor == 'production';
@@ -113,6 +118,10 @@ class AppModeService {
   /// Check if current mode sends data to research
   static Future<bool> sendsDataToResearch() async {
     final mode = await getCurrentMode();
+    if (isDemoBuild) {
+      print('[AppModeService] Demo build detected - forcing sendsDataToResearch=false');
+      return false;
+    }
     return mode.sendsDataToResearch;
   }
 
@@ -151,6 +160,7 @@ class AppModeService {
       
       print('App Flavor: $appFlavor');
       print('Is Beta Build: $isBetaBuild');
+      print('Is Demo Build: $isDemoBuild');
       print('Is Production Build: $isProductionBuild');
       print('Is Test Mode: $isTestMode');
       print('');
@@ -186,9 +196,9 @@ class AppModeService {
   /// Get available modes for selection
   static List<AppMode> getAvailableModes() {
     // Return available modes based on build flavor
-    if (isBetaBuild) {
-      // Beta builds only include safe modes (no research data collection)
-      return [AppMode.private, AppMode.appTesting];
+    if (isDemoBuild) {
+      // Demo builds expose research features but block any real uploads
+      return [AppMode.private, AppMode.research, AppMode.appTesting];
     } else {
       // Production builds include Private and Research modes
       return [AppMode.private, AppMode.research];

@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'app_mode_service.dart';
 import 'barcelona_server_service.dart';
 
 /// Service for validating participant codes against a secure server-side list
@@ -45,7 +46,17 @@ class ParticipantValidationService {
 
       // Clean and normalize the code
       final cleanCode = participantCode.trim().toUpperCase();
-      
+
+      // Demo builds should allow any code without contacting the server so
+      // colleagues can explore the full research flow safely.
+      if (AppModeService.isDemoBuild) {
+        await _storeValidatedParticipant(cleanCode);
+        await _storeValidationSource('demo_auto');
+        await _storeParticipantCodeType('demo');
+        print('[ParticipantValidation] Demo build auto-validated code: ${cleanCode.substring(0, min(3, cleanCode.length))}***');
+        return ValidationResult(isValid: true);
+      }
+
       // Hash the entered code for validation
       final hashedCode = _hashParticipantCode(cleanCode);
       
