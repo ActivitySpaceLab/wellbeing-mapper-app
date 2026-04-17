@@ -42,8 +42,8 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
   
-  # Testing utilities
-  faker: ^2.0.0
+  # Encryption – proper AES-256-GCM for survey data
+  encrypt: ^5.0.3
   
   # Map and Location Dependencies (Testing next batch)
   flutter_map: ^8.1.0
@@ -70,10 +70,6 @@ dependencies:
   fast_rsa: ^3.8.5
   flutter_vector_icons: ^2.0.0
   cached_network_image: ^3.4.1
-  # Platform specific path_provider restrictions
-  path_provider_platform_interface: ^2.0.6
-  path_provider_foundation: ^2.1.1  # for iOS/macOS
-  path_provider_android: ^2.0.24    # for Android
   flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
@@ -87,6 +83,8 @@ dev_dependencies:
     sdk: flutter
   build_runner: ^2.4.7
   mockito: ^5.4.4
+  # Test data generation (dev only)
+  faker: ^2.0.0
 
 flutter:
   uses-material-design: true

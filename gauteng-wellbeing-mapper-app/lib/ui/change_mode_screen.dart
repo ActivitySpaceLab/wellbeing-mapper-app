@@ -19,17 +19,17 @@ class _ChangeModeScreenState extends State<ChangeModeScreen> {
   }
 
   Future<void> _loadCurrentMode() async {
-    print('[ChangeModeScreen] === LOADING CURRENT MODE ===');
+    debugPrint('[ChangeModeScreen] === LOADING CURRENT MODE ===');
     try {
       final mode = await AppModeService.getCurrentMode();
-      print('[ChangeModeScreen] Current mode from AppModeService: $mode');
+      debugPrint('[ChangeModeScreen] Current mode from AppModeService: $mode');
       setState(() {
         currentMode = mode;
         isLoading = false;
       });
-      print('[ChangeModeScreen] Mode loaded and state updated successfully');
+      debugPrint('[ChangeModeScreen] Mode loaded and state updated successfully');
     } catch (e) {
-      print('[ChangeModeScreen] Error loading current mode: $e');
+      debugPrint('[ChangeModeScreen] Error loading current mode: $e');
       setState(() {
         currentMode = AppMode.private; // Safe fallback
         isLoading = false;
@@ -38,37 +38,37 @@ class _ChangeModeScreenState extends State<ChangeModeScreen> {
   }
 
   Future<void> _switchToMode(AppMode newMode) async {
-    print('[ChangeModeScreen] === STARTING MODE SWITCH ===');
-    print('[ChangeModeScreen] Current mode: $currentMode');
-    print('[ChangeModeScreen] Requested new mode: $newMode');
+    debugPrint('[ChangeModeScreen] === STARTING MODE SWITCH ===');
+    debugPrint('[ChangeModeScreen] Current mode: $currentMode');
+    debugPrint('[ChangeModeScreen] Requested new mode: $newMode');
     
     if (newMode == currentMode) {
-      print('[ChangeModeScreen] Same mode selected, returning');
+      debugPrint('[ChangeModeScreen] Same mode selected, returning');
       return;
     }
 
     final confirmed = await _showModeChangeDialog(newMode);
     if (!confirmed) {
-      print('[ChangeModeScreen] Mode change cancelled by user');
+      debugPrint('[ChangeModeScreen] Mode change cancelled by user');
       return;
     }
 
     try {
       // Handle legacy consent service for research mode
       if (newMode == AppMode.research) {
-        print('[ChangeModeScreen] Processing Research mode switch');
+        debugPrint('[ChangeModeScreen] Processing Research mode switch');
         
         // Clear any existing participation settings and consent data to ensure clean state
-        print('[ChangeModeScreen] Clearing consent data for Research mode');
+        debugPrint('[ChangeModeScreen] Clearing consent data for Research mode');
         await ConsentService.clearConsentData();
         
         // DON'T set mode to research yet - let the participation flow complete first
         // This prevents getting stuck if user cancels the participation setup
-        print('[ChangeModeScreen] NOT setting mode to Research yet - waiting for participation completion');
+        debugPrint('[ChangeModeScreen] NOT setting mode to Research yet - waiting for participation completion');
         
         // Navigate to participation selection for real research
         // Use pushReplacementNamed to go directly to participation flow
-        print('[ChangeModeScreen] Navigating to participation_selection');
+        debugPrint('[ChangeModeScreen] Navigating to participation_selection');
         Navigator.of(context).pushReplacementNamed('/participation_selection');
         return;
       } else if (newMode == AppMode.appTesting) {

@@ -1,10 +1,10 @@
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
-import '../models/wellbeing_survey_models.dart';
-import '../services/wellbeing_survey_service.dart';
-import '../services/app_mode_service.dart';
 import '../models/app_mode.dart';
+import '../models/wellbeing_survey_models.dart';
+import '../services/app_mode_service.dart';
+import '../services/geo_location_service.dart';
+import '../services/wellbeing_survey_service.dart';
 import '../theme/south_african_theme.dart';
 
 class WellbeingSurveyScreen extends StatefulWidget {
@@ -13,10 +13,10 @@ class WellbeingSurveyScreen extends StatefulWidget {
 }
 
 class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
-  double? _happinessScore; // 0.0 to 10.0, null means not answered
+  double? _happinessScore;
   bool _isSubmitting = false;
   bool _isCaptingLocation = false;
-  bg.Location? _currentLocation;
+  AppLocation? _currentLocation;
   String? _locationError;
 
   @override
@@ -32,9 +32,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
     });
 
     try {
-      // Skip background geolocation on web platform
       if (kIsWeb) {
-        print('[WellbeingSurveyScreen] Web platform detected - skipping location capture');
         setState(() {
           _locationError = 'Location capture not available on web platform';
           _isCaptingLocation = false;
@@ -42,28 +40,33 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
         return;
       }
       
-      final location = await bg.BackgroundGeolocation.getCurrentPosition(
+      final location = await GeoLocationService.instance.getCurrentPosition(
         persist: false,
         desiredAccuracy: 40,
         maximumAge: 10000,
         timeout: 30,
         samples: 3,
-        extras: {"wellbeing_survey": true}
       );
       
       setState(() {
         _currentLocation = location;
         _isCaptingLocation = false;
+        if (location == null) {
+          _locationError = 'Unable to determine current location. '
+              'The survey can still be submitted without a location.';
+        }
       });
       
-      print('[WellbeingSurveyScreen] Location captured: ${location.coords.latitude}, ${location.coords.longitude}');
+      if (location != null) {
+        debugPrint('[WellbeingSurveyScreen] Location captured: '
+            '${location.coords.latitude}, ${location.coords.longitude}');
+      }
     } catch (error) {
       setState(() {
         _locationError = error.toString();
         _isCaptingLocation = false;
       });
-      
-      print('[WellbeingSurveyScreen] Location capture error: $error');
+      debugPrint('[WellbeingSurveyScreen] Location capture error: $error');
     }
   }
 
@@ -133,7 +136,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
       // Close the screen
       Navigator.of(context).pop();
     } catch (e) {
-      print('[WellbeingSurveyScreen] Error submitting survey: $e');
+      debugPrint('[WellbeingSurveyScreen] Error submitting survey: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error submitting survey. Please try again.'),

@@ -30,7 +30,7 @@ class BannerImage extends StatelessWidget {
         ),
       );
     } catch (e) {
-      print('could not load image $url');
+      debugPrint('could not load image $url');
       return Container();
     }
   }

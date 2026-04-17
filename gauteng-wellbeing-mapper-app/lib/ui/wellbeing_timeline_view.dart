@@ -28,7 +28,7 @@ class _WellbeingTimelineViewState extends State<WellbeingTimelineView> {
         _isLoading = false;
       });
     } catch (error) {
-      print('[WellbeingTimelineView] Error loading survey data: $error');
+      debugPrint('[WellbeingTimelineView] Error loading survey data: $error');
       setState(() {
         _isLoading = false;
       });

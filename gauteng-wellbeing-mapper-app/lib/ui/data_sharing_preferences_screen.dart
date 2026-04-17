@@ -23,7 +23,7 @@ class _DataSharingPreferencesScreenState extends State<DataSharingPreferencesScr
 
   /// Check if user has consent before showing preferences, redirect if no consent
   Future<void> _checkConsentAndLoad() async {
-    print('[DataSharingPreferences] Checking for existing consent...');
+    debugPrint('[DataSharingPreferences] Checking for existing consent...');
     
     // Import the consent tracking service
     try {
@@ -31,7 +31,7 @@ class _DataSharingPreferencesScreenState extends State<DataSharingPreferencesScr
       final consent = await db.getConsent();
       
       if (consent == null) {
-        print('[DataSharingPreferences] No consent found - redirecting to participation selection');
+        debugPrint('[DataSharingPreferences] No consent found - redirecting to participation selection');
         
         if (mounted) {
           // No consent exists, redirect to participation selection
@@ -40,10 +40,10 @@ class _DataSharingPreferencesScreenState extends State<DataSharingPreferencesScr
         return;
       }
       
-      print('[DataSharingPreferences] Consent found - loading data');
+      debugPrint('[DataSharingPreferences] Consent found - loading data');
       await _loadConsentData();
     } catch (e) {
-      print('[DataSharingPreferences] Error checking consent: $e');
+      debugPrint('[DataSharingPreferences] Error checking consent: $e');
       // If there's an error, still try to load data
       await _loadConsentData();
     }
@@ -70,7 +70,7 @@ class _DataSharingPreferencesScreenState extends State<DataSharingPreferencesScr
         });
       }
     } catch (e) {
-      print('Error loading consent data: $e');
+      debugPrint('Error loading consent data: $e');
     } finally {
       setState(() {
         _isLoading = false;

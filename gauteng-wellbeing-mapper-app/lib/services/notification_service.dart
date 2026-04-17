@@ -32,7 +32,7 @@ class NotificationService {
     try {
       tz_data.initializeTimeZones();
     } catch (e) {
-      print('[NotificationService] Error initializing timezones: $e');
+      debugPrint('[NotificationService] Error initializing timezones: $e');
     }
     
     // Check if app was launched from a notification
@@ -40,35 +40,35 @@ class NotificationService {
     
     await _initializeLocalNotifications();
     await _scheduleNotificationTask();
-    print('[NotificationService] Initialized successfully with device notifications');
+    debugPrint('[NotificationService] Initialized successfully with device notifications');
   }
 
   /// Check if the app was launched from a notification
   static Future<void> _checkAppLaunchFromNotification() async {
     try {
-      print('[NotificationService] ===== CHECKING APP LAUNCH FROM NOTIFICATION =====');
+      debugPrint('[NotificationService] ===== CHECKING APP LAUNCH FROM NOTIFICATION =====');
       final NotificationAppLaunchDetails? notificationAppLaunchDetails =
           await _localNotifications.getNotificationAppLaunchDetails();
       
-      print('[NotificationService] Launch details available: ${notificationAppLaunchDetails != null}');
+      debugPrint('[NotificationService] Launch details available: ${notificationAppLaunchDetails != null}');
       
       if (notificationAppLaunchDetails?.didNotificationLaunchApp == true) {
         _pendingNotificationPayload = notificationAppLaunchDetails!.notificationResponse?.payload;
-        print('[NotificationService] App WAS launched from notification');
-        print('[NotificationService] Notification response: ${notificationAppLaunchDetails.notificationResponse}');
-        print('[NotificationService] Payload: $_pendingNotificationPayload');
+        debugPrint('[NotificationService] App WAS launched from notification');
+        debugPrint('[NotificationService] Notification response: ${notificationAppLaunchDetails.notificationResponse}');
+        debugPrint('[NotificationService] Payload: $_pendingNotificationPayload');
       } else {
-        print('[NotificationService] App was NOT launched from notification');
+        debugPrint('[NotificationService] App was NOT launched from notification');
       }
-      print('[NotificationService] ===== END LAUNCH CHECK =====');
+      debugPrint('[NotificationService] ===== END LAUNCH CHECK =====');
     } catch (e) {
-      print('[NotificationService] Error checking app launch details: $e');
+      debugPrint('[NotificationService] Error checking app launch details: $e');
     }
   }
 
   /// Get pending notification payload and clear it
   static String? getPendingNotificationPayload() {
-    print('[NotificationService] Getting pending payload: $_pendingNotificationPayload');
+    debugPrint('[NotificationService] Getting pending payload: $_pendingNotificationPayload');
     final payload = _pendingNotificationPayload;
     _pendingNotificationPayload = null;
     return payload;
@@ -136,7 +136,7 @@ class NotificationService {
 
     if (initialized) {
       _notificationsInitialized = true;
-      print('[NotificationService] Local notifications initialized successfully');
+      debugPrint('[NotificationService] Local notifications initialized successfully');
       
       // Create Android notification channel
       if (Platform.isAndroid) {
@@ -155,11 +155,11 @@ class NotificationService {
         
         if (androidPlugin != null) {
           await androidPlugin.createNotificationChannel(channel);
-          print('[NotificationService] Android notification channel created');
+          debugPrint('[NotificationService] Android notification channel created');
           
           // Request notification permissions for Android 13+
           final bool? permissionGranted = await androidPlugin.requestNotificationsPermission();
-          print('[NotificationService] Android notification permission granted: $permissionGranted');
+          debugPrint('[NotificationService] Android notification permission granted: $permissionGranted');
         }
       }
       
@@ -173,36 +173,36 @@ class NotificationService {
               sound: true,
               critical: false,
             );
-        print('[NotificationService] iOS permission granted: $permissionGranted');
+        debugPrint('[NotificationService] iOS permission granted: $permissionGranted');
       }
     } else {
-      print('[NotificationService] Failed to initialize local notifications');
+      debugPrint('[NotificationService] Failed to initialize local notifications');
     }
   }
 
   /// Handle notification tap
   static void _onNotificationTapped(NotificationResponse response) {
-    print('[NotificationService] ===== NOTIFICATION TAPPED =====');
-    print('[NotificationService] Payload: ${response.payload}');
-    print('[NotificationService] Notification ID: ${response.id}');
-    print('[NotificationService] Action ID: ${response.actionId}');
+    debugPrint('[NotificationService] ===== NOTIFICATION TAPPED =====');
+    debugPrint('[NotificationService] Payload: ${response.payload}');
+    debugPrint('[NotificationService] Notification ID: ${response.id}');
+    debugPrint('[NotificationService] Action ID: ${response.actionId}');
     
     _handleNotificationNavigation(response);
-    print('[NotificationService] ===== END NOTIFICATION TAP =====');
+    debugPrint('[NotificationService] ===== END NOTIFICATION TAP =====');
   }
 
   /// Handle background notification tap (when app is not running)
   @pragma('vm:entry-point')
   static void _onBackgroundNotificationTapped(NotificationResponse response) {
-    print('[NotificationService] ===== BACKGROUND NOTIFICATION TAPPED =====');
-    print('[NotificationService] Payload: ${response.payload}');
-    print('[NotificationService] Notification ID: ${response.id}');
-    print('[NotificationService] Action ID: ${response.actionId}');
+    debugPrint('[NotificationService] ===== BACKGROUND NOTIFICATION TAPPED =====');
+    debugPrint('[NotificationService] Payload: ${response.payload}');
+    debugPrint('[NotificationService] Notification ID: ${response.id}');
+    debugPrint('[NotificationService] Action ID: ${response.actionId}');
     
     // Store the payload for when the app starts up
     _pendingNotificationPayload = response.payload;
-    print('[NotificationService] Stored payload for app startup: ${response.payload}');
-    print('[NotificationService] ===== END BACKGROUND NOTIFICATION TAP =====');
+    debugPrint('[NotificationService] Stored payload for app startup: ${response.payload}');
+    debugPrint('[NotificationService] ===== END BACKGROUND NOTIFICATION TAP =====');
   }
 
   /// Common navigation handling for both foreground and background taps
@@ -210,40 +210,40 @@ class NotificationService {
     // Navigate to the wellbeing survey when notification is tapped
     try {
       final NavigatorState? navigator = navigatorKey.currentState;
-      print('[NotificationService] Navigator available: ${navigator != null}');
-      print('[NotificationService] Payload matches survey route: ${response.payload == '/wellbeing_survey'}');
+      debugPrint('[NotificationService] Navigator available: ${navigator != null}');
+      debugPrint('[NotificationService] Payload matches survey route: ${response.payload == '/wellbeing_survey'}');
       
       if (navigator != null && response.payload == '/wellbeing_survey') {
-        print('[NotificationService] Attempting navigation to wellbeing survey...');
+        debugPrint('[NotificationService] Attempting navigation to wellbeing survey...');
         
         // First try a simple push - this works better when app is already open
         try {
           navigator.pushNamed('/wellbeing_survey');
-          print('[NotificationService] Simple navigation command sent successfully');
+          debugPrint('[NotificationService] Simple navigation command sent successfully');
         } catch (e) {
-          print('[NotificationService] Simple navigation failed, trying pushNamedAndRemoveUntil: $e');
+          debugPrint('[NotificationService] Simple navigation failed, trying pushNamedAndRemoveUntil: $e');
           // If simple push fails, try the more aggressive approach
           navigator.pushNamedAndRemoveUntil(
             '/wellbeing_survey',
             (route) => route.isFirst, // Keep only the first route (home/initial)
           );
-          print('[NotificationService] Aggressive navigation command sent');
+          debugPrint('[NotificationService] Aggressive navigation command sent');
         }
       } else {
-        print('[NotificationService] Navigation conditions not met');
+        debugPrint('[NotificationService] Navigation conditions not met');
         if (navigator == null) {
-          print('[NotificationService] - Navigator is null');
+          debugPrint('[NotificationService] - Navigator is null');
         }
         if (response.payload != '/wellbeing_survey') {
-          print('[NotificationService] - Payload mismatch: expected "/wellbeing_survey", got "${response.payload}"');
+          debugPrint('[NotificationService] - Payload mismatch: expected "/wellbeing_survey", got "${response.payload}"');
         }
-        print('[NotificationService] Setting pending survey prompt as fallback');
+        debugPrint('[NotificationService] Setting pending survey prompt as fallback');
         // If navigation is not available, set a pending prompt flag
         _setPendingSurveyPrompt();
       }
     } catch (e, stackTrace) {
-      print('[NotificationService] Error in notification tap handler: $e');
-      print('[NotificationService] Stack trace: $stackTrace');
+      debugPrint('[NotificationService] Error in notification tap handler: $e');
+      debugPrint('[NotificationService] Stack trace: $stackTrace');
       // Fallback: set pending prompt
       _setPendingSurveyPrompt();
     }
@@ -267,9 +267,9 @@ class NotificationService {
         requiresStorageNotLow: false,
       ));
       
-      print('[NotificationService] Scheduled notification task');
+      debugPrint('[NotificationService] Scheduled notification task');
     } catch (error) {
-      print('[NotificationService] Error scheduling task: $error');
+      debugPrint('[NotificationService] Error scheduling task: $error');
     }
   }
 
@@ -297,9 +297,9 @@ class NotificationService {
             shouldShowNotification = true;
           }
           
-          print('[NotificationService] Recalculated next notification from consent date: $correctNextNotificationDate');
+          debugPrint('[NotificationService] Recalculated next notification from consent date: $correctNextNotificationDate');
         } catch (e) {
-          print('[NotificationService] Error parsing consent timestamp: $e');
+          debugPrint('[NotificationService] Error parsing consent timestamp: $e');
           // Fallback to stored value if consent date parsing fails
           final int? nextNotificationTimestamp = prefs.getInt(_nextNotificationDateKey);
           if (nextNotificationTimestamp != null) {
@@ -334,7 +334,7 @@ class NotificationService {
             final DateTime consentDate = DateTime.parse(consentTimestampStr);
             nextNotificationDate = _calculateNextNotificationFromConsent(consentDate, effectiveInterval);
           } catch (e) {
-            print('[NotificationService] Error parsing consent timestamp for next notification: $e');
+            debugPrint('[NotificationService] Error parsing consent timestamp for next notification: $e');
             nextNotificationDate = now.add(effectiveInterval);
           }
         } else {
@@ -346,11 +346,11 @@ class NotificationService {
         final int count = prefs.getInt(_notificationCountKey) ?? 0;
         await prefs.setInt(_notificationCountKey, count + 1);
         
-        print('[NotificationService] Survey prompt scheduled. Count: ${count + 1}');
-        print('[NotificationService] Next notification scheduled for: $nextNotificationDate');
+        debugPrint('[NotificationService] Survey prompt scheduled. Count: ${count + 1}');
+        debugPrint('[NotificationService] Next notification scheduled for: $nextNotificationDate');
       }
     } catch (error) {
-      print('[NotificationService] Error checking notification timing: $error');
+      debugPrint('[NotificationService] Error checking notification timing: $error');
     }
   }
 
@@ -368,7 +368,7 @@ class NotificationService {
   /// Show a device-level notification
   static Future<void> _showDeviceNotification() async {
     try {
-      print('[NotificationService] Preparing to show device notification...');
+      debugPrint('[NotificationService] Preparing to show device notification...');
       await _initializeLocalNotifications();
       
       if (!_notificationsInitialized) {
@@ -406,7 +406,7 @@ class NotificationService {
       );
 
       final int notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-      print('[NotificationService] Showing notification with ID: $notificationId');
+      debugPrint('[NotificationService] Showing notification with ID: $notificationId');
       
       await _localNotifications.show(
         notificationId,
@@ -416,15 +416,15 @@ class NotificationService {
         payload: '/wellbeing_survey',
       );
       
-      print('[NotificationService] Device notification shown successfully with ID: $notificationId');
+      debugPrint('[NotificationService] Device notification shown successfully with ID: $notificationId');
       
       // Additional check - get pending notifications to verify it was scheduled
       final pendingNotifications = await _localNotifications.pendingNotificationRequests();
-      print('[NotificationService] Pending notifications count: ${pendingNotifications.length}');
+      debugPrint('[NotificationService] Pending notifications count: ${pendingNotifications.length}');
       
     } catch (error) {
-      print('[NotificationService] Error showing device notification: $error');
-      print('[NotificationService] Error details: ${error.toString()}');
+      debugPrint('[NotificationService] Error showing device notification: $error');
+      debugPrint('[NotificationService] Error details: ${error.toString()}');
       rethrow; // Re-throw so the UI can show the error
     }
   }
@@ -508,7 +508,7 @@ class NotificationService {
       try {
         consentDate = DateTime.parse(consentTimestampStr);
       } catch (e) {
-        print('[NotificationService] Error parsing consent timestamp: $e');
+        debugPrint('[NotificationService] Error parsing consent timestamp: $e');
       }
     }
     
@@ -518,11 +518,11 @@ class NotificationService {
       nextNotificationDate = _calculateNextNotificationFromConsent(consentDate, effectiveInterval);
       // Update stored value to keep it current
       await prefs.setInt(_nextNotificationDateKey, nextNotificationDate.millisecondsSinceEpoch);
-      print('[NotificationService] Recalculated next notification from consent date for stats: $nextNotificationDate');
+      debugPrint('[NotificationService] Recalculated next notification from consent date for stats: $nextNotificationDate');
     } else if (nextNotificationTimestamp != null) {
       // Fallback to stored value only if no consent date available
       nextNotificationDate = DateTime.fromMillisecondsSinceEpoch(nextNotificationTimestamp);
-      print('[NotificationService] Using stored next notification date (no consent date): $nextNotificationDate');
+      debugPrint('[NotificationService] Using stored next notification date (no consent date): $nextNotificationDate');
     }
     
     if (lastNotificationTimestamp != null) {
@@ -554,7 +554,7 @@ class NotificationService {
       nextDate = nextDate.add(interval);
     }
     
-    print('[NotificationService] Calculated next notification from consent date $consentDate: $nextDate');
+    debugPrint('[NotificationService] Calculated next notification from consent date $consentDate: $nextDate');
     return nextDate;
   }
 
@@ -566,26 +566,26 @@ class NotificationService {
     await prefs.remove(_nextNotificationDateKey);
     await prefs.remove(_pendingSurveyKey);
     await prefs.remove('${_pendingSurveyKey}_timestamp');
-    print('[NotificationService] Notification schedule reset - will recalculate from consent date');
+    debugPrint('[NotificationService] Notification schedule reset - will recalculate from consent date');
   }
 
   /// Cancel all scheduled notifications
   static Future<void> cancelAllNotifications() async {
     await BackgroundFetch.stop(_notificationTaskId);
     await resetNotificationSchedule();
-    print('[NotificationService] All notifications cancelled');
+    debugPrint('[NotificationService] All notifications cancelled');
   }
 
   /// Enable notifications (for user preference)
   static Future<void> enableNotifications() async {
     await _scheduleNotificationTask();
-    print('[NotificationService] Notifications enabled');
+    debugPrint('[NotificationService] Notifications enabled');
   }
 
   /// Disable notifications (for user preference)
   static Future<void> disableNotifications() async {
     await cancelAllNotifications();
-    print('[NotificationService] Notifications disabled');
+    debugPrint('[NotificationService] Notifications disabled');
   }
 
   // === TESTING INTERVAL CONFIGURATION ===
@@ -595,17 +595,17 @@ class NotificationService {
   static Future<void> setTestingInterval(int minutes) async {
     // Prevent testing intervals in production builds
     if (AppModeService.isProductionBuild) {
-      print('[NotificationService] Testing intervals are not available in production builds');
+      debugPrint('[NotificationService] Testing intervals are not available in production builds');
       return;
     }
     
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_testingIntervalKey, minutes);
-    print('[NotificationService] Testing interval set to $minutes minutes');
+    debugPrint('[NotificationService] Testing interval set to $minutes minutes');
     
     // Clear the last notification timestamp to ensure immediate testing
     await prefs.remove(_lastNotificationKey);
-    print('[NotificationService] Cleared last notification timestamp for testing');
+    debugPrint('[NotificationService] Cleared last notification timestamp for testing');
     
     // For testing mode, schedule a direct notification instead of relying only on background task
     await _scheduleDirectTestingNotification(minutes);
@@ -620,7 +620,7 @@ class NotificationService {
   /// Schedule a direct notification for testing (bypasses background task delays)
   static Future<void> _scheduleDirectTestingNotification(int minutes) async {
     try {
-      print('[NotificationService] Scheduling direct testing notification in $minutes minutes');
+      debugPrint('[NotificationService] Scheduling direct testing notification in $minutes minutes');
       
       // Cancel any existing testing notifications first
       await _localNotifications.cancel(999);
@@ -659,7 +659,7 @@ class NotificationService {
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           );
           
-          print('[NotificationService] Scheduled testing notification #$i for: $nextNotificationTime');
+          debugPrint('[NotificationService] Scheduled testing notification #$i for: $nextNotificationTime');
         }
       } else {
         // For longer intervals, schedule just one
@@ -690,10 +690,10 @@ class NotificationService {
           matchDateTimeComponents: DateTimeComponents.time,
         );
         
-        print('[NotificationService] Direct testing notification scheduled for: $scheduledDate');
+        debugPrint('[NotificationService] Direct testing notification scheduled for: $scheduledDate');
       }
     } catch (error) {
-      print('[NotificationService] Error scheduling direct testing notification: $error');
+      debugPrint('[NotificationService] Error scheduling direct testing notification: $error');
     }
   }
 
@@ -714,19 +714,19 @@ class NotificationService {
   static Future<void> clearTestingInterval() async {
     // Only allow clearing in beta builds
     if (AppModeService.isProductionBuild) {
-      print('[NotificationService] Testing interval clearing is not available in production builds');
+      debugPrint('[NotificationService] Testing interval clearing is not available in production builds');
       return;
     }
     
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(_testingIntervalKey);
-    print('[NotificationService] Reverted to production interval (14 days)');
+    debugPrint('[NotificationService] Reverted to production interval (14 days)');
     
     // Cancel any scheduled testing notifications (IDs 999-1004)
     for (int i = 999; i <= 1004; i++) {
       await _localNotifications.cancel(i);
     }
-    print('[NotificationService] Cancelled all testing notifications');
+    debugPrint('[NotificationService] Cancelled all testing notifications');
     
     // Reschedule background task back to normal frequency
     await _scheduleNotificationTask();
@@ -745,7 +745,7 @@ class NotificationService {
         checkIntervalSeconds = 30; // Minimum 30 seconds
       }
       
-      print('[NotificationService] Rescheduling background task for testing: check every ${checkIntervalSeconds}s for ${testingMinutes}min interval');
+      debugPrint('[NotificationService] Rescheduling background task for testing: check every ${checkIntervalSeconds}s for ${testingMinutes}min interval');
       
       // Schedule more frequent background task for testing
       await BackgroundFetch.scheduleTask(TaskConfig(
@@ -758,9 +758,9 @@ class NotificationService {
         requiredNetworkType: NetworkType.NONE,
       ));
       
-      print('[NotificationService] Rescheduled notification task for testing');
+      debugPrint('[NotificationService] Rescheduled notification task for testing');
     } catch (error) {
-      print('[NotificationService] Error rescheduling task for testing: $error');
+      debugPrint('[NotificationService] Error rescheduling task for testing: $error');
     }
   }
 
@@ -780,7 +780,7 @@ class NotificationService {
       final bool hasPending = prefs.getBool(_pendingSurveyKey) ?? false;
       
       if (hasPending) {
-        print('[NotificationService] Found pending survey prompt, showing dialog');
+        debugPrint('[NotificationService] Found pending survey prompt, showing dialog');
         
         // Clear the pending flag
         await prefs.remove(_pendingSurveyKey);
@@ -793,7 +793,7 @@ class NotificationService {
       
       return false;
     } catch (error) {
-      print('[NotificationService] Error checking pending survey prompt: $error');
+      debugPrint('[NotificationService] Error checking pending survey prompt: $error');
       return false;
     }
   }
@@ -804,67 +804,67 @@ class NotificationService {
   static Future<void> testDeviceNotification() async {
     // Only allow testing notifications in beta builds
     if (AppModeService.isProductionBuild) {
-      print('[NotificationService] Test device notifications are not available in production builds');
+      debugPrint('[NotificationService] Test device notifications are not available in production builds');
       return;
     }
     
-    print('[NotificationService] Starting test device notification...');
+    debugPrint('[NotificationService] Starting test device notification...');
     
     // Enhanced iOS-specific diagnostics
     if (Platform.isIOS) {
-      print('[NotificationService] === iOS NOTIFICATION DEBUG START ===');
+      debugPrint('[NotificationService] === iOS NOTIFICATION DEBUG START ===');
       
       // Check if the plugin is available
       final iosPlugin = _localNotifications
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
-      print('[NotificationService] iOS plugin available: ${iosPlugin != null}');
+      debugPrint('[NotificationService] iOS plugin available: ${iosPlugin != null}');
       
       if (iosPlugin != null) {
         // Get detailed permission status BEFORE requesting
         final initialPermissionStatus = await iosPlugin.checkPermissions();
-        print('[NotificationService] Initial iOS permissions: $initialPermissionStatus');
-        print('[NotificationService] Initial isEnabled: ${initialPermissionStatus?.isEnabled}');
+        debugPrint('[NotificationService] Initial iOS permissions: $initialPermissionStatus');
+        debugPrint('[NotificationService] Initial isEnabled: ${initialPermissionStatus?.isEnabled}');
         
         // Try requesting permissions with explicit options
-        print('[NotificationService] Requesting iOS permissions...');
+        debugPrint('[NotificationService] Requesting iOS permissions...');
         final newPermissions = await iosPlugin.requestPermissions(
           alert: true,
           badge: true,
           sound: true,
           critical: false,
         );
-        print('[NotificationService] iOS permission request result: $newPermissions');
+        debugPrint('[NotificationService] iOS permission request result: $newPermissions');
         
         // Check permissions again after request
         final finalPermissionStatus = await iosPlugin.checkPermissions();
-        print('[NotificationService] Final iOS permissions: $finalPermissionStatus');
-        print('[NotificationService] Final isEnabled: ${finalPermissionStatus?.isEnabled}');
+        debugPrint('[NotificationService] Final iOS permissions: $finalPermissionStatus');
+        debugPrint('[NotificationService] Final isEnabled: ${finalPermissionStatus?.isEnabled}');
       }
-      print('[NotificationService] === iOS NOTIFICATION DEBUG END ===');
+      debugPrint('[NotificationService] === iOS NOTIFICATION DEBUG END ===');
     }
     
     // First check if we have permissions
     final hasPermissions = await checkNotificationPermissions();
-    print('[NotificationService] Has permissions: $hasPermissions');
+    debugPrint('[NotificationService] Has permissions: $hasPermissions');
     
     if (!hasPermissions) {
-      print('[NotificationService] No permissions - cannot send notification');
+      debugPrint('[NotificationService] No permissions - cannot send notification');
       throw Exception('Notification permissions not granted. Please check device settings.');
     }
     
     // Ensure notifications are initialized
     await _initializeLocalNotifications();
-    print('[NotificationService] Notifications initialized: $_notificationsInitialized');
+    debugPrint('[NotificationService] Notifications initialized: $_notificationsInitialized');
     
     if (!_notificationsInitialized) {
-      print('[NotificationService] Notifications not initialized - cannot send');
+      debugPrint('[NotificationService] Notifications not initialized - cannot send');
       throw Exception('Notification system not initialized');
     }
     
     // For iOS, schedule the notification for 5 seconds to avoid foreground suppression
     if (Platform.isIOS) {
       try {
-        print('[NotificationService] iOS detected - scheduling notification for 5 seconds...');
+        debugPrint('[NotificationService] iOS detected - scheduling notification for 5 seconds...');
         
         final scheduledDate = DateTime.now().add(Duration(seconds: 5));
         
@@ -896,24 +896,24 @@ class NotificationService {
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         );
         
-        print('[NotificationService] iOS notification scheduled for $scheduledDate with ID: $notificationId');
+        debugPrint('[NotificationService] iOS notification scheduled for $scheduledDate with ID: $notificationId');
         
         // Check pending notifications
         final pendingRequests = await _localNotifications.pendingNotificationRequests();
-        print('[NotificationService] Pending notifications after scheduling: ${pendingRequests.length}');
+        debugPrint('[NotificationService] Pending notifications after scheduling: ${pendingRequests.length}');
         
       } catch (e) {
-        print('[NotificationService] Error scheduling iOS notification: $e');
+        debugPrint('[NotificationService] Error scheduling iOS notification: $e');
         rethrow;
       }
     } else {
       // For Android, send immediately as it handles foreground notifications better
       try {
-        print('[NotificationService] Android detected - sending immediate notification...');
+        debugPrint('[NotificationService] Android detected - sending immediate notification...');
         await _showDeviceNotification();
-        print('[NotificationService] Android notification sent successfully');
+        debugPrint('[NotificationService] Android notification sent successfully');
       } catch (e) {
-        print('[NotificationService] Error sending Android notification: $e');
+        debugPrint('[NotificationService] Error sending Android notification: $e');
         rethrow;
       }
     }
@@ -924,23 +924,23 @@ class NotificationService {
   static Future<void> testInAppNotification(BuildContext context) async {
     // Only allow testing notifications in beta builds
     if (AppModeService.isProductionBuild) {
-      print('[NotificationService] Test in-app notifications are not available in production builds');
+      debugPrint('[NotificationService] Test in-app notifications are not available in production builds');
       return;
     }
     
     await showSurveyPromptDialog(context);
-    print('[NotificationService] Test in-app notification shown');
+    debugPrint('[NotificationService] Test in-app notification shown');
   }
 
   /// Test immediate iOS notification (for debugging tap handler)
   static Future<void> testImmediateIOSNotification() async {
     // Only allow testing notifications in beta builds
     if (AppModeService.isProductionBuild) {
-      print('[NotificationService] Test immediate iOS notifications are not available in production builds');
+      debugPrint('[NotificationService] Test immediate iOS notifications are not available in production builds');
       return;
     }
     
-    print('[NotificationService] Starting immediate iOS notification test...');
+    debugPrint('[NotificationService] Starting immediate iOS notification test...');
     
     if (!Platform.isIOS) {
       throw Exception('This test is only for iOS');
@@ -948,7 +948,7 @@ class NotificationService {
     
     // First check if we have permissions
     final hasPermissions = await checkNotificationPermissions();
-    print('[NotificationService] Has permissions: $hasPermissions');
+    debugPrint('[NotificationService] Has permissions: $hasPermissions');
     
     if (!hasPermissions) {
       throw Exception('Notification permissions not granted');
@@ -994,12 +994,12 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
       
-      print('[NotificationService] Scheduled iOS notification for 3 seconds with ID: $notificationId');
-      print('[NotificationService] Payload set to: /wellbeing_survey');
-      print('[NotificationService] IMPORTANT: Background the app NOW to see the notification!');
+      debugPrint('[NotificationService] Scheduled iOS notification for 3 seconds with ID: $notificationId');
+      debugPrint('[NotificationService] Payload set to: /wellbeing_survey');
+      debugPrint('[NotificationService] IMPORTANT: Background the app NOW to see the notification!');
       
     } catch (e) {
-      print('[NotificationService] Error sending immediate iOS notification: $e');
+      debugPrint('[NotificationService] Error sending immediate iOS notification: $e');
       rethrow;
     }
   }
@@ -1010,12 +1010,12 @@ class NotificationService {
     // Also show the dialog immediately for testing
     await Future.delayed(Duration(seconds: 1));
     await showSurveyPromptDialog(context);
-    print('[NotificationService] Complete notification flow tested');
+    debugPrint('[NotificationService] Complete notification flow tested');
   }
 
   /// Force reinitialize notifications (useful for iOS troubleshooting)
   static Future<void> forceReinitializeNotifications() async {
-    print('[NotificationService] Force reinitializing notifications...');
+    debugPrint('[NotificationService] Force reinitializing notifications...');
     
     // Reset the initialization flag
     _notificationsInitialized = false;
@@ -1023,7 +1023,7 @@ class NotificationService {
     // Reinitialize
     await _initializeLocalNotifications();
     
-    print('[NotificationService] Force reinitialization completed. Status: $_notificationsInitialized');
+    debugPrint('[NotificationService] Force reinitialization completed. Status: $_notificationsInitialized');
   }
 
   /// iOS-specific simple notification test
@@ -1031,7 +1031,7 @@ class NotificationService {
   static Future<void> testSimpleIOSNotification() async {
     // Only allow testing notifications in beta builds
     if (AppModeService.isProductionBuild) {
-      print('[NotificationService] Test iOS notifications are not available in production builds');
+      debugPrint('[NotificationService] Test iOS notifications are not available in production builds');
       return;
     }
     
@@ -1039,7 +1039,7 @@ class NotificationService {
       throw Exception('This test is only for iOS');
     }
     
-    print('[NotificationService] Testing simple iOS notification...');
+    debugPrint('[NotificationService] Testing simple iOS notification...');
     
     // Force reinitialize first
     await forceReinitializeNotifications();
@@ -1054,7 +1054,7 @@ class NotificationService {
     
     // Check permissions one more time
     final permissions = await iosPlugin.checkPermissions();
-    print('[NotificationService] iOS permissions before simple test: $permissions');
+    debugPrint('[NotificationService] iOS permissions before simple test: $permissions');
     
     if (permissions?.isEnabled != true) {
       // Try requesting permissions one more time
@@ -1063,7 +1063,7 @@ class NotificationService {
         badge: true,
         sound: true,
       );
-      print('[NotificationService] iOS permission request in simple test: $requested');
+      debugPrint('[NotificationService] iOS permission request in simple test: $requested');
       
       if (requested != true) {
         throw Exception('iOS notifications not permitted. Please enable in iOS Settings > Notifications > Wellbeing Mapper');
@@ -1088,7 +1088,7 @@ class NotificationService {
     final int notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     
     try {
-      print('[NotificationService] Scheduling iOS notification for ${scheduledDate.toString()}...');
+      debugPrint('[NotificationService] Scheduling iOS notification for ${scheduledDate.toString()}...');
       
       await _localNotifications.zonedSchedule(
         notificationId,
@@ -1101,30 +1101,30 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
       
-      print('[NotificationService] Scheduled iOS notification with ID: $notificationId for $scheduledDate');
+      debugPrint('[NotificationService] Scheduled iOS notification with ID: $notificationId for $scheduledDate');
       
       // Check pending notifications
       final pendingRequests = await _localNotifications.pendingNotificationRequests();
-      print('[NotificationService] Pending notifications after scheduling: ${pendingRequests.length}');
+      debugPrint('[NotificationService] Pending notifications after scheduling: ${pendingRequests.length}');
       
       if (pendingRequests.isNotEmpty) {
         for (var request in pendingRequests) {
-          print('[NotificationService] Pending: ID=${request.id}, title=${request.title}');
+          debugPrint('[NotificationService] Pending: ID=${request.id}, title=${request.title}');
         }
       }
       
     } catch (e) {
-      print('[NotificationService] Error scheduling iOS notification: $e');
+      debugPrint('[NotificationService] Error scheduling iOS notification: $e');
       
       // Fall back to immediate notification
-      print('[NotificationService] Falling back to immediate notification...');
+      debugPrint('[NotificationService] Falling back to immediate notification...');
       await _localNotifications.show(
         notificationId + 1,
         'Immediate Test',
         'This is an immediate iOS notification test - minimize the app!',
         notificationDetails,
       );
-      print('[NotificationService] Immediate iOS notification sent with ID: ${notificationId + 1}');
+      debugPrint('[NotificationService] Immediate iOS notification sent with ID: ${notificationId + 1}');
     }
   }
 
@@ -1138,18 +1138,18 @@ class NotificationService {
             _localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
         
         if (androidPlugin == null) {
-          print('[NotificationService] Android plugin not available');
+          debugPrint('[NotificationService] Android plugin not available');
           return false;
         }
         
         // Check if notifications are enabled
         final bool? enabled = await androidPlugin.areNotificationsEnabled();
-        print('[NotificationService] Android notifications enabled: $enabled');
+        debugPrint('[NotificationService] Android notifications enabled: $enabled');
         
         if (enabled == false) {
           // Request notification permissions for Android 13+
           final bool? permissionGranted = await androidPlugin.requestNotificationsPermission();
-          print('[NotificationService] Android permission request result: $permissionGranted');
+          debugPrint('[NotificationService] Android permission request result: $permissionGranted');
           return permissionGranted ?? false;
         }
         
@@ -1160,12 +1160,12 @@ class NotificationService {
             .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
             ?.checkPermissions();
         
-        print('[NotificationService] iOS permission status: $permissionStatus');
+        debugPrint('[NotificationService] iOS permission status: $permissionStatus');
         
         // Check if we have alert permissions (main requirement)
         bool hasPermissions = permissionStatus?.isEnabled == true;
         
-        print('[NotificationService] iOS permissions enabled: $hasPermissions');
+        debugPrint('[NotificationService] iOS permissions enabled: $hasPermissions');
         
         // If we don't have permissions, request them
         if (!hasPermissions) {
@@ -1176,7 +1176,7 @@ class NotificationService {
                 badge: true,
                 sound: true,
               );
-          print('[NotificationService] iOS permission request result: $requestResult');
+          debugPrint('[NotificationService] iOS permission request result: $requestResult');
           return requestResult ?? false;
         }
         
@@ -1184,7 +1184,7 @@ class NotificationService {
       }
       return true;
     } catch (error) {
-      print('[NotificationService] Error checking notification permissions: $error');
+      debugPrint('[NotificationService] Error checking notification permissions: $error');
       return false;
     }
   }
@@ -1243,7 +1243,7 @@ class NotificationService {
 /// Headless task handler for notification checking
 /// This runs in the background even when the app is terminated
 Future<void> notificationHeadlessTask(String taskId) async {
-  print('[NotificationService] Headless task executed: $taskId');
+  debugPrint('[NotificationService] Headless task executed: $taskId');
   
   if (taskId == NotificationService._notificationTaskId) {
     await NotificationService.checkNotificationTiming();

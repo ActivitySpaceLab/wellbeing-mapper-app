@@ -8,7 +8,7 @@ import '../db/survey_database.dart';
 import '../services/app_mode_service.dart';
 import '../models/app_mode.dart';
 import '../services/participant_validation_service.dart';
-import '../services/encrypted_survey_service.dart';
+import '../services/research_server_service.dart';
 import '../main.dart'; // For GlobalData
 import '../services/consent_tracking_service.dart';
 
@@ -62,13 +62,13 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
   /// Check if user has already consented and bypass the form if they have
   Future<void> _checkExistingConsent() async {
-    print('[ConsentForm] Checking for existing consent...');
+    debugPrint('[ConsentForm] Checking for existing consent...');
     
     // Check if consent has already been completed
     final hasConsent = await ConsentTrackingService.hasCompletedCurrentConsent();
     
     if (hasConsent) {
-      print('[ConsentForm] User has already completed consent - bypassing form');
+      debugPrint('[ConsentForm] User has already completed consent - bypassing form');
       
       // User has already consented, navigate them past the consent form
       if (mounted) {
@@ -84,7 +84,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
       return;
     }
     
-    print('[ConsentForm] No existing consent found - showing consent form');
+    debugPrint('[ConsentForm] No existing consent found - showing consent form');
   }
 
   // Site-specific content getters
@@ -936,20 +936,20 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
       // Sync consent form to Qualtrics (if not in testing mode)
       if (!widget.isTestingMode) {
         try {
-          print('[ConsentForm] Syncing consent with encrypted service...');
+          debugPrint('[ConsentForm] Syncing consent with encrypted service...');
           
           // SECURITY: Using encrypted survey service for secure consent data transmission
-          EncryptedSurveyService.syncPendingSurveys().catchError((e) {
-            print('[ConsentForm] ⚠️ Encrypted sync will retry later: $e');
+          ResearchServerService.syncPendingSurveys().catchError((e) {
+            debugPrint('[ConsentForm] ⚠️ Encrypted sync will retry later: $e');
           });
           
-          print('[ConsentForm] ✅ Consent form saved and encrypted sync initiated');
+          debugPrint('[ConsentForm] ✅ Consent form saved and encrypted sync initiated');
         } catch (e) {
-          print('[ConsentForm] ❌ Error with encrypted sync: $e');
+          debugPrint('[ConsentForm] ❌ Error with encrypted sync: $e');
           // Don't fail the whole process - consent is still saved locally
         }
       } else {
-        print('[ConsentForm] Skipping sync in testing mode');
+        debugPrint('[ConsentForm] Skipping sync in testing mode');
       }
 
       // Record consent with participant validation service (for research participants)
@@ -959,10 +959,10 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           DateTime.now(),
         );
         if (!consentResult.success) {
-          print('[ConsentForm] Warning: Failed to record consent on server: ${consentResult.error}');
+          debugPrint('[ConsentForm] Warning: Failed to record consent on server: ${consentResult.error}');
           // Don't fail the whole process - consent is still saved locally
         } else {
-          print('[ConsentForm] Consent successfully recorded on server');
+          debugPrint('[ConsentForm] Consent successfully recorded on server');
         }
       }
 
@@ -974,25 +974,25 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         // but mark it as testing so data stays local
         final settings = ParticipationSettings.researchParticipant(widget.participantCode, widget.researchSite);
         await prefs.setString('participation_settings', jsonEncode(settings.toJson()));
-        print('[ConsentForm] Saved research participant settings for testing mode (data stays local)');
+        debugPrint('[ConsentForm] Saved research participant settings for testing mode (data stays local)');
         
         // CRITICAL FIX: Set the app mode to appTesting after consent completion
         await AppModeService.setCurrentMode(AppMode.appTesting);
-        print('[ConsentForm] Set app mode to appTesting after consent completion');
+        debugPrint('[ConsentForm] Set app mode to appTesting after consent completion');
       } else {
         // For research participation, use research participant settings
         final settings = ParticipationSettings.researchParticipant(widget.participantCode, widget.researchSite);
         await prefs.setString('participation_settings', jsonEncode(settings.toJson()));
-        print('[ConsentForm] Saved research participant settings');
+        debugPrint('[ConsentForm] Saved research participant settings');
         
         // Set the app mode to research for real research participation
         await AppModeService.setCurrentMode(AppMode.research);
-        print('[ConsentForm] Set app mode to research after consent completion');
+        debugPrint('[ConsentForm] Set app mode to research after consent completion');
       }
       
       // Mark consent as completed using new tracking service (also sets fresh_consent_completion flag)
       await ConsentTrackingService.markConsentCompleted();
-      print('[ConsentForm] Marked consent as completed using ConsentTrackingService');
+      debugPrint('[ConsentForm] Marked consent as completed using ConsentTrackingService');
 
       // Show success and navigate
       _showSuccessDialog(uuid);
@@ -1033,16 +1033,16 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 
                 if (widget.isTestingMode) {
                   // For testing mode, return true to the change mode screen to indicate success
-                  print('[ConsentForm] Testing mode consent completed - returning to change mode screen');
+                  debugPrint('[ConsentForm] Testing mode consent completed - returning to change mode screen');
                   Navigator.of(context).pop(true);
                 } else {
                   // For research participation, go directly to main app
-                  print('[ConsentForm] Research consent completed - navigating directly to main app');
+                  debugPrint('[ConsentForm] Research consent completed - navigating directly to main app');
                   Navigator.of(context).pushReplacementNamed('/');
                 }
                 
               } catch (e) {
-                print('[ConsentForm] Error in navigation: $e');
+                debugPrint('[ConsentForm] Error in navigation: $e');
                 // Fallback navigation
                 if (widget.isTestingMode) {
                   Navigator.of(context).pop(true);

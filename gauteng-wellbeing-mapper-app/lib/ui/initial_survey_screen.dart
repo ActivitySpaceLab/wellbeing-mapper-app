@@ -6,7 +6,7 @@ import '../models/survey_models.dart';
 import '../models/consent_models.dart';
 import '../models/app_mode.dart';
 import '../services/app_mode_service.dart';
-import '../services/encrypted_survey_service.dart';
+import '../services/research_server_service.dart';
 import '../db/survey_database.dart';
 
 class InitialSurveyScreen extends StatefulWidget {
@@ -720,22 +720,22 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
     try {
       final db = SurveyDatabase();
       final surveyId = await db.insertInitialSurvey(response);
-      print('Initial survey saved to local database with ID: $surveyId');
+      debugPrint('Initial survey saved to local database with ID: $surveyId');
       
       // Mark initial survey as completed to prevent re-prompting
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('initial_survey_completed', true);
-      print('Marked initial survey as completed');
+      debugPrint('Marked initial survey as completed');
       
       // SECURITY: Using encrypted survey service - no API tokens exposed
       // Trigger background sync when connectivity is available
-      EncryptedSurveyService.syncPendingSurveys().catchError((e) {
-        print('Background sync will retry later: $e');
+      ResearchServerService.syncPendingSurveys().catchError((e) {
+        debugPrint('Background sync will retry later: $e');
       });
       
-      print('✅ Survey saved locally. Encrypted background sync initiated.');
+      debugPrint('✅ Survey saved locally. Encrypted background sync initiated.');
     } catch (e) {
-      print('Error saving initial survey: $e');
+      debugPrint('Error saving initial survey: $e');
       rethrow;
     }
   }

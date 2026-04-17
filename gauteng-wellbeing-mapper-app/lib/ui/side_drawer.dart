@@ -47,7 +47,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
         userUuid = uuid;
       });
     } catch (e) {
-      print('Error loading app info: $e');
+      debugPrint('Error loading app info: $e');
       setState(() {
         appVersion = 'Unknown';
         buildNumber = 'Unknown';
@@ -74,7 +74,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
         isLoading = false;
       });
     } catch (e) {
-      print('Error loading current mode: $e');
+      debugPrint('Error loading current mode: $e');
       setState(() {
         currentMode = AppMode.private; // Default to private on error
         isLoading = false;
@@ -89,7 +89,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
         hasCompletedInitialSurvey = completed;
       });
     } catch (e) {
-      print('Error checking initial survey status: $e');
+      debugPrint('Error checking initial survey status: $e');
     }
   }
 
@@ -111,7 +111,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    return new Drawer(
+    return Drawer(
       child: ListView(
         // Important: Remove any padding from the ListView.
         padding: EdgeInsets.zero,

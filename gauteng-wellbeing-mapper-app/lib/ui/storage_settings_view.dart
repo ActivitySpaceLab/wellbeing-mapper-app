@@ -51,7 +51,7 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
         _isLoading = false;
       });
     } catch (e) {
-      print('[StorageSettingsView] Error loading settings: $e');
+      debugPrint('[StorageSettingsView] Error loading settings: $e');
       setState(() {
         _isLoading = false;
       });

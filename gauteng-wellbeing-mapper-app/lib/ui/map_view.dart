@@ -1,14 +1,12 @@
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
-    as bg;
 import 'package:flutter_map/flutter_map.dart';
-//import 'package:flutter_map/plugin_api.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:latlong2/latlong.dart';
 import 'package:wellbeing_mapper/services/test_service.dart';
+import '../services/geo_location_service.dart';
 import '../services/storage_settings_service.dart';
 
 class MapView extends StatefulWidget {
@@ -31,7 +29,7 @@ class MapViewState extends State<MapView>
   DateTime? _lastAccuracyThresholdFetch;
   static const Duration _accuracyThresholdCacheDuration = Duration(seconds: 30);
 
-  LatLng _center = new LatLng(-25.7479, 28.2293); // Pretoria, South Africa - relevant for Gauteng study
+  LatLng _center = LatLng(-25.7479, 28.2293); // Default center (Pretoria)
   late MapController _mapController;
   late MapOptions _mapOptions;
   
@@ -41,41 +39,39 @@ class MapViewState extends State<MapView>
   @override
   void initState() {
     super.initState();
-    print('[map_view] 📍 MapView initState called');
-    _mapOptions = new MapOptions(
-      onMapEvent: _onPositionChanged, // Changed from onPositionChanged
-      initialCenter: _center, // Changed from center
+    debugPrint('[map_view] MapView initState called');
+    _mapOptions = MapOptions(
+      onMapEvent: _onPositionChanged,
+      initialCenter: _center,
       initialZoom: 16.0,
     );
-    _mapController = new MapController();
+    _mapController = MapController();
 
-    // Skip background geolocation setup on web platform
+    // Register location listeners through GeoLocationService.
     if (!kIsWeb) {
-      bg.BackgroundGeolocation.onLocation(_onLocation);
-      bg.BackgroundGeolocation.onEnabledChange(_onEnabledChange);
-    } else {
-      print('[map_view] Web platform detected - skipping background geolocation listeners');
+      GeoLocationService.instance.addLocationListener(_onLocation);
+      GeoLocationService.instance.addEnabledChangeListener(_onEnabledChange);
     }
 
-    // Replace onReady with a different initialization approach
+    // Load stored locations after the widget is built.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('[map_view] 📍 PostFrameCallback - Loading initial stored locations');
       _displayStoredLocations();
     });
-    
-    // Additional delayed load to ensure map is fully ready
-    Future.delayed(Duration(milliseconds: 500), () {
-      print('[map_view] 📍 Delayed callback - Loading stored locations after 500ms');
-      _displayStoredLocations();
-    });
+    Future.delayed(const Duration(milliseconds: 500), _displayStoredLocations);
+  }
+
+  @override
+  void dispose() {
+    if (!kIsWeb) {
+      GeoLocationService.instance.removeLocationListener(_onLocation);
+      GeoLocationService.instance.removeEnabledChangeListener(_onEnabledChange);
+    }
+    super.dispose();
   }
 
   @override
   void didUpdateWidget(MapView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    print('[map_view] 📍 MapView didUpdateWidget called - refreshing stored locations');
-    
-    // Refresh stored locations when widget updates (e.g., coming back from survey)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _displayStoredLocations();
     });
@@ -84,7 +80,7 @@ class MapViewState extends State<MapView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    print('[map_view] 📍 MapView didChangeDependencies called - refreshing stored locations');
+    debugPrint('[map_view] 📍 MapView didChangeDependencies called - refreshing stored locations');
     
     // Refresh stored locations when dependencies change (e.g., navigation)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -94,13 +90,13 @@ class MapViewState extends State<MapView>
 
   // Add method to refresh map when coming back into view
   void refreshMapData() {
-    print('[map_view] 📍 MapView refreshMapData called');
+    debugPrint('[map_view] 📍 MapView refreshMapData called');
     _displayStoredLocations();
   }
   
   // Public method to refresh stored locations (called externally)
   void refreshStoredLocations() {
-    print('[map_view] 📍 MapView refreshStoredLocations called externally');
+    debugPrint('[map_view] 📍 MapView refreshStoredLocations called externally');
     _displayStoredLocations();
   }
 
@@ -121,22 +117,22 @@ class MapViewState extends State<MapView>
   void _displayStoredLocations() async {
     // Skip background geolocation operations on web platform
     if (kIsWeb) {
-      print('[map_view] Web platform detected - skipping stored locations display');
+      debugPrint('[map_view] Web platform detected - skipping stored locations display');
       return;
     }
     
     try {
-      print('[map_view] 🔄 Starting _displayStoredLocations - Current markers: ${_locations.length}');
+      debugPrint('[map_view] 🔄 Starting _displayStoredLocations - Current markers: ${_locations.length}');
       
       // Clear existing markers before reloading to prevent duplicates
-  print('[map_view] 🗑️ Clearing existing markers before reload');
+  debugPrint('[map_view] 🗑️ Clearing existing markers before reload');
   final maxAccuracy = await _getAccuracyThreshold(forceRefresh: true);
   // Use filtered location data to improve performance
   List filteredLocations = await StorageSettingsService.getFilteredLocationDataForMap();
-  print('[map_view] ✅ Found ${filteredLocations.length} filtered location points (<= ${maxAccuracy.toStringAsFixed(1)}m error) to display');
+  debugPrint('[map_view] ✅ Found ${filteredLocations.length} filtered location points (<= ${maxAccuracy.toStringAsFixed(1)}m error) to display');
       
       if (filteredLocations.isEmpty) {
-        print('[map_view] ⚠️ No location data found - user may not have tracking enabled or no movement yet');
+        debugPrint('[map_view] ⚠️ No location data found - user may not have tracking enabled or no movement yet');
         if (mounted) {
           setState(() {
             _locations = [];
@@ -157,31 +153,31 @@ class MapViewState extends State<MapView>
       for (var thisLocation in filteredLocations) {
         try {
           if (thisLocation == null) {
-            print('[map_view] ⚠️ Skipping null location data');
+            debugPrint('[map_view] ⚠️ Skipping null location data');
             continue;
           }
-          print('[map_view] 🔍 Processing location data: ${thisLocation.toString().substring(0, 100)}...');
+          debugPrint('[map_view] 🔍 Processing location data: ${thisLocation.toString().substring(0, 100)}...');
           Map<String, dynamic>? coords = thisLocation['coords'];
           if (coords == null) {
-            print('[map_view] ⚠️ Skipping location with null coords');
+            debugPrint('[map_view] ⚠️ Skipping location with null coords');
             continue;
           }
           double lat = (coords['latitude'] as num?)?.toDouble() ?? double.nan;
           double lon = (coords['longitude'] as num?)?.toDouble() ?? double.nan;
           if (lat.isNaN || lon.isNaN || lat.isInfinite || lon.isInfinite) {
-            print('[map_view] ⚠️ Skipping location with invalid coordinates: lat=$lat, lon=$lon');
+            debugPrint('[map_view] ⚠️ Skipping location with invalid coordinates: lat=$lat, lon=$lon');
             continue;
           }
           double accuracy = (coords['accuracy'] as num?)?.toDouble() ?? 999.0;
           if (accuracy > maxAccuracy) {
-            print('[map_view] 🚫 Skipping location with accuracy ${accuracy.toStringAsFixed(1)}m above threshold ${maxAccuracy.toStringAsFixed(1)}m');
+            debugPrint('[map_view] 🚫 Skipping location with accuracy ${accuracy.toStringAsFixed(1)}m above threshold ${maxAccuracy.toStringAsFixed(1)}m');
             continue;
           }
           LatLng currentPoint = LatLng(lat, lon);
           if (previousPoint != null &&
               (currentPoint.latitude - previousPoint.latitude).abs() < 0.000001 &&
               (currentPoint.longitude - previousPoint.longitude).abs() < 0.000001) {
-            print('[map_view] 🔄 Skipping duplicate location: ${currentPoint.latitude}, ${currentPoint.longitude}');
+            debugPrint('[map_view] 🔄 Skipping duplicate location: ${currentPoint.latitude}, ${currentPoint.longitude}');
             continue;
           }
           mostRecentLocation ??= currentPoint;
@@ -198,16 +194,16 @@ class MapViewState extends State<MapView>
             useRadiusInMeter: true,
           ));
           
-          print('[map_view] ✅ Successfully added location point: ${currentPoint.latitude}, ${currentPoint.longitude}');
+          debugPrint('[map_view] ✅ Successfully added location point: ${currentPoint.latitude}, ${currentPoint.longitude}');
           displayedCount++;
         } catch (e) {
-          print('[map_view] ❌ Error processing individual location: $e');
-          print('[map_view] 📊 Location data: $thisLocation');
+          debugPrint('[map_view] ❌ Error processing individual location: $e');
+          debugPrint('[map_view] 📊 Location data: $thisLocation');
           continue;
         }
       }
       
-      print('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
+      debugPrint('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
 
       final List<CircleMarker> orderedLocations = newLocations.reversed.toList();
 
@@ -250,57 +246,51 @@ class MapViewState extends State<MapView>
         target ??= _center;
 
         try {
-          print('[map_view] 📍 Auto-centering map on target: ${target.latitude}, ${target.longitude}');
+          debugPrint('[map_view] 📍 Auto-centering map on target: ${target.latitude}, ${target.longitude}');
           double zoom = _mapOptions.initialZoom;
           _mapController.move(target, zoom);
         } catch (e) {
-          print('[map_view] ❌ Error centering map on target location: $e');
+          debugPrint('[map_view] ❌ Error centering map on target location: $e');
         }
       } else {
-        print('[map_view] 📍 Auto-center disabled - keeping current map position');
+        debugPrint('[map_view] 📍 Auto-center disabled - keeping current map position');
       }
       
-      print('[map_view] 🎯 Map refresh complete with ${_locations.length} location markers');
+      debugPrint('[map_view] 🎯 Map refresh complete with ${_locations.length} location markers');
       
     } catch (error) {
-      print('[map_view] ❌ Error loading stored locations: $error');
+      debugPrint('[map_view] ❌ Error loading stored locations: $error');
     }
   }
 
   void _onEnabledChange(bool enabled) {
-    print("[home] - _onEnabledChange: $enabled");
-    // Markers should remain visible on the map even when tracking is disabled
+    debugPrint('[map_view] Tracking enabled changed: $enabled');
+    // Markers remain visible even when tracking is disabled.
   }
 
-  void _onLocation(bg.Location location) async {
-    print('[MapView] 📍 Real-time location received: ${location.coords.latitude}, ${location.coords.longitude}');
+  void _onLocation(AppLocation location) async {
+    debugPrint('[MapView] Real-time location: ${location.coords.latitude}, ${location.coords.longitude}');
     
     try {
       final maxAccuracy = await _getAccuracyThreshold();
 
-      // Create location point safely
       LatLng currentPoint = LatLng(location.coords.latitude, location.coords.longitude);
-      double accuracy = (location.coords.accuracy as num?)?.toDouble() ?? 999.0;
+      double accuracy = location.coords.accuracy;
       if (accuracy > maxAccuracy) {
-        print('[MapView] ⚠️ Rejecting real-time location with accuracy ${accuracy.toStringAsFixed(1)}m above threshold ${maxAccuracy.toStringAsFixed(1)}m');
+        debugPrint('[MapView] Rejecting location: accuracy ${accuracy.toStringAsFixed(1)}m > threshold');
         return;
       }
       
-      // FIXED: Enhanced duplicate and stationary filtering to reduce flashing
       if (_currentPosition.isNotEmpty) {
         LatLng lastPoint = _currentPosition.first.point;
         double distance = _calculateDistance(currentPoint.latitude, currentPoint.longitude, 
                                             lastPoint.latitude, lastPoint.longitude);
         
-        // If stationary and very close to last position, skip update more aggressively
         if (!location.isMoving && distance < 15.0) {
-          print('[MapView] ⚠️ Skipping stationary location update (${distance.toStringAsFixed(1)}m from last)');
           return;
         }
         
-        // For moving locations, still filter exact duplicates
         if (distance < 0.5) {
-          print('[MapView] ⚠️ Skipping very close duplicate location (${distance.toStringAsFixed(1)}m)');
           return;
         }
       }
@@ -308,18 +298,12 @@ class MapViewState extends State<MapView>
       // Add a marker for the recorded location (semitransparent circle with accuracy radius)
       double radius = accuracy.clamp(10.0, 200.0);
       
-      // Auto-center map if enabled (like FBG example)
       if (_autoCenter) {
         try {
-          double zoom = _mapOptions.initialZoom;
-          _mapController.move(currentPoint, zoom);
-          print('[MapView] 🎯 Auto-centered map on real-time location: ${currentPoint.latitude}, ${currentPoint.longitude}');
+          _mapController.move(currentPoint, _mapOptions.initialZoom);
         } catch (e) {
-          print('[MapView] ❌ Error moving map to new location (flutter_map compatibility issue): $e');
-          // Continue without map centering to avoid crashes
+          debugPrint('[MapView] Error moving map: $e');
         }
-      } else {
-        print('[MapView] 📍 Auto-center disabled - not centering on real-time location');
       }
       
       setState(() {
@@ -348,11 +332,8 @@ class MapViewState extends State<MapView>
         _maxAccuracyMeters = maxAccuracy;
       });
       
-      print('[MapView] ✅ Successfully added location point, total: ${_locations.length}');
-      
     } catch (error) {
-      print('[MapView] ❌ Error processing real-time location: $error');
-      // Don't crash the app, just log and continue
+      debugPrint('[MapView] Error processing real-time location: $error');
     }
   }
 
@@ -370,21 +351,14 @@ class MapViewState extends State<MapView>
   
   @override
   void dispose() {
+    if (!kIsWeb) {
+      GeoLocationService.instance.removeLocationListener(_onLocation);
+      GeoLocationService.instance.removeEnabledChangeListener(_onEnabledChange);
+    }
     super.dispose();
   }
 
 
-
-  /*CircleMarker _buildStationaryCircleMarker(
-      bg.Location location, bg.State state) {
-    return new CircleMarker(
-        point: LatLng(location.coords.latitude, location.coords.longitude),
-        color: Color.fromRGBO(255, 0, 0, 0.5),
-        useRadiusInMeter: true,
-        radius: (state.trackingMode == 1)
-            ? 200
-            : (state.geofenceProximityRadius! / 2));
-  }*/
 
 
 
@@ -476,9 +450,9 @@ class MapViewState extends State<MapView>
 
                     try {
                       _mapController.move(centerPoint, _mapOptions.initialZoom);
-                      print('[MapView] 🎯 Immediate centering on enabling auto-center');
+                      debugPrint('[MapView] 🎯 Immediate centering on enabling auto-center');
                     } catch (e) {
-                      print('[MapView] Error centering map: $e');
+                      debugPrint('[MapView] Error centering map: $e');
                     }
                   }
                   

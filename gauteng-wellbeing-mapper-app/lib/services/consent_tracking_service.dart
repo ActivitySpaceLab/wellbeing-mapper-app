@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Simple service to track if user has completed consent for the current app version
@@ -10,7 +11,7 @@ class ConsentTrackingService {
   static Future<bool> hasCompletedCurrentConsent() async {
     final prefs = await SharedPreferences.getInstance();
     final completed = prefs.getBool(_consentV2CompletedKey) ?? false;
-    print('[ConsentTracking] Current consent completed: $completed');
+    debugPrint('[ConsentTracking] Current consent completed: $completed');
     return completed;
   }
   
@@ -20,14 +21,14 @@ class ConsentTrackingService {
     await prefs.setBool(_consentV2CompletedKey, true);
     // Also set the backward compatibility flag for immediate survey prompt
     await prefs.setBool('fresh_consent_completion', true);
-    print('[ConsentTracking] Consent marked as completed for current version');
+    debugPrint('[ConsentTracking] Consent marked as completed for current version');
   }
   
   /// Reset consent status (for testing/debugging)
   static Future<void> resetConsentStatus() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_consentV2CompletedKey);
-    print('[ConsentTracking] Consent status reset - user will need to consent again');
+    debugPrint('[ConsentTracking] Consent status reset - user will need to consent again');
   }
   
   /// Check if user needs to provide consent

@@ -17,6 +17,7 @@
 /// 
 /// This implementation provides Option 1 (URL-based) as the recommended approach.
 
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'dart:convert';
 // TODO: MULTIMEDIA DISABLED - Uncomment imports when re-enabling multimedia
@@ -116,7 +117,7 @@ class MultimediaHandler {
       await ref.delete();
     } catch (e) {
       // File might already be deleted or URL invalid
-      print('Warning: Could not delete file: $e');
+      debugPrint('Warning: Could not delete file: $e');
     }
     */
   }
@@ -173,7 +174,7 @@ class QualtricsFileUploadHandler {
 /// Instructions for implementing multimedia in your survey screens
 class MultimediaImplementationGuide {
   static void printInstructions() {
-    print('''
+    debugPrint('''
 === MULTIMEDIA IMPLEMENTATION GUIDE ===
 
 RECOMMENDED APPROACH (URL-based):

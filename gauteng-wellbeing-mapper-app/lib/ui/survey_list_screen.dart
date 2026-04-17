@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../db/survey_database.dart';
 import '../models/survey_models.dart';
 import '../services/survey_navigation_service.dart';
-import '../services/encrypted_survey_service.dart';
+import '../services/research_server_service.dart';
 import '../services/global_notification_service.dart';
 
 class SurveyListScreen extends StatefulWidget {
@@ -388,11 +388,11 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
     });
 
     try {
-      print('[SurveyListScreen] Starting manual sync...');
+      debugPrint('[SurveyListScreen] Starting manual sync...');
       
-      await EncryptedSurveyService.syncPendingSurveys();
+      await ResearchServerService.syncPendingSurveys();
       
-      print('[SurveyListScreen] Manual sync completed');
+      debugPrint('[SurveyListScreen] Manual sync completed');
       
       // Show success notification
       GlobalNotificationService.showSuccess('✅ Surveys synced successfully!');
@@ -401,7 +401,7 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
       await _loadSurveys();
       
     } catch (e) {
-      print('[SurveyListScreen] Manual sync failed: $e');
+      debugPrint('[SurveyListScreen] Manual sync failed: $e');
       
       // Show error notification  
       GlobalNotificationService.showError('Sync failed: $e');
