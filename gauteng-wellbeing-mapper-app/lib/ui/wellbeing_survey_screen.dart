@@ -51,6 +51,10 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
       setState(() {
         _currentLocation = location;
         _isCaptingLocation = false;
+        if (location == null) {
+          _locationError = 'Unable to determine current location. '
+              'The survey can still be submitted without a location.';
+        }
       });
       
       if (location != null) {

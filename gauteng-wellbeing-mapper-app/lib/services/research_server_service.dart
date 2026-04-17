@@ -89,6 +89,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
 
       int initialSynced = 0, biweeklySynced = 0, consentSynced = 0;
 
+      final db = SurveyDatabase();
       final unsyncedInitial = await db.getUnsyncedInitialSurveys();
       for (final survey in unsyncedInitial) {
         if (await _syncInitialSurvey(survey)) initialSynced++;

@@ -205,7 +205,10 @@ class ParticipantValidationService {
     return sha256.convert(bytes).toString();
   }
 
-  /// Stores the SHA-256 hash of the validated code in SharedPreferences.
+  /// Stores [hashedCode] (already SHA-256 hashed by callers) in SharedPreferences.
+  ///
+  /// The raw participant code is NEVER written to storage – only its hash.
+  /// All call sites compute the hash via [_hashCode] before calling [_store].
   static Future<void> _store(String hashedCode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_validatedParticipantKey, hashedCode);
