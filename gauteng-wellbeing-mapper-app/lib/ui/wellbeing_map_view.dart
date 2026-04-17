@@ -43,7 +43,7 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
         );
       }
     } catch (error) {
-      print('[WellbeingMapView] Error loading survey data: $error');
+      debugPrint('[WellbeingMapView] Error loading survey data: $error');
       setState(() {
         _isLoading = false;
       });

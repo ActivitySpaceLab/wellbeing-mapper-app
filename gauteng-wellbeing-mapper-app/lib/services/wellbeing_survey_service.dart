@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../models/wellbeing_survey_models.dart';
 import '../db/survey_database.dart';
@@ -16,7 +17,7 @@ class WellbeingSurveyService {
     map['timestamp'] = survey.timestamp.toIso8601String();
     
     final id = await db.insert('wellbeing_survey_responses', map);
-    print('[WellbeingSurveyService] Inserted wellbeing survey with id: $id');
+    debugPrint('[WellbeingSurveyService] Inserted wellbeing survey with id: $id');
     return id;
   }
 
@@ -57,7 +58,7 @@ class WellbeingSurveyService {
       where: 'id = ?',
       whereArgs: [surveyId],
     );
-    print('[WellbeingSurveyService] Marked survey $surveyId as synced');
+    debugPrint('[WellbeingSurveyService] Marked survey $surveyId as synced');
   }
 
   /// Get wellbeing surveys for export (both synced and unsynced)
@@ -77,7 +78,7 @@ class WellbeingSurveyService {
   Future<void> deleteAllWellbeingSurveys() async {
     final db = await SurveyDatabase().database;
     await db.delete('wellbeing_survey_responses');
-    print('[WellbeingSurveyService] Deleted all wellbeing surveys');
+    debugPrint('[WellbeingSurveyService] Deleted all wellbeing surveys');
   }
 
   /// Get count of wellbeing surveys

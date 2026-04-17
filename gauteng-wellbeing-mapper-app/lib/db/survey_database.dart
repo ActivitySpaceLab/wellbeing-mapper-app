@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'dart:convert';
@@ -480,11 +481,11 @@ class SurveyDatabase {
         for (final entry in requiredColumns.entries) {
           if (!existingColumns.contains(entry.key)) {
             await db.execute(entry.value);
-            print('[Database] Added missing column: ${entry.key}');
+            debugPrint('[Database] Added missing column: ${entry.key}');
           }
         }
       } catch (e) {
-        print('[Database] Error checking consent_responses schema: $e');
+        debugPrint('[Database] Error checking consent_responses schema: $e');
         // If there's an error, try to recreate the table
         await _recreateConsentResponsesTable(db);
       }
@@ -492,14 +493,14 @@ class SurveyDatabase {
   }
   
   Future<void> _recreateConsentResponsesTable(Database db) async {
-    print('[Database] Recreating consent_responses table with correct schema');
+    debugPrint('[Database] Recreating consent_responses table with correct schema');
     
     // Backup existing data
     List<Map<String, dynamic>> existingData = [];
     try {
       existingData = await db.query('consent_responses');
     } catch (e) {
-      print('[Database] No existing consent data to backup: $e');
+      debugPrint('[Database] No existing consent data to backup: $e');
     }
     
     // Drop and recreate table
@@ -539,7 +540,7 @@ class SurveyDatabase {
       try {
         await db.insert('consent_responses', row);
       } catch (e) {
-        print('[Database] Could not restore consent row: $e');
+        debugPrint('[Database] Could not restore consent row: $e');
       }
     }
   }
@@ -843,11 +844,11 @@ class SurveyDatabase {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } catch (e) {
-      print('[Database] Error inserting consent, attempting to fix schema: $e');
+      debugPrint('[Database] Error inserting consent, attempting to fix schema: $e');
       
       // If the insert fails due to missing columns, recreate the table
       if (e.toString().contains('no column named') || e.toString().contains('SQLITE_ERROR')) {
-        print('[Database] Recreating consent_responses table due to schema error');
+        debugPrint('[Database] Recreating consent_responses table due to schema error');
         await _recreateConsentResponsesTable(db);
         
         // Retry the insert after fixing the schema
@@ -1099,7 +1100,7 @@ class SurveyDatabase {
     final db = await database;
     final cutoffTimestamp = cutoffDate.millisecondsSinceEpoch.toString();
     
-    print('[SurveyDatabase] Cleaning up location data older than $cutoffDate');
+    debugPrint('[SurveyDatabase] Cleaning up location data older than $cutoffDate');
     
     try {
       // Clean up location tracks table
@@ -1109,10 +1110,10 @@ class SurveyDatabase {
         whereArgs: [cutoffTimestamp]
       );
       
-      print('[SurveyDatabase] Deleted $tracksDeleted old location tracks');
+      debugPrint('[SurveyDatabase] Deleted $tracksDeleted old location tracks');
       
     } catch (e) {
-      print('[SurveyDatabase] Error during location data cleanup: $e');
+      debugPrint('[SurveyDatabase] Error during location data cleanup: $e');
     }
   }
 
@@ -1176,7 +1177,7 @@ class SurveyDatabase {
       }
       
     } catch (e) {
-      print('[SurveyDatabase] Error getting location data stats: $e');
+      debugPrint('[SurveyDatabase] Error getting location data stats: $e');
       stats['error'] = e.toString();
     }
     

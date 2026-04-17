@@ -13,7 +13,7 @@ class InternetConnectivityService {
       
       return response.statusCode == 200;
     } catch (e) {
-      print('[Connectivity] Error checking internet connection: $e');
+      debugPrint('[Connectivity] Error checking internet connection: $e');
       return false;
     }
   }

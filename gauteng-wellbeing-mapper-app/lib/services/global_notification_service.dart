@@ -74,7 +74,7 @@ class GlobalNotificationService {
       );
     } else {
       // Fallback - print to console if no scaffold messenger available
-      print('[GlobalNotification] $message');
+      debugPrint('[GlobalNotification] $message');
     }
   }
 }

@@ -259,7 +259,7 @@ class _ParticipantCodeEntryScreenState extends State<ParticipantCodeEntryScreen>
       setState(() {
         _errorMessage = 'An unexpected error occurred. Please try again.';
       });
-      print('[ParticipantCodeEntry] Error validating code: $e');
+      debugPrint('[ParticipantCodeEntry] Error validating code: $e');
     } finally {
       if (mounted) {
         setState(() {

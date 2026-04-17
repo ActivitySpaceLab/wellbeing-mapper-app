@@ -1,453 +1,211 @@
 import 'dart:convert';
-import 'package:wellbeing_mapper/models/route_generator.dart';
-import 'package:wellbeing_mapper/util/env.dart';
-import 'package:wellbeing_mapper/services/notification_service.dart';
-import 'package:wellbeing_mapper/services/global_notification_service.dart';
-import 'package:wellbeing_mapper/services/app_mode_service.dart';
-import 'package:wellbeing_mapper/models/app_mode.dart';
 
-import 'package:wellbeing_mapper/theme/south_african_theme.dart';
+import 'package:background_fetch/background_fetch.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
-    as bg;
-import 'package:background_fetch/background_fetch.dart';
+import 'package:uuid/uuid.dart';
 
 import 'models/app_localizations.dart';
-import 'package:uuid/uuid.dart';
+import 'models/app_mode.dart';
+import 'models/route_generator.dart';
+import 'services/app_mode_service.dart';
 import 'services/consent_tracking_service.dart';
+import 'services/geo_location_service.dart';
+import 'services/global_notification_service.dart';
+import 'services/notification_service.dart';
+import 'theme/south_african_theme.dart';
+import 'util/env.dart';
 
-/// GlobalData holds global user-related state for the app.
+/// Holds global user-related state shared across the app.
 class GlobalData {
-  static String userUUID = "";
+  static String userUUID = '';
 }
 
-/// Global navigator key for navigation from services
+/// Global navigator key for navigation from services.
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-/// Handles BackgroundGeolocation events when the app is in a headless state.
-/// This allows the app to respond to location and geofence events even when terminated or in the background.
-void backgroundGeolocationHeadlessTask(bg.HeadlessEvent headlessEvent) async {
-  try {
-    print('📬 --> $headlessEvent');
-
-    switch (headlessEvent.name) {
-      case bg.Event.TERMINATE:
-        // Handle app termination event.
-        try {
-          // Uncomment to fetch current position on terminate event.
-          // bg.Location location = await bg.BackgroundGeolocation.getCurrentPosition(samples: 1);
-          print('[getCurrentPosition] Headless: $headlessEvent');
-        } catch (error) {
-          print('[getCurrentPosition] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.HEARTBEAT:
-        // Optionally handle heartbeat event.
-        /*
-        try {
-          bg.Location location = await bg.BackgroundGeolocation.getCurrentPosition(samples: 1);
-          print('[getCurrentPosition] Headless: $location');
-        } catch (error) {
-          print('[getCurrentPosition] Headless ERROR: $error');
-        }
-        */
-        break;
-      case bg.Event.LOCATION:
-        // Handle location update event.
-        try {
-          bg.Location location = headlessEvent.event;
-          print(location);
-        } catch (error) {
-          print('[LOCATION] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.MOTIONCHANGE:
-        // Handle motion change event.
-        try {
-          bg.Location location = headlessEvent.event;
-          print(location);
-        } catch (error) {
-          print('[MOTIONCHANGE] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.GEOFENCE:
-        // Handle geofence event.
-        try {
-          bg.GeofenceEvent geofenceEvent = headlessEvent.event;
-          print(geofenceEvent);
-        } catch (error) {
-          print('[GEOFENCE] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.GEOFENCESCHANGE:
-        // Handle geofences change event.
-        try {
-          bg.GeofencesChangeEvent event = headlessEvent.event;
-          print(event);
-        } catch (error) {
-          print('[GEOFENCESCHANGE] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.SCHEDULE:
-        // Handle schedule event.
-        try {
-          bg.State state = headlessEvent.event;
-          print(state);
-        } catch (error) {
-          print('[SCHEDULE] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.ACTIVITYCHANGE:
-        // Handle activity change event.
-        try {
-          bg.ActivityChangeEvent event = headlessEvent.event;
-          print(event);
-        } catch (error) {
-          print('[ACTIVITYCHANGE] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.HTTP:
-        // Handle HTTP event.
-        try {
-          bg.HttpEvent response = headlessEvent.event;
-          print(response);
-        } catch (error) {
-          print('[HTTP] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.POWERSAVECHANGE:
-        // Handle power save mode change.
-        try {
-          bool enabled = headlessEvent.event;
-          print(enabled);
-        } catch (error) {
-          print('[POWERSAVECHANGE] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.CONNECTIVITYCHANGE:
-        // Handle connectivity change event.
-        try {
-          bg.ConnectivityChangeEvent event = headlessEvent.event;
-          print(event);
-        } catch (error) {
-          print('[CONNECTIVITYCHANGE] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.ENABLEDCHANGE:
-        // Handle enabled state change.
-        try {
-          bool enabled = headlessEvent.event;
-          print(enabled);
-        } catch (error) {
-          print('[ENABLEDCHANGE] Headless ERROR: $error');
-        }
-        break;
-      case bg.Event.AUTHORIZATION:
-        // Handle authorization event.
-        try {
-          bg.AuthorizationEvent event = headlessEvent.event;
-          print(event);
-        } catch (error) {
-          print('[AUTHORIZATION] Headless ERROR: $error');
-        }
-        break;
-    }
-  } catch (error) {
-    print('[backgroundGeolocationHeadlessTask] Critical ERROR: $error');
-  }
-}
-
-/// Function to handle background fetch events
+/// Handles BackgroundFetch events when the app is in a headless/terminated state.
 void backgroundFetchHeadlessTask(HeadlessTask task) async {
-  try {
-    var taskId = task.taskId;
-    var timeout = task.timeout;
-    if (timeout) {
-      print("[BackgroundFetch] HeadlessTask timeout: $taskId");
-      BackgroundFetch.finish(taskId);
-      return;
-    }
-
-    print("[BackgroundFetch] HeadlessTask start: $taskId");
-
-    // Check for notification triggers
-    try {
-      await notificationHeadlessTask(taskId);
-      print("[BackgroundFetch] Notification check completed");
-    } catch (notificationError) {
-      print("[BackgroundFetch] Notification check error: $notificationError");
-    }
-
+  final taskId = task.taskId;
+  if (task.timeout) {
+    debugPrint('[BackgroundFetch] HeadlessTask timeout: $taskId');
     BackgroundFetch.finish(taskId);
-  } catch (error) {
-    print("[BackgroundFetch] HeadlessTask ERROR: $error");
-    // Still try to finish the task
-    try {
-      BackgroundFetch.finish(task.taskId);
-    } catch (finishError) {
-      print("[BackgroundFetch] Error finishing task: $finishError");
-    }
+    return;
+  }
+
+  debugPrint('[BackgroundFetch] HeadlessTask start: $taskId');
+  try {
+    await notificationHeadlessTask(taskId);
+  } catch (e) {
+    debugPrint('[BackgroundFetch] Notification check error: $e');
+  } finally {
+    BackgroundFetch.finish(taskId);
   }
 }
 
 /// App entry point.
-/// Initializes shared preferences, sets up user UUID, and registers background tasks.
 void main() {
-  print('[main.dart] Starting app initialization...');
   WidgetsFlutterBinding.ensureInitialized();
 
-  SharedPreferences.getInstance().then((SharedPreferences prefs) async {
-    print('[main.dart] SharedPreferences loaded');
-    
-    // Create random user ID if not yet created.
-    String? sampleId = prefs.getString("sample_id");
-    String? userUUID = prefs.getString("user_uuid");
+  SharedPreferences.getInstance().then((prefs) async {
+    // Create a random user UUID on first launch and persist it.
+    String? userUUID = prefs.getString('user_uuid');
+    String? sampleId = prefs.getString('sample_id');
 
-    GlobalData.userUUID = userUUID ?? ""; // Set the global userUUID
-
-    if (sampleId == null || userUUID == null) {
-      prefs.setString("user_uuid", Uuid().v4());
-      prefs.setString("sample_id", ENV.DEFAULT_SAMPLE_ID);
-
-      GlobalData.userUUID =
-          prefs.getString("user_uuid") ?? ""; // Set the global userUUID
+    if (userUUID == null || sampleId == null) {
+      userUUID = const Uuid().v4();
+      sampleId = ENV.DEFAULT_SAMPLE_ID;
+      // Await writes before reading back so GlobalData.userUUID is accurate.
+      await prefs.setString('user_uuid', userUUID);
+      await prefs.setString('sample_id', sampleId);
     }
 
-    print('[main.dart] userUUID: $userUUID');
-    print('[main.dart] sampleId: $sampleId');
+    GlobalData.userUUID = userUUID;
 
-    // Initialize notification service
+    // Initialise services.
     try {
       await NotificationService.initialize();
-      print('[main.dart] NotificationService initialized');
-    } catch (error) {
-      print('[main.dart] Error initializing NotificationService: $error');
+    } catch (e) {
+      debugPrint('[main] NotificationService init error: $e');
     }
 
-    // Initialize iOS location fix service on iOS devices
+    // Register headless tasks (geolocation + background fetch).
     try {
-      print('[main.dart] Initializing iOS location services...');
-      // Import at the top of file: import 'services/ios_location_fix_service.dart';
-      // For now, we'll skip auto-initialization to avoid import complexity
-      // The fix will still work when LocationService.initializeLocationServices is called
-      print('[main.dart] iOS location initialization deferred to first location request');
-    } catch (error) {
-      print('[main.dart] Error initializing iOS location services: $error');
+      GeoLocationService.registerHeadlessTask();
+    } catch (e) {
+      debugPrint('[main] GeoLocationService headless task registration error: $e');
+    }
+    try {
+      BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+    } catch (e) {
+      debugPrint('[main] BackgroundFetch headless task registration error: $e');
     }
 
-    // Register headless tasks with error handling to prevent UI blocking
-    try {
-      print('[main.dart] Registering headless tasks...');
-      
-      // Register background geolocation headless task with error handling
-      try {
-        bg.BackgroundGeolocation.registerHeadlessTask(backgroundGeolocationHeadlessTask);
-        print('[main.dart] BackgroundGeolocation headless task registered');
-      } catch (bgError) {
-        print('[main.dart] Error registering BackgroundGeolocation headless task: $bgError');
-      }
-      
-      // Register background fetch headless task with error handling
-      try {
-        BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
-        print('[main.dart] BackgroundFetch headless task registered');
-      } catch (bfError) {
-        print('[main.dart] Error registering BackgroundFetch headless task: $bfError');
-      }
-      
-      print('[main.dart] Headless task registration completed');
-    } catch (error) {
-      print('[main.dart] Error in headless task registration block (non-fatal): $error');
-      // Continue app startup even if headless task registration fails
-    }
-    
-    print('[main.dart] Launching app...');
-    runApp(new MyApp());
+    runApp(MyApp());
   }).catchError((error) {
-    print('[main.dart] Error initializing app: $error');
-    // Still run the app even if there's an error
-    runApp(new MyApp());
+    debugPrint('[main] Startup error: $error');
+    runApp(MyApp());
   });
 }
 
-/// The root widget of the application.
-/// Sets up localization, routes, and the initial screen.
+/// Root widget of the application.
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    print('[main.dart] MyApp build() called');
     return MaterialApp(
       navigatorKey: navigatorKey,
       scaffoldMessengerKey: GlobalNotificationService.scaffoldMessengerKey,
       title: 'Wellbeing Mapper',
       debugShowCheckedModeBanner: false,
       theme: SouthAfricanTheme.materialTheme,
-      supportedLocales: [
-        Locale('en', ''), // English, no country code. The first element of this list is the default language
-        Locale('es', ''), // Spanish, no country code
-        //Locale('ca', '') // Catalan, no country code
+      supportedLocales: const [
+        Locale('en', ''), // English (default)
+        Locale('es', ''), // Spanish
+        // TODO(i18n): Re-enable Catalan once translations are complete.
+        // Locale('ca', ''),
       ],
-      localizationsDelegates: [
-        //A class which loads the translations from JSON files
+      localizationsDelegates: const [
         AppLocalizations.delegate,
-        // Built-in localization of basic text for Material widgets.
         GlobalMaterialLocalizations.delegate,
-        // Built-in localization for text direction LTR/RTL
+        GlobalCupertinoLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
-      // Returns a locale which will be used by the app
       localeResolutionCallback: (locale, supportedLocales) {
-        // Check if the current device locale is supported.
-        for (var supportedLocale in supportedLocales) {
-          if (supportedLocale.languageCode == locale!.languageCode) {
-            return supportedLocale;
+        if (locale == null) return supportedLocales.first;
+        for (final supported in supportedLocales) {
+          if (supported.languageCode == locale.languageCode) {
+            return supported;
           }
         }
-        // If the locale of the device is not supported, use the first one
-        // from the list (English, in this case).
         return supportedLocales.first;
       },
-      onGenerateRoute: (settings) {
-        print('[main.dart] onGenerateRoute called for: ${settings.name}');
-        final route = RouteGenerator.generateRoute(settings);
-        print('[main.dart] RouteGenerator returned: $route');
-        return route;
-      },
+      onGenerateRoute: RouteGenerator.generateRoute,
       initialRoute: '/',
     );
   }
 }
 
-/// Simple widget to decide the initial route without complex navigation
-class InitialRouteDecider extends StatelessWidget {
+/// Decides the initial route based on app state (consent, mode, notifications).
+class InitialRouteDecider extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<String>(
-      future: _getInitialRoute(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          final route = snapshot.data!;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (route != '/') {
-              Navigator.of(context).pushReplacementNamed(route);
-            } else {
-              // Navigate to home route instead of returning HomeView directly
-              Navigator.of(context).pushReplacementNamed('/home');
-            }
-          });
-          
-          // Show loading indicator while navigation is happening
-          return Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        } else {
-          return Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-      },
-    );
+  _InitialRouteDeciderState createState() => _InitialRouteDeciderState();
+}
+
+class _InitialRouteDeciderState extends State<InitialRouteDecider> {
+  bool _navigated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveRoute();
   }
-  
+
+  Future<void> _resolveRoute() async {
+    final route = await _getInitialRoute();
+    if (!mounted || _navigated) return;
+    _navigated = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed(
+        route == '/' ? '/home' : route,
+      );
+    });
+  }
+
   Future<String> _getInitialRoute() async {
     try {
-      print('[InitialRouteDecider] ===== DETERMINING INITIAL ROUTE =====');
-      
-      // Check if app was launched from a notification
+      // A pending notification payload takes priority over everything else.
       final notificationPayload = NotificationService.getPendingNotificationPayload();
-      print('[InitialRouteDecider] Notification payload: $notificationPayload');
       if (notificationPayload == '/wellbeing_survey') {
-        print('[InitialRouteDecider] App launched from notification, navigating to survey');
         return '/wellbeing_survey';
       }
-      
-      // Get current app mode first
+
       final currentMode = await AppModeService.getCurrentMode();
-      print('[InitialRouteDecider] Current app mode: $currentMode');
-      
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? participationSettings = prefs.getString('participation_settings');
-      print('[InitialRouteDecider] Participation settings: $participationSettings');
-      
-      // Handle different modes
-      print('[InitialRouteDecider] === MODE-BASED ROUTING ===');
-      if (currentMode == AppMode.private) {
-        print('[InitialRouteDecider] Private mode detected - going directly to home');
+      final prefs = await SharedPreferences.getInstance();
+      final participationSettings = prefs.getString('participation_settings');
+
+      if (currentMode == AppMode.private || currentMode == AppMode.appTesting) {
         return '/';
-      } else if (currentMode == AppMode.appTesting) {
-        print('[InitialRouteDecider] App testing mode detected - going directly to home');
-        return '/';
-      } else if (currentMode == AppMode.research) {
-        print('[InitialRouteDecider] Research mode detected - checking participation status');
-        print('[InitialRouteDecider] participationSettings: $participationSettings');
-        
-        // For research mode, check if user has completed participation setup
+      }
+
+      if (currentMode == AppMode.research) {
         if (participationSettings != null && participationSettings.isNotEmpty) {
-          print('[InitialRouteDecider] Found participation settings, parsing...');
           try {
-            final settingsMap = Map<String, dynamic>.from(jsonDecode(participationSettings));
-            print('[InitialRouteDecider] Parsed settings map: $settingsMap');
-            final isResearchParticipant = settingsMap['isResearchParticipant'] ?? false;
-            print('[InitialRouteDecider] isResearchParticipant: $isResearchParticipant');
-            
-            if (isResearchParticipant == true) {
-              // Check if user needs to complete current consent
-              print('[InitialRouteDecider] User is research participant, checking consent...');
-              bool needsConsent = await ConsentTrackingService.needsConsent();
-              print('[InitialRouteDecider] Research mode - needs consent: $needsConsent');
-              if (!needsConsent) {
-                print('[InitialRouteDecider] Research mode with valid setup - going to home');
-                return '/';
-              } else {
-                print('[InitialRouteDecider] Research mode needs consent - going to participation selection');
-                return '/participation_selection';
-              }
-            } else {
-              print('[InitialRouteDecider] isResearchParticipant is false, going to participation selection');
-              return '/participation_selection';
+            final settings =
+                Map<String, dynamic>.from(jsonDecode(participationSettings));
+            if (settings['isResearchParticipant'] == true) {
+              final needsConsent = await ConsentTrackingService.needsConsent();
+              return needsConsent ? '/participation_selection' : '/';
             }
-          } catch (e) {
-            print('[InitialRouteDecider] Error parsing participationSettings: $e');
-            return '/participation_selection';
-          }
-        } else {
-          // Research mode but no valid participation settings - need to set up
-          print('[InitialRouteDecider] Research mode without participation settings - going to participation selection');
-          return '/participation_selection';
+          } catch (_) {}
         }
+        return '/participation_selection';
       }
-      
-      // Fallback logic for cases where mode isn't set properly
+
+      // Fallback: check participation settings and consent state.
       if (participationSettings != null && participationSettings.isNotEmpty) {
-        // Check if private user (never needs consent)
         try {
-          final settingsMap = Map<String, dynamic>.from(jsonDecode(participationSettings));
-          final isResearchParticipant = settingsMap['isResearchParticipant'] ?? false;
-          if (isResearchParticipant == false) {
-            print('[InitialRouteDecider] Private user detected, going to home route');
-            return '/';
-          }
-        } catch (e) {
-          print('[InitialRouteDecider] Error parsing participationSettings: $e');
-        }
+          final settings =
+              Map<String, dynamic>.from(jsonDecode(participationSettings));
+          if (settings['isResearchParticipant'] == false) return '/';
+        } catch (_) {}
+        final needsConsent = await ConsentTrackingService.needsConsent();
+        return needsConsent ? '/participation_selection' : '/';
       }
-      
-      // Check if user needs to complete current consent
-      bool needsConsent = await ConsentTrackingService.needsConsent();
-      print('[InitialRouteDecider] Needs consent: $needsConsent');
-      if (participationSettings != null && participationSettings.isNotEmpty && !needsConsent) {
-        print('[InitialRouteDecider] Going to home route');
-        return '/'; // Go to home
-      } else {
-        print('[InitialRouteDecider] Going to participation selection ([33m${needsConsent ? 'needs consent' : 'no settings'}[0m)');
-        return '/participation_selection'; // Go to participation selection
-      }
-    } catch (error) {
-      print('[InitialRouteDecider] Error: $error');
-      return '/participation_selection'; // Default to participation selection
+
+      return '/participation_selection';
+    } catch (e) {
+      debugPrint('[InitialRouteDecider] Error resolving route: $e');
+      return '/participation_selection';
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../db/survey_database.dart';
 import 'dart:convert';
@@ -20,10 +21,10 @@ class InitialSurveyService {
       final prefs = await SharedPreferences.getInstance();
       final completedFromPrefs = prefs.getBool(_INITIAL_SURVEY_COMPLETED_KEY);
       
-      print('[InitialSurveyService] completedFromPrefs: $completedFromPrefs');
+      debugPrint('[InitialSurveyService] completedFromPrefs: $completedFromPrefs');
       
       if (completedFromPrefs == true) {
-        print('[InitialSurveyService] Survey marked as completed in SharedPreferences');
+        debugPrint('[InitialSurveyService] Survey marked as completed in SharedPreferences');
         return true;
       }
       
@@ -32,18 +33,18 @@ class InitialSurveyService {
       final surveys = await db.getInitialSurveys();
       final hasCompleted = surveys.isNotEmpty;
       
-      print('[InitialSurveyService] surveys from database: ${surveys.length}');
-      print('[InitialSurveyService] hasCompleted from database: $hasCompleted');
+      debugPrint('[InitialSurveyService] surveys from database: ${surveys.length}');
+      debugPrint('[InitialSurveyService] hasCompleted from database: $hasCompleted');
       
       // Update SharedPreferences if we found a completed survey
       if (hasCompleted) {
         await prefs.setBool(_INITIAL_SURVEY_COMPLETED_KEY, true);
-        print('[InitialSurveyService] Updated SharedPreferences with completion status');
+        debugPrint('[InitialSurveyService] Updated SharedPreferences with completion status');
       }
       
       return hasCompleted;
     } catch (e) {
-      print('[InitialSurveyService] Error checking initial survey completion: $e');
+      debugPrint('[InitialSurveyService] Error checking initial survey completion: $e');
       return false;
     }
   }
@@ -58,9 +59,9 @@ class InitialSurveyService {
       await prefs.remove(_INITIAL_SURVEY_REMINDER_COUNT_KEY);
       await prefs.remove(_LAST_REMINDER_DATE_KEY);
       
-      print('[InitialSurveyService] Initial survey marked as completed');
+      debugPrint('[InitialSurveyService] Initial survey marked as completed');
     } catch (e) {
-      print('[InitialSurveyService] Error marking initial survey as completed: $e');
+      debugPrint('[InitialSurveyService] Error marking initial survey as completed: $e');
     }
   }
 
@@ -72,9 +73,9 @@ class InitialSurveyService {
       await prefs.remove(_INITIAL_SURVEY_REMINDER_COUNT_KEY);
       await prefs.remove(_LAST_REMINDER_DATE_KEY);
       
-      print('[InitialSurveyService] Initial survey status reset');
+      debugPrint('[InitialSurveyService] Initial survey status reset');
     } catch (e) {
-      print('[InitialSurveyService] Error resetting initial survey status: $e');
+      debugPrint('[InitialSurveyService] Error resetting initial survey status: $e');
     }
   }
 
@@ -133,7 +134,7 @@ class InitialSurveyService {
       
       return null;
     } catch (e) {
-      print('[InitialSurveyService] Error checking reminder status: $e');
+      debugPrint('[InitialSurveyService] Error checking reminder status: $e');
       return null;
     }
   }
@@ -150,32 +151,32 @@ class InitialSurveyService {
       final prefs = await SharedPreferences.getInstance();
       final participationJson = prefs.getString('participation_settings');
       
-      print('[InitialSurveyService] participationJson: $participationJson');
+      debugPrint('[InitialSurveyService] participationJson: $participationJson');
       
       if (participationJson == null) {
-        print('[InitialSurveyService] No participation settings - private user, no survey needed');
+        debugPrint('[InitialSurveyService] No participation settings - private user, no survey needed');
         return false; // Private users don't need initial survey
       }
 
       final participationData = jsonDecode(participationJson);
       final isResearchParticipant = participationData['isResearchParticipant'] ?? false;
       
-      print('[InitialSurveyService] isResearchParticipant: $isResearchParticipant');
+      debugPrint('[InitialSurveyService] isResearchParticipant: $isResearchParticipant');
       
       if (!isResearchParticipant) {
-        print('[InitialSurveyService] Not a research participant - no survey needed');
+        debugPrint('[InitialSurveyService] Not a research participant - no survey needed');
         return false; // Private users don't need initial survey
       }
 
       // Research participants need initial survey if not completed
       final hasCompleted = await hasCompletedInitialSurvey();
-      print('[InitialSurveyService] hasCompletedInitialSurvey: $hasCompleted');
+      debugPrint('[InitialSurveyService] hasCompletedInitialSurvey: $hasCompleted');
       
       final needsSurvey = !hasCompleted;
-      print('[InitialSurveyService] needsInitialSurvey result: $needsSurvey');
+      debugPrint('[InitialSurveyService] needsInitialSurvey result: $needsSurvey');
       return needsSurvey;
     } catch (e) {
-      print('[InitialSurveyService] Error checking if initial survey is needed: $e');
+      debugPrint('[InitialSurveyService] Error checking if initial survey is needed: $e');
       return false;
     }
   }

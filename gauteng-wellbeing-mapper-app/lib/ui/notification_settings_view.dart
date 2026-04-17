@@ -25,7 +25,7 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
         _isLoading = false;
       });
     } catch (error) {
-      print('Error loading notification stats: $error');
+      debugPrint('Error loading notification stats: $error');
       setState(() {
         _isLoading = false;
       });

@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 import 'package:flutter/foundation.dart';
 import '../db/survey_database.dart';
+import 'geo_location_service.dart';
 
 class StorageSettingsService {
   // Default values - balanced for research usage and performance
@@ -38,11 +38,9 @@ class StorageSettingsService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(PREF_LOCATION_RETENTION_DAYS, days);
     
-    // Update background geolocation plugin settings
+    // Propagate to the location plugin if it has been configured.
     if (!kIsWeb) {
-      await bg.BackgroundGeolocation.setConfig(
-        bg.Config(maxDaysToPersist: days == UNLIMITED_VALUE ? 999999 : days)
-      );
+      await GeoLocationService.instance.updateRetentionDays(days);
     }
   }
 
@@ -177,23 +175,23 @@ class StorageSettingsService {
     
     // Don't cleanup if unlimited
     if (retentionDays == UNLIMITED_VALUE) {
-      print('[StorageSettingsService] Skipping cleanup - unlimited retention enabled');
+      debugPrint('[StorageSettingsService] Skipping cleanup - unlimited retention enabled');
       return;
     }
     
     final cutoffDate = DateTime.now().subtract(Duration(days: retentionDays));
     
-    print('[StorageSettingsService] Performing cleanup - removing data older than $retentionDays days (cutoff: ${cutoffDate.toIso8601String()})');
+    debugPrint('[StorageSettingsService] Performing cleanup - removing data older than $retentionDays days (cutoff: ${cutoffDate.toIso8601String()})');
     
     try {
       // Clean up app database location data (FBG handles its own minimal 1-day retention)
       final database = SurveyDatabase();
       await database.cleanupOldLocationData(cutoffDate);
       
-      print('[StorageSettingsService] ✅ App database cleanup completed');
+      debugPrint('[StorageSettingsService] ✅ App database cleanup completed');
       
     } catch (e) {
-      print('[StorageSettingsService] ❌ Error during cleanup: $e');
+      debugPrint('[StorageSettingsService] ❌ Error during cleanup: $e');
     }
   }
 
@@ -207,14 +205,14 @@ class StorageSettingsService {
   final maxMarkers = await getMaxMapMarkers();
   final maxErrorThreshold = await getMapErrorThresholdMeters();
     
-  print('[StorageSettingsService] Map filtering - Display days: $displayDays, Retention days: $retentionDays, Max markers: $maxMarkers, Max error: ${maxErrorThreshold.toStringAsFixed(1)}m');
+  debugPrint('[StorageSettingsService] Map filtering - Display days: $displayDays, Retention days: $retentionDays, Max markers: $maxMarkers, Max error: ${maxErrorThreshold.toStringAsFixed(1)}m');
     
     try {
       // FIXED: Load from app's database instead of FBG's internal storage that auto-purges
       final db = SurveyDatabase();
       final locationTracks = await db.getAllLocationTracks();
       
-      print('[StorageSettingsService] 🗃️ Loaded ${locationTracks.length} location tracks from app database');
+      debugPrint('[StorageSettingsService] 🗃️ Loaded ${locationTracks.length} location tracks from app database');
       
       // Convert LocationTrack objects to FBG-compatible format for map
       List<Map<String, dynamic>> allLocations = [];
@@ -222,7 +220,7 @@ class StorageSettingsService {
         final accuracy = track.accuracy ?? 0.0;
         if (accuracy > maxErrorThreshold) {
           if (kDebugMode) {
-            print('[StorageSettingsService] 🚫 Skipping LocationTrack at ${track.timestamp.toIso8601String()} due to accuracy ${accuracy.toStringAsFixed(1)}m');
+            debugPrint('[StorageSettingsService] 🚫 Skipping LocationTrack at ${track.timestamp.toIso8601String()} due to accuracy ${accuracy.toStringAsFixed(1)}m');
           }
           continue;
         }
@@ -261,19 +259,19 @@ class StorageSettingsService {
         return locationDate.isAfter(cutoffDate);
       }).toList();
       
-      print('[StorageSettingsService] 📍 Filtered to ${recentLocations.length} recent locations (last $displayDays days)');
+      debugPrint('[StorageSettingsService] 📍 Filtered to ${recentLocations.length} recent locations (last $displayDays days)');
       
       // Limit to max markers
       if (recentLocations.length > maxMarkers) {
         final limited = recentLocations.take(maxMarkers).toList();
-        print('[StorageSettingsService] 🎯 Limited to ${limited.length} markers for performance');
+        debugPrint('[StorageSettingsService] 🎯 Limited to ${limited.length} markers for performance');
         return limited;
       }
       
       return recentLocations;
       
     } catch (e) {
-      print('[StorageSettingsService] ❌ Error getting filtered location data from database: $e');
+      debugPrint('[StorageSettingsService] ❌ Error getting filtered location data from database: $e');
       return [];
     }
   }

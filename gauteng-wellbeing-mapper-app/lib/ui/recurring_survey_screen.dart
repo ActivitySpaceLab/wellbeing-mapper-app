@@ -7,7 +7,7 @@ import '../models/survey_models.dart';
 import '../models/consent_models.dart';
 import '../models/data_sharing_consent.dart';
 import '../models/app_mode.dart';
-import '../services/encrypted_survey_service.dart';
+import '../services/research_server_service.dart';
 import '../services/global_notification_service.dart';
 import '../db/survey_database.dart';
 import '../services/app_mode_service.dart';
@@ -956,7 +956,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       final consent = await db.getConsent();
       participantUuid = consent?.participantUuid ?? '';
     } catch (e) {
-      print('Error getting participant UUID: $e');
+      debugPrint('Error getting participant UUID: $e');
     }
 
     // Open the interactive map
@@ -1000,7 +1000,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           // Get location data from app database (same source as map)
           final db = SurveyDatabase();
           final allLocationTracks = await db.getAllLocationTracks();
-          print('[RecurringSurvey] 🗃️ Found ${allLocationTracks.length} total location tracks in app database');
+          debugPrint('[RecurringSurvey] 🗃️ Found ${allLocationTracks.length} total location tracks in app database');
           
           // Filter for last 2 weeks for survey interaction
           final twoWeeksAgo = DateTime.now().subtract(Duration(days: 14));
@@ -1008,9 +1008,9 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
             return track.timestamp.isAfter(twoWeeksAgo);
           }).toList();
           
-          print('[RecurringSurvey] 📍 Filtered to ${locationTracks.length} recent location tracks (last 2 weeks)');
+          debugPrint('[RecurringSurvey] 📍 Filtered to ${locationTracks.length} recent location tracks (last 2 weeks)');
         } catch (e) {
-          print('[RecurringSurvey] ❌ Error getting location data from app database: $e');
+          debugPrint('[RecurringSurvey] ❌ Error getting location data from app database: $e');
         }
       }
       
@@ -1019,7 +1019,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         _totalLocationCount = locationTracks.length;
       });
     } catch (e) {
-      print('[RecurringSurvey] ❌ Error loading location data: $e');
+      debugPrint('[RecurringSurvey] ❌ Error loading location data: $e');
     }
   }
 
@@ -1485,7 +1485,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
 
       await db.insertDataSharingConsent(locationConsent);
     } catch (e) {
-      print('Error saving location sharing consent: $e');
+      debugPrint('Error saving location sharing consent: $e');
       throw e;
     }
   }
@@ -1501,7 +1501,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     try {
       // Collect location data based on user's sharing preference
       if (_locationSharingOption != LocationSharingOption.surveyOnly && !kIsWeb) {
-        print('[RecurringSurvey] Collecting location data for survey...');
+        debugPrint('[RecurringSurvey] Collecting location data for survey...');
         
         // Get filtered location tracks based on user's erasure preferences
         List<LocationTrack> locationsToShare = [];
@@ -1524,15 +1524,15 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
             'submitted_at': submissionTime.toIso8601String(),
           };
           
-          print('[RecurringSurvey] Prepared ${locationsToShare.length} location points for survey');
+          debugPrint('[RecurringSurvey] Prepared ${locationsToShare.length} location points for survey');
         } else {
-          print('[RecurringSurvey] No location data to share (user removed all locations)');
+          debugPrint('[RecurringSurvey] No location data to share (user removed all locations)');
         }
       } else {
-        print('[RecurringSurvey] Location sharing disabled by user or web platform');
+        debugPrint('[RecurringSurvey] Location sharing disabled by user or web platform');
       }
     } catch (e) {
-      print('[RecurringSurvey] Error collecting location data: $e');
+      debugPrint('[RecurringSurvey] Error collecting location data: $e');
       locationDataMap = null;
     }
       
@@ -1579,7 +1579,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     
     // SECURITY: API sync disabled - using secure web-based submission instead
     // The web-based survey approach is more secure as it doesn't expose API tokens
-    print('✅ Biweekly survey saved locally. Participants will complete web survey for secure submission.');
+    debugPrint('✅ Biweekly survey saved locally. Participants will complete web survey for secure submission.');
     
     // Note: API sync removed for security - web surveys provide secure data collection
     // without exposing API tokens that could compromise all participant data
@@ -1731,18 +1731,18 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
 
       // Try to upload in background - user already navigated away
       try {
-        print('[RecurringSurveyScreen] 🚀 Starting background upload...');
+        debugPrint('[RecurringSurveyScreen] 🚀 Starting background upload...');
         
         // Use the same encrypted survey service as consent and initial surveys
-        await EncryptedSurveyService.syncPendingSurveys();
+        await ResearchServerService.syncPendingSurveys();
         
-        print('[RecurringSurveyScreen] ✅ Background upload completed successfully!');
+        debugPrint('[RecurringSurveyScreen] ✅ Background upload completed successfully!');
         
         // Show success notification using global service
         GlobalNotificationService.showSuccess('✅ Research data uploaded successfully!');
         
       } catch (uploadError) {
-        print('[RecurringSurveyScreen] ❌ Background upload failed: $uploadError');
+        debugPrint('[RecurringSurveyScreen] ❌ Background upload failed: $uploadError');
         
         // Show error notification using global service
         GlobalNotificationService.showWarning('Upload failed - data saved locally for retry');

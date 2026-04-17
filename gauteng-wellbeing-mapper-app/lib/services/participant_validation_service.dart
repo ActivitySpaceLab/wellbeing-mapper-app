@@ -1,139 +1,128 @@
-import 'dart:math';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Service for validating participant codes against a secure server-side list
-/// Uses SHA-256 hashing for security - codes are never transmitted in plain text
+/// Validates participant codes against the research server.
+///
+/// Codes are never transmitted in plain text – only their SHA-256 hash is
+/// sent over the network or stored locally.
 class ParticipantValidationService {
-  // Production server endpoints (Lambda Function URL - more reliable than API Gateway)
-  static const String _baseUrl = 'https://6p7hir7licc5yisxhkner4wt2i0yhtzo.lambda-url.af-south-1.on.aws';
+  // TODO: Update this URL when the research server is built.
+  static const String _baseUrl =
+      'https://research-server.example.com';
   static const String _validateEndpoint = '/api/v1/participants/validate';
-  
-  // Local storage keys
+
+  static bool get _isServerConfigured =>
+      !_baseUrl.contains('example.com');
+
+  // SharedPreferences keys
   static const String _validatedParticipantKey = 'validated_participant_code';
   static const String _validationTimestampKey = 'validation_timestamp';
   static const String _consentRecordedKey = 'consent_recorded';
   static const String _codeTypeKey = 'participant_code_type';
   static const String _lastApiValidationKey = 'last_api_validation';
-  
-  // Validation source tracking
+
   static const String _apiValidationSource = 'api';
   static const String _localValidationSource = 'local_fallback';
 
-  /// Check if the current user has already been validated
+  // -------------------------------------------------------------------------
+  // Public API
+  // -------------------------------------------------------------------------
+
+  /// Returns `true` if a validated participant hash is stored locally.
   static Future<bool> isParticipantValidated() async {
     final prefs = await SharedPreferences.getInstance();
-    final validatedCode = prefs.getString(_validatedParticipantKey);
-    return validatedCode != null && validatedCode.isNotEmpty;
+    final stored = prefs.getString(_validatedParticipantKey);
+    return stored != null && stored.isNotEmpty;
   }
 
-  /// Get the stored participant code (hashed for security)
+  /// Returns the stored SHA-256 hash of the validated participant code, or
+  /// `null` if the user has not yet been validated.
   static Future<String?> getValidatedParticipantCode() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_validatedParticipantKey);
   }
 
-  /// Validate a participant code against the server
-  /// Returns true if code is valid, false otherwise
-  static Future<ValidationResult> validateParticipantCode(String participantCode) async {
+  /// Validates [participantCode] against the research server.
+  ///
+  /// Falls back to debug-only local codes when the server is unreachable and
+  /// the app is running in debug mode.
+  static Future<ValidationResult> validateParticipantCode(
+      String participantCode) async {
     try {
-      // Input validation
       if (participantCode.trim().isEmpty) {
         return ValidationResult(
-          isValid: false,
-          error: 'Participant code cannot be empty',
-        );
+            isValid: false, error: 'Participant code cannot be empty');
       }
 
-      // Clean and normalize the code
       final cleanCode = participantCode.trim().toUpperCase();
-      
-      // Hash the entered code for validation
-      final hashedCode = _hashParticipantCode(cleanCode);
-      
-      // Try server validation first
-      try {
-        final response = await http.post(
-          Uri.parse('$_baseUrl$_validateEndpoint'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: jsonEncode({
-            'hashed_code': hashedCode,
-            'timestamp': DateTime.now().toIso8601String(),
-          }),
-        ).timeout(Duration(seconds: 10));
+      final hashedCode = _hashCode(cleanCode);
 
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          if (data['valid'] == true) {
-            // Store the validation locally with additional metadata
-            await _storeValidatedParticipant(cleanCode);
-            await _storeValidationSource(_apiValidationSource);
-            await _storeParticipantCodeType(data['code_type'] ?? 'unknown');
-            
-            print('[ParticipantValidation] Server validation successful: ${cleanCode.substring(0, min(3, cleanCode.length))}*** (${data['code_type']})');
-            return ValidationResult(isValid: true);
-          } else {
-            print('[ParticipantValidation] Server rejected code: ${cleanCode.substring(0, min(3, cleanCode.length))}***');
+      if (_isServerConfigured) {
+        try {
+          final response = await http
+              .post(
+                Uri.parse('$_baseUrl$_validateEndpoint'),
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                },
+                body: jsonEncode({
+                  'hashed_code': hashedCode,
+                  'timestamp': DateTime.now().toIso8601String(),
+                }),
+              )
+              .timeout(const Duration(seconds: 10));
+
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body) as Map<String, dynamic>;
+            if (data['valid'] == true) {
+              await _store(hashedCode);
+              await _storeValidationSource(_apiValidationSource);
+              await _storeCodeType(data['code_type']?.toString() ?? 'unknown');
+              debugPrint('[ParticipantValidation] Server validation successful.');
+              return ValidationResult(isValid: true);
+            }
+            debugPrint('[ParticipantValidation] Server rejected code.');
             return ValidationResult(
               isValid: false,
-              error: 'Invalid participant code. Please check your code and contact the research team if you continue to have issues.',
+              error: 'Invalid participant code. Please check your code and '
+                  'contact the research team if you continue to have issues.',
             );
+          } else if (response.statusCode == 404) {
+            debugPrint('[ParticipantValidation] Code not found on server.');
+            return ValidationResult(
+              isValid: false,
+              error: 'Participant code not found. Please check your code and try again.',
+            );
+          } else {
+            debugPrint(
+                '[ParticipantValidation] Server error ${response.statusCode}, falling back.');
+            return _localFallback(cleanCode, hashedCode);
           }
-        } else if (response.statusCode == 404) {
-          print('[ParticipantValidation] Code not found on server: ${cleanCode.substring(0, min(3, cleanCode.length))}***');
-          return ValidationResult(
-            isValid: false,
-            error: 'Participant code not found. Please check your code and try again.',
-          );
-        } else {
-          print('[ParticipantValidation] Server validation failed with status ${response.statusCode}');
-          // Fall back to local validation
-          return await _validateWithLocalFallback(cleanCode, hashedCode);
+        } catch (networkError) {
+          debugPrint(
+              '[ParticipantValidation] Network error, falling back: $networkError');
+          return _localFallback(cleanCode, hashedCode);
         }
-      } catch (networkError) {
-        print('[ParticipantValidation] Network error during server validation: $networkError');
-        // Fall back to local validation
-        return await _validateWithLocalFallback(cleanCode, hashedCode);
+      } else {
+        // Server not yet configured – use local fallback.
+        return _localFallback(cleanCode, hashedCode);
       }
     } catch (e) {
-      print('[ParticipantValidation] Error validating code: $e');
+      debugPrint('[ParticipantValidation] Unexpected error: $e');
       return ValidationResult(
-        isValid: false,
-        error: 'Validation error. Please try again.',
-      );
+          isValid: false, error: 'Validation error. Please try again.');
     }
   }
 
-  /// Fallback validation using local hardcoded hashes
-  static Future<ValidationResult> _validateWithLocalFallback(String cleanCode, String hashedCode) async {
-    print('[ParticipantValidation] Using local fallback validation - server unavailable');
-    
-    // For development/testing - allow specific test codes only
-    if (cleanCode == 'TESTER' || cleanCode == 'TEST123' || cleanCode == 'DEV001' || cleanCode == 'PRODTEST') {
-      await _storeValidatedParticipant(cleanCode);
-      await _storeValidationSource(_localValidationSource);
-      await _storeParticipantCodeType('test');
-      print('[ParticipantValidation] Test code accepted: $cleanCode');
-      return ValidationResult(isValid: true);
-    }
-    
-    // No hardcoded participant codes - server required for validation
-    print('[ParticipantValidation] Local fallback: Server required for participant validation');
-    return ValidationResult(
-      isValid: false,
-      error: 'Unable to validate participant code. Please check your internet connection and try again.',
-    );
-  }
-
-  /// Record consent for a validated participant
-  static Future<ConsentResult> recordConsent(String participantCode, DateTime consentTimestamp) async {
+  /// Records consent for a validated participant (stored locally until the
+  /// research server is ready to accept consent submissions).
+  static Future<ConsentResult> recordConsent(
+      String participantCode, DateTime consentTimestamp) async {
     try {
-      // Verify participant is validated
       final isValidated = await isParticipantValidated();
       if (!isValidated) {
         return ConsentResult(
@@ -142,77 +131,28 @@ class ParticipantValidationService {
         );
       }
 
-      // For now, just store locally since server isn't ready
-      // TODO: Remove this when server is ready
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_consentRecordedKey, true);
-      await prefs.setString('consent_timestamp', consentTimestamp.toIso8601String());
-      
-      print('[ParticipantValidation] Consent recorded locally for participant: ${participantCode.substring(0, min(3, participantCode.length))}***');
+      await prefs.setString(
+          'consent_timestamp', consentTimestamp.toIso8601String());
+      debugPrint('[ParticipantValidation] Consent recorded locally.');
       return ConsentResult(success: true);
-
-      // Server consent recording (commented out until server is ready)
-      /*
-      final response = await http.post(
-        Uri.parse('$_baseUrl$_consentEndpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'hashed_participant_code': hashedCode,
-          'consent_timestamp': consentTimestamp.toIso8601String(),
-          'consent_version': '1.0', // Track consent form version
-        }),
-      ).timeout(Duration(seconds: 10));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Mark consent as recorded locally
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool(_consentRecordedKey, true);
-        await prefs.setString('consent_timestamp', consentTimestamp.toIso8601String());
-        
-        return ConsentResult(success: true);
-      } else {
-        return ConsentResult(
-          success: false,
-          error: 'Failed to record consent on server. Please try again.',
-        );
-      }
-      */
     } catch (e) {
-      print('[ParticipantValidation] Error recording consent: $e');
+      debugPrint('[ParticipantValidation] Error recording consent: $e');
       return ConsentResult(
         success: false,
-        error: 'Network error while recording consent. Please try again.',
+        error: 'Error while recording consent. Please try again.',
       );
     }
   }
 
-  /// Check if consent has been recorded for the current participant
+  /// Returns `true` if consent has been recorded for the current participant.
   static Future<bool> hasConsentBeenRecorded() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_consentRecordedKey) ?? false;
   }
 
-  /// Hash participant code using SHA-256 for security
-  static String _hashParticipantCode(String code) {
-    final bytes = utf8.encode(code);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
-  }
-
-  /// Store validated participant locally (stores hashed version for security)
-  static Future<void> _storeValidatedParticipant(String participantCode) async {
-    final prefs = await SharedPreferences.getInstance();
-    // For now, store the plain code until server integration
-    // TODO: Use hashed version when server is ready
-    await prefs.setString(_validatedParticipantKey, participantCode);
-    await prefs.setString(_validationTimestampKey, DateTime.now().toIso8601String());
-    print('[ParticipantValidation] Stored validated participant: ${participantCode.substring(0, min(3, participantCode.length))}***');
-  }
-
-  /// Clear validation data (for testing or logout)
+  /// Removes all validation data (for testing or sign-out).
   static Future<void> clearValidation() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_validatedParticipantKey);
@@ -223,47 +163,79 @@ class ParticipantValidationService {
     await prefs.remove('consent_timestamp');
   }
 
-  /// Store the validation source (API or local fallback)
+  /// Returns the timestamp of the last successful validation, or `null`.
+  static Future<DateTime?> getValidationTimestamp() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ts = prefs.getString(_validationTimestampKey);
+    return ts != null ? DateTime.tryParse(ts) : null;
+  }
+
+  // -------------------------------------------------------------------------
+  // Private helpers
+  // -------------------------------------------------------------------------
+
+  /// Local fallback validation – in debug builds only, a handful of test
+  /// codes are accepted. In release builds this always fails, requiring the
+  /// real server.
+  static Future<ValidationResult> _localFallback(
+      String cleanCode, String hashedCode) async {
+    debugPrint('[ParticipantValidation] Using local fallback (server unavailable).');
+
+    if (kDebugMode &&
+        (cleanCode == 'TESTER' ||
+            cleanCode == 'TEST123' ||
+            cleanCode == 'DEV001' ||
+            cleanCode == 'PRODTEST')) {
+      await _store(hashedCode);
+      await _storeValidationSource(_localValidationSource);
+      await _storeCodeType('test');
+      debugPrint('[ParticipantValidation] Debug test code accepted.');
+      return ValidationResult(isValid: true);
+    }
+
+    return ValidationResult(
+      isValid: false,
+      error: 'Unable to validate participant code. '
+          'Please check your internet connection and try again.',
+    );
+  }
+
+  static String _hashCode(String code) {
+    final bytes = utf8.encode(code);
+    return sha256.convert(bytes).toString();
+  }
+
+  /// Stores the SHA-256 hash of the validated code in SharedPreferences.
+  static Future<void> _store(String hashedCode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_validatedParticipantKey, hashedCode);
+    await prefs.setString(
+        _validationTimestampKey, DateTime.now().toIso8601String());
+  }
+
   static Future<void> _storeValidationSource(String source) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastApiValidationKey, source);
   }
 
-  /// Store the participant code type (pilot, study, test)
-  static Future<void> _storeParticipantCodeType(String codeType) async {
+  static Future<void> _storeCodeType(String codeType) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_codeTypeKey, codeType);
   }
-
-  /// Get validation timestamp
-  static Future<DateTime?> getValidationTimestamp() async {
-    final prefs = await SharedPreferences.getInstance();
-    final timestamp = prefs.getString(_validationTimestampKey);
-    if (timestamp != null) {
-      return DateTime.tryParse(timestamp);
-    }
-    return null;
-  }
 }
 
-/// Result of participant code validation
+/// Result of participant code validation.
 class ValidationResult {
   final bool isValid;
   final String? error;
 
-  ValidationResult({
-    required this.isValid,
-    this.error,
-  });
+  const ValidationResult({required this.isValid, this.error});
 }
 
-/// Result of consent recording
+/// Result of consent recording.
 class ConsentResult {
   final bool success;
   final String? error;
 
-  ConsentResult({
-    required this.success,
-    this.error,
-  });
+  const ConsentResult({required this.success, this.error});
 }

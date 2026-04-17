@@ -81,7 +81,7 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
       try {
         _mapController.move(LatLng(centerLat, centerLng), 14.0);
       } catch (e) {
-        print('[InteractiveLocationMap] ⚠️ flutter_map move error (bypassed): $e');
+        debugPrint('[InteractiveLocationMap] ⚠️ flutter_map move error (bypassed): $e');
         // Bypass flutter_map compatibility issue - map will use default positioning
       }
     });
@@ -135,8 +135,8 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
     // Always store the current eraser position for visual feedback (show circle everywhere)
     _currentEraserLatLng = LatLng(tapLat, tapLng);
     
-    print('[InteractiveMap] Touch at map-local: ${localPosition.dx.toStringAsFixed(1)}, ${localPosition.dy.toStringAsFixed(1)} -> lat/lng: ${tapLat.toStringAsFixed(6)}, ${tapLng.toStringAsFixed(6)}');
-    print('[InteractiveMap] Map size: ${mapSize.width.toStringAsFixed(1)} x ${mapSize.height.toStringAsFixed(1)}');
+    debugPrint('[InteractiveMap] Touch at map-local: ${localPosition.dx.toStringAsFixed(1)}, ${localPosition.dy.toStringAsFixed(1)} -> lat/lng: ${tapLat.toStringAsFixed(6)}, ${tapLng.toStringAsFixed(6)}');
+    debugPrint('[InteractiveMap] Map size: ${mapSize.width.toStringAsFixed(1)} x ${mapSize.height.toStringAsFixed(1)}');
     
     _findAndToggleNearbyPoints(LatLng(tapLat, tapLng));
   }
@@ -156,17 +156,17 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
         setState(() {
           if (_isEraserMode) {
             _erasedPointIndices.add(i);
-            print('[InteractiveMap] Erased point $i at distance ${pointDistance.toStringAsFixed(1)}m');
+            debugPrint('[InteractiveMap] Erased point $i at distance ${pointDistance.toStringAsFixed(1)}m');
           } else {
             _erasedPointIndices.remove(i);
-            print('[InteractiveMap] Restored point $i at distance ${pointDistance.toStringAsFixed(1)}m');
+            debugPrint('[InteractiveMap] Restored point $i at distance ${pointDistance.toStringAsFixed(1)}m');
           }
         });
       }
     }
     
     if (!foundPoints) {
-      print('[InteractiveMap] No points found within ${_eraserRadius}m of position');
+      debugPrint('[InteractiveMap] No points found within ${_eraserRadius}m of position');
     }
   }
 
@@ -355,7 +355,7 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
                               (currentZoom + 1).clamp(10.0, 18.0),
                             );
                           } catch (e) {
-                            print('[InteractiveLocationMap] ⚠️ flutter_map zoom in error (bypassed): $e');
+                            debugPrint('[InteractiveLocationMap] ⚠️ flutter_map zoom in error (bypassed): $e');
                             // Bypass flutter_map compatibility issue - zoom control disabled
                           }
                         },
@@ -375,7 +375,7 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
                               (currentZoom - 1).clamp(10.0, 18.0),
                             );
                           } catch (e) {
-                            print('[InteractiveLocationMap] ⚠️ flutter_map zoom out error (bypassed): $e');
+                            debugPrint('[InteractiveLocationMap] ⚠️ flutter_map zoom out error (bypassed): $e');
                             // Bypass flutter_map compatibility issue - zoom control disabled
                           }
                         },

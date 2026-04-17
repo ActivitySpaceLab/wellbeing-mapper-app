@@ -51,7 +51,7 @@ class _DataSharingConsentDialogState extends State<DataSharingConsentDialog> {
       if (!kIsWeb) {
         try {
           final allLocationTracks = await db.getAllLocationTracks();
-          print('[DataSharingConsentDialog] 🗃️ Found ${allLocationTracks.length} total location tracks in app database');
+          debugPrint('[DataSharingConsentDialog] 🗃️ Found ${allLocationTracks.length} total location tracks in app database');
           
           // Filter for last 2 weeks for data sharing display
           final twoWeeksAgo = DateTime.now().subtract(Duration(days: 14));
@@ -59,13 +59,13 @@ class _DataSharingConsentDialogState extends State<DataSharingConsentDialog> {
             return track.timestamp.isAfter(twoWeeksAgo);
           }).toList();
           
-          print('[DataSharingConsentDialog] 📍 Filtered to ${locationTracks.length} recent location tracks (last 2 weeks)');
+          debugPrint('[DataSharingConsentDialog] 📍 Filtered to ${locationTracks.length} recent location tracks (last 2 weeks)');
         } catch (e) {
-          print('[DataSharingConsentDialog] ❌ Error getting location data from app database: $e');
+          debugPrint('[DataSharingConsentDialog] ❌ Error getting location data from app database: $e');
         }
       }
       
-      print('[DataSharingConsentDialog] Retrieved ${locationTracks.length} recent location tracks (last 2 weeks)');
+      debugPrint('[DataSharingConsentDialog] Retrieved ${locationTracks.length} recent location tracks (last 2 weeks)');
 
       // Store location tracks for interactive map
       _recentLocationTracks = locationTracks;
@@ -77,7 +77,7 @@ class _DataSharingConsentDialogState extends State<DataSharingConsentDialog> {
 
       // Create clusters for location preview
       final clusters = _createLocationClusters(locationTracks);
-      print('[DataSharingConsentDialog] Created ${clusters.length} location clusters');
+      debugPrint('[DataSharingConsentDialog] Created ${clusters.length} location clusters');
 
       if (locationTracks.isNotEmpty) {
         final dates = locationTracks.map((track) => track.timestamp).toList()..sort();
@@ -121,7 +121,7 @@ class _DataSharingConsentDialogState extends State<DataSharingConsentDialog> {
       setState(() {
         _isLoading = false;
       });
-      print('Error loading data summary: $e');
+      debugPrint('Error loading data summary: $e');
     }
   }
 

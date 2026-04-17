@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wellbeing_mapper/models/consent_models.dart';
 import 'dart:convert';
@@ -17,17 +18,17 @@ class ConsentService {
   static Future<ParticipationSettings?> getParticipationSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final settingsJson = prefs.getString(_participationSettingsKey);
-    print('[consent_service.dart] getParticipationSettings raw: '
+    debugPrint('[consent_service.dart] getParticipationSettings raw: '
         '${settingsJson ?? 'null'}');
     if (settingsJson == null) {
       return null;
     }
     try {
       final settingsMap = jsonDecode(settingsJson);
-      print('[consent_service.dart] getParticipationSettings decoded: $settingsMap');
+      debugPrint('[consent_service.dart] getParticipationSettings decoded: $settingsMap');
       return ParticipationSettings.fromJson(settingsMap);
     } catch (e) {
-      print('[consent_service.dart] ERROR decoding participation_settings: $e');
+      debugPrint('[consent_service.dart] ERROR decoding participation_settings: $e');
       return null;
     }
   }
