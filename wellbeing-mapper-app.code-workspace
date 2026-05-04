@@ -1,7 +1,19 @@
 {
 	"folders": [
 		{
+			"name": "wellbeing-mapper-app",
 			"path": "."
+		},
+		{
+			"name": "open-background-locator",
+			"path": "../../../open-background-locator"
 		}
-	]
+	],
+	"settings": {
+		"files.exclude": {
+			"**/.dart_tool": true,
+			"**/build": true,
+			"**/.fvm": true
+		}
+	}
 }
