@@ -48,12 +48,12 @@ jobs:
           
       - name: Get Flutter dependencies
         run: |
-          cd gauteng-wellbeing-mapper-app
+          cd .
           flutter pub get
           
       - name: Run Flutter Doctor
         run: |
-          cd gauteng-wellbeing-mapper-app
+          cd .
           flutter doctor -v
         
       - name: "Run Integration tests"
@@ -68,6 +68,6 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 1800 # 30 minutes
           script: |
-            cd gauteng-wellbeing-mapper-app
+            cd .
             echo "Starting integration tests..."
             timeout 600 flutter test --dart-define=FLUTTER_TEST_MODE=true integration_test/app_test.dart || echo "Test completed or timed out"

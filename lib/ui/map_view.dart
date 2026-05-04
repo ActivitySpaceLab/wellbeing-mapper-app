@@ -1,0 +1,473 @@
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:latlong2/latlong.dart';
+import 'package:wellbeing_mapper/services/test_service.dart';
+import '../services/geo_location_service.dart';
+import '../services/storage_settings_service.dart';
+
+class MapView extends StatefulWidget {
+  const MapView({Key? key}) : super(key: key);
+  
+  @override
+  State createState() => MapViewState();
+}
+
+class MapViewState extends State<MapView>
+    with AutomaticKeepAliveClientMixin<MapView> {
+  @override
+  bool get wantKeepAlive {
+    return true;
+  }
+
+  List<CircleMarker> _currentPosition = [];
+  List<CircleMarker> _locations = [];
+  double _maxAccuracyMeters = StorageSettingsService.DEFAULT_MAP_ERROR_THRESHOLD_METERS;
+  DateTime? _lastAccuracyThresholdFetch;
+  static const Duration _accuracyThresholdCacheDuration = Duration(seconds: 30);
+
+  LatLng _center = LatLng(-25.7479, 28.2293); // Default center (Pretoria)
+  late MapController _mapController;
+  late MapOptions _mapOptions;
+  
+  // Track current location for re-center functionality (stored in _currentPosition)
+  bool _autoCenter = true; // Start with auto-center enabled
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('[map_view] MapView initState called');
+    _mapOptions = MapOptions(
+      onMapEvent: _onPositionChanged,
+      initialCenter: _center,
+      initialZoom: 16.0,
+    );
+    _mapController = MapController();
+
+    // Register location listeners through GeoLocationService.
+    if (!kIsWeb) {
+      GeoLocationService.instance.addLocationListener(_onLocation);
+      GeoLocationService.instance.addEnabledChangeListener(_onEnabledChange);
+    }
+
+    // Load stored locations after the widget is built.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _displayStoredLocations();
+    });
+    Future.delayed(const Duration(milliseconds: 500), _displayStoredLocations);
+  }
+
+  @override
+  void dispose() {
+    if (!kIsWeb) {
+      GeoLocationService.instance.removeLocationListener(_onLocation);
+      GeoLocationService.instance.removeEnabledChangeListener(_onEnabledChange);
+    }
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(MapView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _displayStoredLocations();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    debugPrint('[map_view] 📍 MapView didChangeDependencies called - refreshing stored locations');
+    
+    // Refresh stored locations when dependencies change (e.g., navigation)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _displayStoredLocations();
+    });
+  }
+
+  // Add method to refresh map when coming back into view
+  void refreshMapData() {
+    debugPrint('[map_view] 📍 MapView refreshMapData called');
+    _displayStoredLocations();
+  }
+  
+  // Public method to refresh stored locations (called externally)
+  void refreshStoredLocations() {
+    debugPrint('[map_view] 📍 MapView refreshStoredLocations called externally');
+    _displayStoredLocations();
+  }
+
+  Future<double> _getAccuracyThreshold({bool forceRefresh = false}) async {
+    final now = DateTime.now();
+    if (!forceRefresh &&
+        _lastAccuracyThresholdFetch != null &&
+        now.difference(_lastAccuracyThresholdFetch!) < _accuracyThresholdCacheDuration) {
+      return _maxAccuracyMeters;
+    }
+
+    final newThreshold = await StorageSettingsService.getMapErrorThresholdMeters();
+    _lastAccuracyThresholdFetch = now;
+    _maxAccuracyMeters = newThreshold;
+    return newThreshold;
+  }
+
+  void _displayStoredLocations() async {
+    // Skip background geolocation operations on web platform
+    if (kIsWeb) {
+      debugPrint('[map_view] Web platform detected - skipping stored locations display');
+      return;
+    }
+    
+    try {
+      debugPrint('[map_view] 🔄 Starting _displayStoredLocations - Current markers: ${_locations.length}');
+      
+      // Clear existing markers before reloading to prevent duplicates
+  debugPrint('[map_view] 🗑️ Clearing existing markers before reload');
+  final maxAccuracy = await _getAccuracyThreshold(forceRefresh: true);
+  // Use filtered location data to improve performance
+  List filteredLocations = await StorageSettingsService.getFilteredLocationDataForMap();
+  debugPrint('[map_view] ✅ Found ${filteredLocations.length} filtered location points (<= ${maxAccuracy.toStringAsFixed(1)}m error) to display');
+      
+      if (filteredLocations.isEmpty) {
+        debugPrint('[map_view] ⚠️ No location data found - user may not have tracking enabled or no movement yet');
+        if (mounted) {
+          setState(() {
+            _locations = [];
+            _maxAccuracyMeters = maxAccuracy;
+          });
+        } else {
+          _maxAccuracyMeters = maxAccuracy;
+          _locations = [];
+        }
+        return;
+      }
+      
+  int displayedCount = 0;
+  LatLng? mostRecentLocation;
+  LatLng? previousPoint;
+  final List<CircleMarker> newLocations = [];
+      
+      for (var thisLocation in filteredLocations) {
+        try {
+          if (thisLocation == null) {
+            debugPrint('[map_view] ⚠️ Skipping null location data');
+            continue;
+          }
+          debugPrint('[map_view] 🔍 Processing location data: ${thisLocation.toString().substring(0, 100)}...');
+          Map<String, dynamic>? coords = thisLocation['coords'];
+          if (coords == null) {
+            debugPrint('[map_view] ⚠️ Skipping location with null coords');
+            continue;
+          }
+          double lat = (coords['latitude'] as num?)?.toDouble() ?? double.nan;
+          double lon = (coords['longitude'] as num?)?.toDouble() ?? double.nan;
+          if (lat.isNaN || lon.isNaN || lat.isInfinite || lon.isInfinite) {
+            debugPrint('[map_view] ⚠️ Skipping location with invalid coordinates: lat=$lat, lon=$lon');
+            continue;
+          }
+          double accuracy = (coords['accuracy'] as num?)?.toDouble() ?? 999.0;
+          if (accuracy > maxAccuracy) {
+            debugPrint('[map_view] 🚫 Skipping location with accuracy ${accuracy.toStringAsFixed(1)}m above threshold ${maxAccuracy.toStringAsFixed(1)}m');
+            continue;
+          }
+          LatLng currentPoint = LatLng(lat, lon);
+          if (previousPoint != null &&
+              (currentPoint.latitude - previousPoint.latitude).abs() < 0.000001 &&
+              (currentPoint.longitude - previousPoint.longitude).abs() < 0.000001) {
+            debugPrint('[map_view] 🔄 Skipping duplicate location: ${currentPoint.latitude}, ${currentPoint.longitude}');
+            continue;
+          }
+          mostRecentLocation ??= currentPoint;
+          previousPoint = currentPoint;
+          
+          // Create CircleMarker for historical location (add to main _locations list like FBG)
+          double radius = accuracy.clamp(10.0, 200.0);
+          newLocations.add(CircleMarker(
+            point: currentPoint,
+            color: Colors.blue.withValues(alpha: 0.3),
+            borderColor: Colors.blue.withValues(alpha: 0.5),
+            borderStrokeWidth: 1.0,
+            radius: radius,
+            useRadiusInMeter: true,
+          ));
+          
+          debugPrint('[map_view] ✅ Successfully added location point: ${currentPoint.latitude}, ${currentPoint.longitude}');
+          displayedCount++;
+        } catch (e) {
+          debugPrint('[map_view] ❌ Error processing individual location: $e');
+          debugPrint('[map_view] 📊 Location data: $thisLocation');
+          continue;
+        }
+      }
+      
+      debugPrint('[map_view] ✅ Successfully displayed ${displayedCount} location points on map');
+
+      final List<CircleMarker> orderedLocations = newLocations.reversed.toList();
+
+      void applyLatestMarker() {
+        final latestPoint = mostRecentLocation;
+        if (latestPoint != null) {
+          _currentPosition
+            ..clear()
+            ..add(
+              CircleMarker(
+                point: latestPoint,
+                color: Colors.blue,
+                borderColor: Colors.white,
+                borderStrokeWidth: 3.0,
+                radius: 8.0,
+                useRadiusInMeter: false,
+              ),
+            );
+        } else {
+          _currentPosition.clear();
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _locations = orderedLocations;
+          _maxAccuracyMeters = maxAccuracy;
+          applyLatestMarker();
+        });
+      } else {
+        _locations = orderedLocations;
+        _maxAccuracyMeters = maxAccuracy;
+        applyLatestMarker();
+      }
+
+      // Center map on the most recent location (latest point) if auto-center is enabled
+      if (_autoCenter) {
+        LatLng? target = mostRecentLocation ?? (orderedLocations.isNotEmpty ? orderedLocations.last.point : null);
+        target ??= _locations.isNotEmpty ? _locations.last.point : null;
+        target ??= _center;
+
+        try {
+          debugPrint('[map_view] 📍 Auto-centering map on target: ${target.latitude}, ${target.longitude}');
+          double zoom = _mapOptions.initialZoom;
+          _mapController.move(target, zoom);
+        } catch (e) {
+          debugPrint('[map_view] ❌ Error centering map on target location: $e');
+        }
+      } else {
+        debugPrint('[map_view] 📍 Auto-center disabled - keeping current map position');
+      }
+      
+      debugPrint('[map_view] 🎯 Map refresh complete with ${_locations.length} location markers');
+      
+    } catch (error) {
+      debugPrint('[map_view] ❌ Error loading stored locations: $error');
+    }
+  }
+
+  void _onEnabledChange(bool enabled) {
+    debugPrint('[map_view] Tracking enabled changed: $enabled');
+    // Markers remain visible even when tracking is disabled.
+  }
+
+  void _onLocation(AppLocation location) async {
+    debugPrint('[MapView] Real-time location: ${location.coords.latitude}, ${location.coords.longitude}');
+    
+    try {
+      final maxAccuracy = await _getAccuracyThreshold();
+
+      LatLng currentPoint = LatLng(location.coords.latitude, location.coords.longitude);
+      double accuracy = location.coords.accuracy;
+      if (accuracy > maxAccuracy) {
+        debugPrint('[MapView] Rejecting location: accuracy ${accuracy.toStringAsFixed(1)}m > threshold');
+        return;
+      }
+      
+      if (_currentPosition.isNotEmpty) {
+        LatLng lastPoint = _currentPosition.first.point;
+        double distance = _calculateDistance(currentPoint.latitude, currentPoint.longitude, 
+                                            lastPoint.latitude, lastPoint.longitude);
+        
+        if (!location.isMoving && distance < 15.0) {
+          return;
+        }
+        
+        if (distance < 0.5) {
+          return;
+        }
+      }
+      
+      // Add a marker for the recorded location (semitransparent circle with accuracy radius)
+      double radius = accuracy.clamp(10.0, 200.0);
+      
+      if (_autoCenter) {
+        try {
+          _mapController.move(currentPoint, _mapOptions.initialZoom);
+        } catch (e) {
+          debugPrint('[MapView] Error moving map: $e');
+        }
+      }
+      
+      setState(() {
+        _locations.add(CircleMarker(
+          point: currentPoint,
+          color: Colors.blue.withValues(alpha: 0.3),
+          borderColor: Colors.blue.withValues(alpha: 0.5),
+          borderStrokeWidth: 1.0,
+          radius: radius,
+          useRadiusInMeter: true,
+        ));
+
+        _currentPosition
+          ..clear()
+          ..add(
+            CircleMarker(
+              point: currentPoint,
+              color: Colors.blue,
+              borderColor: Colors.white,
+              borderStrokeWidth: 3.0,
+              radius: 8.0,
+              useRadiusInMeter: false,
+            ),
+          );
+
+        _maxAccuracyMeters = maxAccuracy;
+      });
+      
+    } catch (error) {
+      debugPrint('[MapView] Error processing real-time location: $error');
+    }
+  }
+
+  // FIXED: Add distance calculation helper for location filtering
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double earthRadius = 6371000; // Earth radius in meters
+    double dLat = (lat2 - lat1) * (math.pi / 180);
+    double dLon = (lon2 - lon1) * (math.pi / 180);
+    double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * (math.pi / 180)) * math.cos(lat2 * (math.pi / 180)) *
+        math.sin(dLon / 2) * math.sin(dLon / 2);
+    double c = 2 * math.asin(math.sqrt(a));
+    return earthRadius * c;
+  }
+
+
+
+
+
+  //void _onPositionChanged(MapPosition pos, bool hasGesture) {
+  //   _mapOptions.crs.scale(_mapController.zoom);
+  // }
+
+  void _onPositionChanged(MapEvent event) {
+    if (event is MapEventMove) {
+      _mapOptions.crs
+          .scale(event.camera.zoom); // Use camera.zoom instead of zoom
+          
+      // If user manually moves the map, disable auto-centering
+      if (event.source == MapEventSource.onDrag || event.source == MapEventSource.flingAnimationController) {
+        setState(() {
+          _autoCenter = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Stack(
+      children: [
+        // Main map
+        FlutterMap(
+          mapController: _mapController,
+          options: _mapOptions,
+          children: [
+            if (!TestService.isTestMode)
+              TileLayer(
+                urlTemplate: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+                subdomains: const ['a', 'b', 'c', 'd'],
+                userAgentPackageName: 'com.github.activityspacelab.wellbeingmapper',
+                maxZoom: 20,
+                retinaMode: RetinaMode.isHighDensity(context),
+
+              ),
+            if (TestService.isTestMode)
+              Container(
+                color: Colors.grey[200],
+                child: Center(
+                  child: Text(
+                    'Test Mode - Map Disabled',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ),
+              ),
+            // All location points (historical + real-time) in one simple layer
+            if (_locations.isNotEmpty) 
+              CircleLayer(circles: _locations),
+            
+            // Current position (blue dot like FBG example)
+            if (_currentPosition.isNotEmpty) 
+              CircleLayer(circles: _currentPosition),
+          ],
+        ),
+        
+        // Map control buttons
+        Positioned(
+          right: 16,
+          bottom: 100, // Position above typical FAB location
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Auto-center toggle (green when enabled)
+              FloatingActionButton(
+                mini: true,
+                heroTag: "auto_center_toggle",
+                onPressed: () {
+                  final newAutoCenter = !_autoCenter;
+                  
+                  // Do the centering first if enabling (before setState to avoid rebuild during centering)
+                  if (newAutoCenter) {
+                    LatLng? centerPoint;
+                    
+                    // Try current position first
+                    if (_currentPosition.isNotEmpty) {
+                      centerPoint = _currentPosition.first.point;
+                    } 
+                    // Fall back to last recorded location
+                    else if (_locations.isNotEmpty) {
+                      centerPoint = _locations.last.point;
+                    }
+                    
+                    centerPoint ??= _center;
+
+                    try {
+                      _mapController.move(centerPoint, _mapOptions.initialZoom);
+                      debugPrint('[MapView] 🎯 Immediate centering on enabling auto-center');
+                    } catch (e) {
+                      debugPrint('[MapView] Error centering map: $e');
+                    }
+                  }
+                  
+                  // Then update the state for the button color (minimal setState)
+                  setState(() {
+                    _autoCenter = newAutoCenter;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(_autoCenter 
+                        ? 'Auto-center enabled - map will follow your location' 
+                        : 'Auto-center disabled - explore freely!'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                backgroundColor: _autoCenter ? Colors.blue : Colors.grey[600],
+                foregroundColor: Colors.white,
+                child: Icon(_autoCenter ? Icons.gps_fixed : Icons.gps_not_fixed),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}

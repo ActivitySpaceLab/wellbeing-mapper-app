@@ -34,7 +34,7 @@ example_data
 original_survey
 
 # Specific directories ignored
-gauteng-wellbeing-mapper-app/android/key.properties
+android/key.properties
 
 # Miscellaneous
 *.class
@@ -155,10 +155,10 @@ app.*.symbols
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
 # Android keystore files
-gauteng-wellbeing-mapper-app/android/app/gauteng-wellbeing-mapper-app.keystore
-gauteng-wellbeing-mapper-app/gauteng-wellbeing-mapper-app.keystore
-gauteng-wellbeing-mapper-app/.fvm/flutter_sdk
-gauteng-wellbeing-mapper-app/.fvm/fvm_config.json
+android/app/wellbeing-mapper-app.keystore
+wellbeing-mapper-app.keystore
+.fvm/flutter_sdk
+.fvm/fvm_config.json
 
 
 # R

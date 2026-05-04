@@ -57,7 +57,7 @@ jobs:
           flutter-version: '3.27.1'
           channel: 'stable' # or: 'dev' or 'beta'
       - run: "flutter clean"
-        working-directory: gauteng-wellbeing-mapper-app
+        working-directory: .
       - name: "Run Flutter Driver tests"
         run: "flutter drive --target=test_driver/driver.dart" 
-        working-directory: gauteng-wellbeing-mapper-app
+        working-directory: .

@@ -80,7 +80,7 @@ jobs:
         echo "is_production=true" >> $GITHUB_OUTPUT
 
     - name: Extract and verify version information
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
       run: |
           # Get version from pubspec.yaml (remove build number for comparison)
           PUBSPEC_VERSION=$(grep "version:" pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
@@ -113,7 +113,7 @@ jobs:
 
     # CRITICAL: Clean all caches before building
     - name: Clean all build caches
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
       run: |
         echo "🧹 Cleaning all build caches to ensure correct version..."
         
@@ -139,7 +139,7 @@ jobs:
         echo "✅ All caches cleaned (Gradle clean will be done in separate step)"
 
     - name: Configure Android environment for CI
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
       run: |
         echo "🔧 Configuring Android environment for CI compatibility..."
         
@@ -165,7 +165,7 @@ jobs:
         echo "✅ Android environment configured for CI"
 
     - name: Verify Android environment setup
-      working-directory: gauteng-wellbeing-mapper-app/android
+      working-directory: android
       run: |
         echo "🔧 Verifying Android environment setup..."
         
@@ -182,7 +182,7 @@ jobs:
         echo "✅ Android environment ready for Flutter build"
 
     - name: Clean dependencies for AAR compatibility
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
       run: |
         echo "🧹 Cleaning dependencies to avoid AAR metadata conflicts..."
         
@@ -199,7 +199,7 @@ jobs:
 
     - name: Get flutter dependencies
       run: flutter pub get
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
 
     - name: Sync version information
       run: |
@@ -209,7 +209,7 @@ jobs:
         echo "✅ Version sync complete"
 
     - name: Verify iOS entitlements configuration
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
       run: |
         echo "🔍 Verifying iOS entitlements are properly configured..."
         
@@ -262,11 +262,11 @@ jobs:
 
     - name: Statically analyze the Dart code for any errors
       run: flutter analyze
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
     
     - name: Run tests for our flutter project
       run: flutter test --dart-define=FLUTTER_TEST_MODE=true
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
 
     - name: Generate and verify local.properties with version info
       run: |
@@ -302,7 +302,7 @@ jobs:
         
         echo "Updated gradle.properties:"
         tail -5 android/gradle.properties
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
 
     # Android Builds - Production Flavor
     - name: Build Android APKs (Production) - Multiple Architectures
@@ -380,7 +380,7 @@ jobs:
             fi
           fi
         done
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
 
     - name: Build Android App Bundle (Production)
       run: |
@@ -416,7 +416,7 @@ jobs:
         echo "✅ Production App Bundle built successfully!"
         echo "AAB location:"
         ls -la build/app/outputs/bundle/productionRelease/app-production-release.aab || echo "AAB file not found"
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
 
     # iOS Builds - Production Flavor
     - name: Install iOS dependencies
@@ -425,7 +425,7 @@ jobs:
         pod cache clean --all
         pod install --repo-update
         cd ..
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
       
     - name: Build iOS (Production) - Unsigned for Distribution
       run: |
@@ -433,7 +433,7 @@ jobs:
         
         # Set the appropriate Info.plist for production flavor
         cp ios/Runner/Info-Production.plist ios/Runner/Info.plist
-        echo "Using Production Info.plist with bundle ID: com.github.activityspacelab.wellbeingmapper.gauteng"
+        echo "Using Production Info.plist with bundle ID: com.github.activityspacelab.wellbeingmapper"
         
         # Build iOS without code signing (for distribution only)
         flutter build ios --release \
@@ -451,15 +451,15 @@ jobs:
         
         echo "iOS app archived as wellbeing-mapper-production-ios.zip"
         echo "Note: This build is for distribution - actual App Store submission requires proper provisioning profiles and signing"
-      working-directory: gauteng-wellbeing-mapper-app
+      working-directory: .
     
     - name: Create a Production Release in GitHub
       uses: ncipollo/release-action@v1
       with:
         artifacts: |
-          gauteng-wellbeing-mapper-app/build/app/outputs/flutter-apk/*.apk
-          gauteng-wellbeing-mapper-app/build/app/outputs/bundle/productionRelease/app-production-release.aab
-          gauteng-wellbeing-mapper-app/wellbeing-mapper-production-ios.zip
+          build/app/outputs/flutter-apk/*.apk
+          build/app/outputs/bundle/productionRelease/app-production-release.aab
+          wellbeing-mapper-production-ios.zip
         token: ${{ secrets.GITHUB_TOKEN }}
         tag: ${{ steps.version.outputs.content }}
         name: "Wellbeing Mapper ${{ steps.version.outputs.content }} - Production Release"
@@ -518,7 +518,7 @@ jobs:
           
           ## Support & Feedback
           - Email: john.palmer@upf.edu
-          - Full Documentation: [User Guide](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/blob/main/docs/USER_GUIDE.md)
+          - Full Documentation: [User Guide](https://github.com/ActivitySpaceLab/blob/main/docs/USER_GUIDE.md)
           - Report Issues: Use GitHub Issues or in-app feedback
           
           ## What's Included
