@@ -64,14 +64,10 @@ dependencies:
 
   # New background location plugin under active development. Path
   # dependency while we iterate; switch to a git ref or pub.dev release
-  # once stable. Coexists with flutter_background_geolocation during the
-  # migration — remove FBG once geo_location_service.dart is ported.
+  # once stable. Replaces flutter_background_geolocation as of step 3 of
+  # the FBG → OBL migration.
   open_background_locator:
     path: ../../../open-background-locator
-
-  # Legacy background-location plugin. Will be removed once OBL has been
-  # validated on a real device through one biweekly survey cycle.
-  flutter_background_geolocation: ^4.18.0
   
   # Additional dependencies from original app
   ffi: ^2.1.3

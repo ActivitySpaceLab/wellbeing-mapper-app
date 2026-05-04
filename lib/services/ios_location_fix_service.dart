@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 import '../main.dart'; // Import to access existing navigatorKey
 
 /// iOS-specific location service to fix permission registration issues
@@ -98,34 +97,12 @@ class IosLocationFixService {
         print('[IosLocationFixService] Registration successful, skipping additional requests');
         return true;
       }
-      
-      // Step 3: Initialize background geolocation only if native request didn't work
-      try {
-        await bg.BackgroundGeolocation.ready(bg.Config(
-          desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
-          distanceFilter: 10.0,
-          stopOnTerminate: false,
-          startOnBoot: true,
-          debug: false,
-          logLevel: bg.Config.LOG_LEVEL_OFF,
-          // iOS-specific fixes for pocket/background tracking
-          pausesLocationUpdatesAutomatically: false,
-          allowIdenticalLocations: true,
-          showsBackgroundLocationIndicator: false,
-        ));
-        print('[IosLocationFixService] Background geolocation ready');
-        
-        // Check again after background geolocation
-        final isRegisteredAfterBg = await isAppRegisteredInSettings();
-        if (isRegisteredAfterBg) {
-          print('[IosLocationFixService] Registration successful after background geolocation');
-          return true;
-        }
-      } catch (bgError) {
-        print('[IosLocationFixService] Background geolocation error (non-critical): $bgError');
-      }
-      
-      // Step 4: Use permission_handler only as final fallback
+
+      // Step 3: Use permission_handler as final fallback. (Previous
+      // versions of this service triggered flutter_background_geolocation
+      // here as an additional nudge; that plugin has been replaced with
+      // open_background_locator, whose CLLocationManager warm-up happens
+      // inside the plugin itself when GeoLocationService.configure runs.)
       print('[IosLocationFixService] Using permission_handler as final fallback');
       final permissionResult = await Permission.locationWhenInUse.request();
       print('[IosLocationFixService] Permission handler result: $permissionResult');

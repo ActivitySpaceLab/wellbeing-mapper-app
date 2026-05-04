@@ -5,7 +5,6 @@
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.transistorsoft.fetch</string>
-		<string>com.transistorsoft.wellbeing_mapper</string>
 		<string>com.transistorsoft.wellbeingmapper</string>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
