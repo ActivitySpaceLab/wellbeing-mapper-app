@@ -28,9 +28,6 @@ if (flutterVersionName == null) {
 
 ext.kotlin_version = '1.9.0'  // Update to the desired Kotlin version
 
-Project background_geolocation = project(':flutter_background_geolocation')
-apply from: "${background_geolocation.projectDir}/background_geolocation.gradle"
-
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
@@ -100,12 +97,10 @@ android {
             // Use debug signing for CI/CD builds when keystore is not available
             signingConfig keystoreProperties['storeFile'] ? signingConfigs.release : signingConfigs.debug
             shrinkResources false
-            proguardFiles "${background_geolocation.projectDir}/proguard-rules.pro"
         }
         debug {
             signingConfig signingConfigs.debug
             shrinkResources false
-            proguardFiles "${background_geolocation.projectDir}/proguard-rules.pro"
             debuggable true
         }
     }
