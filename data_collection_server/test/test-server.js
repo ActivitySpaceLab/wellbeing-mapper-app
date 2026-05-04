@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 
 /**
- * Test script for the encrypted survey proxy server
+ * Test script for the wellbeing mapper data collection server server
  * Tests both local and deployed instances
  * 
  * Usage:
- *   node test-proxy.js                    # Test localhost:3000
- *   node test-proxy.js http://localhost:8080  # Test custom URL
- *   node test-proxy.js https://your-proxy.com # Test deployed proxy
+ *   node test-server.js                    # Test localhost:3000
+ *   node test-server.js http://localhost:8080  # Test custom URL
+ *   node test-server.js https://your-server.example.com # Test deployed proxy
  */
 
 const https = require('https');
 const http = require('http');
 
 // Test configuration
-const PROXY_URL = process.argv[2] || 'http://localhost:3000';
+const SERVER_URL = process.argv[2] || 'http://localhost:3000';
 const TEST_TIMEOUT = 10000; // 10 seconds
 
-console.log(`🧪 Testing proxy server at: ${PROXY_URL}`);
+console.log(`🧪 Testing server at: ${SERVER_URL}`);
 console.log('=' .repeat(60));
 
 // Mock encrypted survey data for testing
@@ -99,7 +99,7 @@ async function testHealthCheck() {
   console.log('🏥 Testing health check endpoint...');
   
   try {
-    const response = await makeRequest(`${PROXY_URL}/health`, {
+    const response = await makeRequest(`${SERVER_URL}/health`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
@@ -132,7 +132,7 @@ async function testSurveySubmission(surveyType) {
   const postData = JSON.stringify(testData);
   
   try {
-    const response = await makeRequest(`${PROXY_URL}/submit`, {
+    const response = await makeRequest(`${SERVER_URL}/api/v1/surveys/encrypted`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -174,7 +174,7 @@ async function testInvalidRequests() {
     },
     {
       name: 'Invalid survey_type',
-      data: { encrypted_data: 'test', survey_type: 'invalid' }
+      data: { encrypted_data: 'test', survey_type: 'invalid_type' }
     },
     {
       name: 'Empty request body',
@@ -187,7 +187,7 @@ async function testInvalidRequests() {
   for (const test of tests) {
     try {
       const postData = JSON.stringify(test.data);
-      const response = await makeRequest(`${PROXY_URL}/submit`, {
+      const response = await makeRequest(`${SERVER_URL}/api/v1/surveys/encrypted`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -215,7 +215,7 @@ async function test404Handling() {
   console.log('🔍 Testing 404 handling...');
   
   try {
-    const response = await makeRequest(`${PROXY_URL}/nonexistent`, {
+    const response = await makeRequest(`${SERVER_URL}/nonexistent`, {
       method: 'GET'
     });
     
@@ -234,7 +234,7 @@ async function test404Handling() {
 
 // Main test runner
 async function runTests() {
-  console.log(`🚀 Starting proxy server tests\n`);
+  console.log(`🚀 Starting server tests\n`);
   
   const results = {
     healthCheck: false,
@@ -288,7 +288,7 @@ async function runTests() {
     console.log('🎉 All tests passed! Proxy server is working correctly.');
     process.exit(0);
   } else {
-    console.log('❌ Some tests failed. Please check the proxy server configuration.');
+    console.log('❌ Some tests failed. Please check the server server configuration.');
     process.exit(1);
   }
 }
@@ -298,12 +298,12 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log('Encrypted Survey Proxy Test Suite');
   console.log('');
   console.log('Usage:');
-  console.log('  node test-proxy.js [URL]');
+  console.log('  node test-server.js [URL]');
   console.log('');
   console.log('Examples:');
-  console.log('  node test-proxy.js                           # Test localhost:3000');
-  console.log('  node test-proxy.js http://localhost:8080     # Test custom local URL');
-  console.log('  node test-proxy.js https://your-proxy.com   # Test deployed proxy');
+  console.log('  node test-server.js                           # Test localhost:3000');
+  console.log('  node test-server.js http://localhost:8080     # Test custom local URL');
+  console.log('  node test-server.js https://your-server.example.com   # Test deployed proxy');
   console.log('');
   process.exit(0);
 }

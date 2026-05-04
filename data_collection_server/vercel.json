@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "gauteng-wellbeing-proxy",
+  "name": "wellbeing-mapper-data-collection-server",
   "builds": [
     {
       "src": "server.js",
@@ -15,7 +15,8 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "ALLOWED_ORIGINS": "*"
+    "ALLOWED_ORIGINS": "*",
+    "STORAGE_DIR": "/tmp/received"
   },
   "regions": ["bru1"],
   "functions": {

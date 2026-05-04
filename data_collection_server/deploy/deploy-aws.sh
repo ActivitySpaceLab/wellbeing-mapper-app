@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# AWS Lambda Deployment Script for Encrypted Survey Proxy
+# AWS Lambda Deployment Script for Wellbeing Mapper Data Collection Server
 # Deploys to AWS Cape Town (af-south-1) region for data sovereignty
 
 set -e
 
 # Configuration
 AWS_REGION="af-south-1"
-FUNCTION_NAME="gauteng-wellbeing-proxy"
+FUNCTION_NAME="wellbeing-mapper-data-collection"
 RUNTIME="nodejs18.x"
 TIMEOUT=30
 MEMORY_SIZE=256
@@ -19,7 +19,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🚀 Deploying Encrypted Survey Proxy to AWS Lambda (Cape Town)${NC}"
+echo -e "${BLUE}🚀 Deploying Wellbeing Mapper Data Collection Server to AWS Lambda (Cape Town)${NC}"
 echo "============================================================="
 
 # Check if AWS CLI is installed
@@ -52,7 +52,7 @@ cd "$(dirname "$0")/.."
 
 # Clean previous builds
 rm -rf dist
-rm -f deploy/proxy.zip
+rm -f deploy/server.zip
 
 # Create distribution directory
 mkdir -p dist
@@ -79,10 +79,10 @@ cd ..
 # Create deployment ZIP
 echo -e "${BLUE}🗜️  Creating deployment ZIP...${NC}"
 cd dist
-zip -r ../deploy/proxy.zip . -q
+zip -r ../deploy/server.zip . -q
 cd ..
 
-ZIP_SIZE=$(du -h deploy/proxy.zip | cut -f1)
+ZIP_SIZE=$(du -h deploy/server.zip | cut -f1)
 echo -e "${GREEN}✅ Deployment package created: $ZIP_SIZE${NC}"
 
 # Check if Lambda function exists
@@ -93,7 +93,7 @@ if aws lambda get-function --function-name $FUNCTION_NAME --region $AWS_REGION &
     # Update function code
     aws lambda update-function-code \
         --function-name $FUNCTION_NAME \
-        --zip-file fileb://deploy/proxy.zip \
+        --zip-file fileb://deploy/server.zip \
         --region $AWS_REGION \
         --no-cli-pager
         
@@ -102,7 +102,7 @@ else
     echo -e "${YELLOW}🆕 Function doesn't exist. Creating new function...${NC}"
     
     # Create IAM role if it doesn't exist
-    ROLE_NAME="lambda-execution-role-proxy"
+    ROLE_NAME="lambda-execution-role-wellbeing"
     ROLE_ARN="arn:aws:iam::$ACCOUNT_ID:role/$ROLE_NAME"
     
     if ! aws iam get-role --role-name $ROLE_NAME --region $AWS_REGION &> /dev/null; then
@@ -149,7 +149,7 @@ EOF
         --runtime $RUNTIME \
         --role $ROLE_ARN \
         --handler index.handler \
-        --zip-file fileb://deploy/proxy.zip \
+        --zip-file fileb://deploy/server.zip \
         --timeout $TIMEOUT \
         --memory-size $MEMORY_SIZE \
         --region $AWS_REGION \
@@ -172,7 +172,7 @@ fi
 
 # Create API Gateway (optional)
 echo -e "${BLUE}🌐 Setting up API Gateway...${NC}"
-API_NAME="gauteng-wellbeing-proxy-api"
+API_NAME="wellbeing-mapper-data-collection-api"
 
 # Check if API exists
 API_ID=$(aws apigateway get-rest-apis --region $AWS_REGION --query "items[?name=='$API_NAME'].id" --output text)
@@ -183,7 +183,7 @@ if [ "$API_ID" = "None" ] || [ -z "$API_ID" ]; then
     # Create API
     API_ID=$(aws apigateway create-rest-api \
         --name $API_NAME \
-        --description "API for Encrypted Survey Proxy" \
+        --description "API for Wellbeing Mapper Data Collection Server" \
         --region $AWS_REGION \
         --query 'id' \
         --output text)
@@ -260,7 +260,7 @@ echo -e "${BLUE}🆔 Account ID:${NC} $ACCOUNT_ID"
 echo ""
 echo -e "${BLUE}🧪 Test Commands:${NC}"
 echo "   Health Check: curl $API_URL/health"
-echo "   Test Suite:   node test/test-proxy.js $API_URL"
+echo "   Test Suite:   node test/test-server.js $API_URL"
 echo ""
 echo -e "${BLUE}🛠️  Management Commands:${NC}"
 echo "   View Logs:    aws logs tail /aws/lambda/$FUNCTION_NAME --region $AWS_REGION --follow"
