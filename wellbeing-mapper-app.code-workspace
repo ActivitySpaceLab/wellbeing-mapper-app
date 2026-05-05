@@ -5,6 +5,10 @@
 			"path": "."
 		},
 		{
+			"name": "data-collection-server",
+			"path": "../data-collection-server"
+		},
+		{
 			"name": "open-background-locator",
 			"path": "../../../open-background-locator"
 		}
