@@ -9,8 +9,16 @@ class ENV {
   /// While this is set to a placeholder, [ResearchServerService] keeps survey
   /// data in the local database and skips network calls. Replace this with the
   /// real URL once the research server is provisioned.
-  static const String apiBaseUrl =
-      'https://research-server.example.com/api/v1';
+  ///
+  /// Can be overridden at build/run time with
+  /// `--dart-define=SERVER_BASE_URL=https://my-server.example/api/v1`. This
+  /// is how local-dev builds point at the data-collection server running on
+  /// `http://localhost:3000/api/v1` (iOS sim) or `http://10.0.2.2:3000/api/v1`
+  /// (Android emulator).
+  static const String apiBaseUrl = String.fromEnvironment(
+    'SERVER_BASE_URL',
+    defaultValue: 'https://research-server.example.com/api/v1',
+  );
 
   /// Endpoint paths (appended to [apiBaseUrl]).
   static const String encryptedSurveyPath = '/surveys/encrypted';

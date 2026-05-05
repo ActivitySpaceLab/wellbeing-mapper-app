@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/env.dart';
 import 'app_mode_service.dart';
 
 /// Validates participant codes against the research server.
@@ -11,13 +12,14 @@ import 'app_mode_service.dart';
 /// Codes are never transmitted in plain text – only their SHA-256 hash is
 /// sent over the network or stored locally.
 class ParticipantValidationService {
-  // TODO: Update this URL when the research server is built.
-  static const String _baseUrl =
-      'https://research-server.example.com';
-  static const String _validateEndpoint = '/api/v1/participants/validate';
+  // Validation endpoint URL is composed from the shared [ENV.apiBaseUrl] so a
+  // single `--dart-define=SERVER_BASE_URL=...` override switches every
+  // research-server call (validation, registration, encrypted uploads, …)
+  // to the same target in one go.
+  static String get _validateUrl =>
+      '${ENV.apiBaseUrl}${ENV.participantValidationPath}';
 
-  static bool get _isServerConfigured =>
-      !_baseUrl.contains('example.com');
+  static bool get _isServerConfigured => ENV.isServerConfigured;
 
   // SharedPreferences keys
   static const String _validatedParticipantKey = 'validated_participant_code';
@@ -109,7 +111,7 @@ class ParticipantValidationService {
         try {
           final response = await http
               .post(
-                Uri.parse('$_baseUrl$_validateEndpoint'),
+                Uri.parse(_validateUrl),
                 headers: {
                   'Content-Type': 'application/json',
                   'Accept': 'application/json',
