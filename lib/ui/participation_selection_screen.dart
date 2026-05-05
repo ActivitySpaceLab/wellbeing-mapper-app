@@ -235,10 +235,12 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('For selected research participants in Southern Europe only.'),
+            Text('Join the Southern Europe research study.'),
             SizedBox(height: 4),
             Text(
-              '• Use only if you have been recruited for this study\n• Requires valid participant code',
+              '• Open to anyone living in the study area\n'
+              '• If a survey panel recruited you, you can enter their code for compensation\n'
+              '• Otherwise, just continue without a code',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
