@@ -88,6 +88,8 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
                               ? LatLng(_surveyResponses.first.latitude!, _surveyResponses.first.longitude!)
                               : LatLng(51.5, -0.09), // Default to London
                           initialZoom: 12.0,
+                          minZoom: 2.0,
+                          maxZoom: 18.0,
                         ),
                         children: [
                           TileLayer(

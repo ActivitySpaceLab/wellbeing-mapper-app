@@ -44,6 +44,8 @@ class MapViewState extends State<MapView>
       onMapEvent: _onPositionChanged,
       initialCenter: _center,
       initialZoom: 16.0,
+      minZoom: 2.0,
+      maxZoom: 18.0,
     );
     _mapController = MapController();
 
