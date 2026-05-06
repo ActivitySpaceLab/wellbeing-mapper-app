@@ -13,9 +13,21 @@ import '../util/env.dart';
 
 /// Service for encrypting complete survey responses and sending to proxy server
 class EncryptedSurveyService {
-  
-  // AWS Lambda Function URL for encrypted survey proxy (Cape Town region)
-  static const String _proxyServerUrl = 'https://6p7hir7licc5yisxhkner4wt2i0yhtzo.lambda-url.af-south-1.on.aws/submit';
+
+  /// Resolves the destination URL for a given survey type. Reads from
+  /// [ENV.apiBaseUrl] (which honours `--dart-define=SERVER_BASE_URL`) so
+  /// that this app can never accidentally post to the Gauteng production
+  /// Lambda — by default [ENV.apiBaseUrl] is the placeholder host and
+  /// [ENV.isServerConfigured] is false, which short-circuits all uploads.
+  static String _endpointFor(String surveyType) {
+    final base = ENV.apiBaseUrl;
+    // Consent forms have their own endpoint on the data-collection server;
+    // initial / biweekly survey uploads share /surveys/encrypted.
+    if (surveyType == 'consent') {
+      return '$base${ENV.encryptedConsentPath}';
+    }
+    return '$base${ENV.encryptedSurveyPath}';
+  }
   
   // Use the same public key as location encryption for consistency
   static const String _publicKey = '''-----BEGIN PUBLIC KEY-----
@@ -493,12 +505,25 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
   
     /// Send encrypted blob to proxy server with enhanced error handling
   static Future<bool> _sendToProxy(String surveyType, String encryptedBlob) async {
+    // Hard safety net: if no real research server is configured (i.e.
+    // [ENV.apiBaseUrl] still points at the example.com placeholder),
+    // refuse to upload anywhere. This guarantees the testing build can't
+    // post to a production endpoint.
+    if (!ENV.isServerConfigured) {
+      debugPrint(
+          '❌ [EncryptedSurveyService] Server not configured (ENV.apiBaseUrl=${ENV.apiBaseUrl}); skipping $surveyType upload.');
+      debugPrint(
+          '   Set --dart-define=SERVER_BASE_URL=... to point at a real server.');
+      return false;
+    }
+
+    final endpoint = _endpointFor(surveyType);
     const int maxRetries = 3;
     const Duration initialDelay = Duration(seconds: 2);
     
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        debugPrint('🌐 Sending encrypted $surveyType survey to proxy (attempt $attempt/$maxRetries)...');
+        debugPrint('🌐 Sending encrypted $surveyType survey to $endpoint (attempt $attempt/$maxRetries)...');
         
         // iOS-specific: Increase timeout for AWS Lambda function URLs
         final Duration timeout = Platform.isIOS ? Duration(seconds: 45) : Duration(seconds: 30);
@@ -520,7 +545,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         });
         
         final response = await http.post(
-          Uri.parse(_proxyServerUrl),
+          Uri.parse(endpoint),
           headers: headers,
           body: body,
         ).timeout(
