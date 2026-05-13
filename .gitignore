@@ -1,5 +1,9 @@
 untracked
 
+# Local pubspec overrides (e.g. switching open_background_locator to a
+# local path for active development). See docs/CONTRIBUTOR_SETUP.md.
+pubspec_overrides.yaml
+
 # Keys
 android/key.properties
 *.pem

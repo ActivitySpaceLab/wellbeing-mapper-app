@@ -62,12 +62,17 @@ dependencies:
   # Testing background_fetch next ✅ WORKING!
   background_fetch: ^1.3.5
 
-  # New background location plugin under active development. Path
-  # dependency while we iterate; switch to a git ref or pub.dev release
-  # once stable. Replaces flutter_background_geolocation as of step 3 of
-  # the FBG → OBL migration.
+  # Background location plugin. Pinned to a specific commit on main so
+  # builds are reproducible. Bump the ref after pushing changes to OBL.
+  # Replaces flutter_background_geolocation as of the FBG → OBL migration.
+  #
+  # Active OBL development: put a pubspec_overrides.yaml next to this file
+  # with a `path:` entry pointing at a local clone (it is gitignored).
+  # See docs/CONTRIBUTOR_SETUP.md.
   open_background_locator:
-    path: ../../../open-background-locator
+    git:
+      url: https://github.com/ActivitySpaceLab/open-background-locator.git
+      ref: 321b056b01f293c72955bb6a4353382b66054a5f
   
   # Additional dependencies from original app
   ffi: ^2.1.3

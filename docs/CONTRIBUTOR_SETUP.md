@@ -8,35 +8,37 @@ This guide gets a new collaborator from `git clone` to a build running on a real
 
 ## 1. Required directory layout
 
-The app uses **path dependencies** on a sibling repository, so where you clone matters. Pick a parent directory you control (e.g. `~/projects/wellbeing-mapper`) and create this layout:
+The minimal setup is just **one** clone:
 
 ```
 <your-parent-dir>/
-├── open-background-locator/       ← MUST be cloned (path dependency)
-└── space_mapper_app/
-    └── current/
-        ├── wellbeing-mapper-app/   ← this repo
-        └── wellbeing-mapper-server/ ← optional, only if you'll run a local server
+└── wellbeing-mapper-app/   ← this repo
 ```
 
-The `pubspec.yaml` has `open_background_locator: path: ../../../open-background-locator`, which resolves to `<your-parent-dir>/open-background-locator/` from the app root. If your layout differs, builds will fail with a "package not found" error.
+The app's `open_background_locator` dependency is now fetched from a pinned
+commit on GitHub, so a fresh `flutter pub get` is all you need. **You only need
+to clone other repos if you are actively developing them in parallel.**
+
+Optional sibling clones (only if relevant to your work):
+
+```
+<your-parent-dir>/
+├── wellbeing-mapper-app/
+├── open-background-locator/    ← only if editing the location plugin (see §6)
+└── wellbeing-mapper-server/    ← only if running a local server (see §7)
+```
 
 ### Clone commands
 
 ```bash
-mkdir -p <your-parent-dir>/space_mapper_app/current
+mkdir -p <your-parent-dir>
 cd <your-parent-dir>
 
-# 1. Required: the background-location plugin
-git clone git@github.com:ActivitySpaceLab/open-background-locator.git
-
-# 2. Required: this app
-cd space_mapper_app/current
 git clone git@github.com:ActivitySpaceLab/wellbeing-mapper-app.git
-
-# 3. Optional: local server (only if you'll test encrypted uploads end-to-end)
-git clone git@github.com:ActivitySpaceLab/wellbeing-mapper-server.git
 ```
+
+That's it for a default build. The other repos are only needed for the
+workflows in §6 and §7.
 
 ---
 
@@ -95,7 +97,9 @@ fvm flutter analyze         # should report only the pre-existing warnings
 fvm flutter test            # runs unit tests (some are known-pre-existing-failing)
 ```
 
-If `flutter pub get` complains about `open_background_locator`, your directory layout is wrong — re-check section 1.
+If `flutter pub get` fails to fetch `open_background_locator` from GitHub, check
+that your SSH/HTTPS auth to GitHub works and that you have network access. The
+pinned commit in `pubspec.yaml` must exist on the OBL repo's default branch.
 
 ---
 
@@ -141,7 +145,50 @@ Or just use the shortcut script (auto-picks the right host):
 
 ---
 
-## 6. (Optional) Running the local server
+## 6. (Optional) Working on `open_background_locator` locally
+
+If you need to edit OBL and see changes immediately in this app (without
+pushing OBL and bumping the commit ref), use Dart's [`pubspec_overrides.yaml`](https://dart.dev/tools/pub/dependencies#dependency-overrides)
+mechanism:
+
+```bash
+# 1. Clone OBL anywhere convenient.
+cd <your-parent-dir>
+git clone git@github.com:ActivitySpaceLab/open-background-locator.git
+
+# 2. In wellbeing-mapper-app/, create pubspec_overrides.yaml
+#    (this file is gitignored and only affects your local builds):
+cat > pubspec_overrides.yaml <<'EOF'
+dependency_overrides:
+  open_background_locator:
+    path: ../open-background-locator   # adjust to wherever you cloned it
+EOF
+
+# 3. Re-resolve
+fvm flutter pub get
+```
+
+Flutter will now use your local OBL working copy. Delete
+`pubspec_overrides.yaml` to go back to the pinned git ref.
+
+### Promoting OBL changes back to the app
+
+After pushing changes to OBL, bump the pin in this repo:
+
+```bash
+cd <path-to-open-background-locator>
+git push                      # push your OBL changes
+NEW_SHA=$(git rev-parse main)
+
+cd <path-to-wellbeing-mapper-app>
+sed -i '' "s/      ref: .*/      ref: ${NEW_SHA}/" pubspec.yaml
+fvm flutter pub get           # updates pubspec.lock
+git add pubspec.yaml pubspec.lock && git commit -m "Bump open_background_locator to ${NEW_SHA:0:7}"
+```
+
+---
+
+## 7. (Optional) Running the local server
 
 If you want to exercise the full encrypted-upload pipeline on your machine:
 
@@ -156,9 +203,13 @@ See the [wellbeing-mapper-server README](https://github.com/ActivitySpaceLab/wel
 
 ---
 
-## 7. Common gotchas
+## 8. Common gotchas
 
-- **"Could not find package open_background_locator"** — wrong directory layout. See section 1.
+- **`flutter pub get` fails on `open_background_locator`** — either your GitHub
+  auth/network is broken, or the pinned commit no longer exists on the OBL
+  repo. Re-run after fixing network, or update the `ref:` in `pubspec.yaml`.
+- **Local OBL edits not picked up** — you forgot to create
+  `pubspec_overrides.yaml`. See §6.
 - **iOS build fails on `audioplayers_darwin`** — your iOS deployment target is below 13.0. Run `pod install` inside `ios/` and verify the project sets `IPHONEOS_DEPLOYMENT_TARGET = 13.0`.
 - **"flutter.sdk not set" on Android build** — `android/local.properties` is missing or wrong. Run `./sync-version.sh` and edit the file to point at your Flutter install.
 - **Map shows red error overlay on extreme zoom-out** — should be fixed by the `minZoom`/`maxZoom` bounds, but if it recurs, file an issue with the device and zoom level.
@@ -166,7 +217,7 @@ See the [wellbeing-mapper-server README](https://github.com/ActivitySpaceLab/wel
 
 ---
 
-## 8. Where to read next
+## 9. Where to read next
 
 - [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) — full architecture, app-mode system, encryption details.
 - [API_REFERENCE.md](API_REFERENCE.md) — public API of each major service.

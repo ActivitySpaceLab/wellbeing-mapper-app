@@ -60,11 +60,11 @@ flutter --version
 
 If you've just cloned this repo and want to build it on your own machine, follow **[docs/CONTRIBUTOR_SETUP.md](docs/CONTRIBUTOR_SETUP.md)**. It covers:
 
-- the required sibling-repo layout (you also need to clone [`open-background-locator`](https://github.com/ActivitySpaceLab/open-background-locator))
 - toolchain versions (Flutter 3.27.1, Xcode 15+, etc.)
 - one-time per-clone setup (`flutter pub get`, `pod install`, `./sync-version.sh`)
 - which files are gitignored and need to be created locally
 - how to point a build at a local server with `--dart-define=SERVER_BASE_URL=...`
+- how to optionally develop [`open-background-locator`](https://github.com/ActivitySpaceLab/open-background-locator) in parallel (it is fetched from GitHub by default)
 - the (optional) local [`wellbeing-mapper-server`](https://github.com/ActivitySpaceLab/wellbeing-mapper-server)
 
 > **Safety note for collaborators:** by default the app's research-server URL is a placeholder, and every upload path refuses to send data when the placeholder is in use. You must explicitly pass `--dart-define=SERVER_BASE_URL=...` to direct uploads anywhere. This app should **never** post to the Gauteng Wellbeing Mapper production server.
