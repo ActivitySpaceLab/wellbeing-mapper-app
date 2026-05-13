@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Run the Flutter app pointed at a locally-running data-collection-server.
+# Run the Flutter app pointed at a locally-running wellbeing-mapper-server.
 #
 # Prereq: in another terminal, start the server:
-#     cd ../data-collection-server && npm run dev
+#     cd ../wellbeing-mapper-server && npm run dev
 #
 # Usage:
 #     scripts/run-with-local-server.sh [extra flutter run args]

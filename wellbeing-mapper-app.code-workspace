@@ -5,8 +5,8 @@
 			"path": "."
 		},
 		{
-			"name": "data-collection-server",
-			"path": "../data-collection-server"
+			"name": "wellbeing-mapper-server",
+			"path": "../wellbeing-mapper-server"
 		},
 		{
 			"name": "open-background-locator",
