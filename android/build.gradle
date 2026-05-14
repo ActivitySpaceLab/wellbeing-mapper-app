@@ -1,3 +1,14 @@
+plugins {
+    id 'dev.flutter.flutter-gradle-plugin'
+}
+// Debug: Print the resolved background_fetch projectDir path
+gradle.projectsEvaluated {
+    if (project.findProject(':background_fetch') != null) {
+        println "background_fetch projectDir: ${project(":background_fetch").projectDir}"
+    } else {
+        println "background_fetch project not found!"
+    }
+}
 buildscript {
     ext.kotlin_version = '1.9.0'
     ext {

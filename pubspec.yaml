@@ -25,7 +25,7 @@ dependencies:
   json_annotation: ^4.9.0
   
   # UI and Form Components - Updated versions for compatibility
-  flutter_form_builder: ^9.4.1
+  flutter_form_builder: ^10.3.0+2
   form_builder_validators: ^11.0.0
   
   # Media and UI Utilities (Testing next batch)
@@ -53,7 +53,7 @@ dependencies:
   
   # Chart dependencies for timeline visualization
   fl_chart: ^0.69.2
-  intl: ^0.19.0
+  intl: ^0.20.2
   
 
   # Testing permission_handler first ✅ WORKING!
