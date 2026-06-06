@@ -188,22 +188,32 @@ class ParticipantValidationService {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  /// Local fallback validation – in debug builds only, a handful of test
-  /// codes are accepted. In release builds this always fails, requiring the
-  /// real server.
+  /// Local fallback validation.
+  ///
+  /// While no research server is configured ([ENV.isServerConfigured] is
+  /// false — the default until `--dart-define=SERVER_BASE_URL=...` is set),
+  /// a small set of offline codes (e.g. `TESTER`) unlock research mode so the
+  /// full participant experience can be exercised without a backend. No data
+  /// is ever uploaded in this state because every upload path also checks
+  /// [ENV.isServerConfigured].
+  ///
+  /// Once a real server URL is configured, this fallback only runs when the
+  /// server is unreachable, and then only in debug builds — release builds
+  /// with a configured server always require real server validation.
   static Future<ValidationResult> _localFallback(
       String cleanCode, String hashedCode) async {
     debugPrint('[ParticipantValidation] Using local fallback (server unavailable).');
 
-    if (kDebugMode &&
-        (cleanCode == 'TESTER' ||
-            cleanCode == 'TEST123' ||
-            cleanCode == 'DEV001' ||
-            cleanCode == 'PRODTEST')) {
+    final isOfflineTestCode = cleanCode == 'TESTER' ||
+        cleanCode == 'TEST123' ||
+        cleanCode == 'DEV001' ||
+        cleanCode == 'PRODTEST';
+
+    if ((!_isServerConfigured || kDebugMode) && isOfflineTestCode) {
       await _store(hashedCode);
       await _storeValidationSource(_localValidationSource);
       await _storeCodeType('test');
-      debugPrint('[ParticipantValidation] Debug test code accepted.');
+      debugPrint('[ParticipantValidation] Offline test code accepted.');
       return ValidationResult(isValid: true);
     }
 
