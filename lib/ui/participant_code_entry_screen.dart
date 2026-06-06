@@ -72,7 +72,7 @@ class _ParticipantCodeEntryScreenState extends State<ParticipantCodeEntryScreen>
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'If you were recruited through a survey panel and have a participant code, enter it below so the panel can compensate you. Otherwise, continue without a code.',
+                        'Enter the participant code provided by the research team to join the study. If you do not have a code, you can still use the app privately.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[700],
                         ),
@@ -103,12 +103,12 @@ class _ParticipantCodeEntryScreenState extends State<ParticipantCodeEntryScreen>
                 
                 SizedBox(height: 32),
                 
-                // Participant code input (optional)
+                // Participant code input (required for research mode)
                 TextFormField(
                   controller: _codeController,
                   decoration: InputDecoration(
-                    labelText: 'Participant Code (optional)',
-                    hintText: 'Only if provided by a survey panel',
+                    labelText: 'Participant Code',
+                    hintText: 'Provided by the research team',
                     prefixIcon: Icon(Icons.badge_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -117,9 +117,8 @@ class _ParticipantCodeEntryScreenState extends State<ParticipantCodeEntryScreen>
                   ),
                   textCapitalization: TextCapitalization.characters,
                   validator: (value) {
-                    // Only validate if the user actually typed something.
                     if (value == null || value.trim().isEmpty) {
-                      return null;
+                      return 'Please enter your participant code';
                     }
                     if (value.trim().length < 3) {
                       return 'Participant code must be at least 3 characters';
@@ -173,25 +172,6 @@ class _ParticipantCodeEntryScreenState extends State<ParticipantCodeEntryScreen>
                         ),
                 ),
 
-                SizedBox(height: 12),
-
-                // Continue without a code
-                OutlinedButton(
-                  onPressed: _isLoading ? null : _continueWithoutCode,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: SouthAfricanTheme.primaryGreen,
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    side: BorderSide(color: SouthAfricanTheme.primaryGreen),
-                  ),
-                  child: Text(
-                    'Continue without a code',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                
                 SizedBox(height: 32),
                 
                 // Information section
@@ -227,8 +207,9 @@ class _ParticipantCodeEntryScreenState extends State<ParticipantCodeEntryScreen>
                       ),
                       SizedBox(height: 8),
                       Text(
-                        '• Codes are only needed if a survey panel recruited you and will compensate you\n'
-                        '• If you were recruited through ads or in person, just continue without a code\n'
+                        '• A participant code is required to join the research study\n'
+                        '• Codes are provided by the research team when you are recruited\n'
+                        '• Without a code, you can still use the app in private mode\n'
                         '• Codes are case-insensitive\n'
                         '• Once registered, you won\'t need to do this again\n'
                         '• Contact the research team if you have issues',
@@ -276,13 +257,6 @@ class _ParticipantCodeEntryScreenState extends State<ParticipantCodeEntryScreen>
 
   Future<void> _validateCode() async {
     final entered = _codeController.text.trim();
-    if (entered.isEmpty) {
-      // Empty field on the "Validate Code" button means the user probably
-      // wanted to skip — route them through the anonymous flow instead of
-      // showing a confusing validation error.
-      await _continueWithoutCode();
-      return;
-    }
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -320,43 +294,6 @@ class _ParticipantCodeEntryScreenState extends State<ParticipantCodeEntryScreen>
         _errorMessage = 'An unexpected error occurred. Please try again.';
       });
       debugPrint('[ParticipantCodeEntry] Error validating code: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _continueWithoutCode() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final result =
-          await ParticipantValidationService.registerAnonymousParticipant();
-      if (!mounted) return;
-      if (result.isValid) {
-        Navigator.of(context).pushReplacementNamed(
-          '/consent_form',
-          arguments: {
-            'participantCode': '',
-            'researchSite': widget.researchSite,
-            'isTestingMode': false,
-          },
-        );
-      } else {
-        setState(() {
-          _errorMessage = result.error;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred. Please try again.';
-      });
-      debugPrint('[ParticipantCodeEntry] Error in anonymous flow: $e');
     } finally {
       if (mounted) {
         setState(() {

@@ -238,9 +238,9 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
             Text('Join the Southern Europe research study.'),
             SizedBox(height: 4),
             Text(
-              '• Open to anyone living in the study area\n'
-              '• If a survey panel recruited you, you can enter their code for compensation\n'
-              '• Otherwise, just continue without a code',
+              '• Requires a participant code from the research team\n'
+              '• Enter your code on the next screen to take part\n'
+              '• Without a code, you can still use the app privately',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],

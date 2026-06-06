@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../../open-background-locator"
+		},
+		{
+			"path": "../data-collection-server"
+		}
+	],
+	"settings": {}
+}

@@ -49,39 +49,6 @@ class ParticipantValidationService {
     return prefs.getString(_validatedParticipantKey);
   }
 
-  /// Registers an anonymous participant who has not been recruited through
-  /// a survey panel and therefore has no compensation code.
-  ///
-  /// Generates a random `ANON-XXXXXXXX` identifier, stores its SHA-256 hash
-  /// locally just like a normal validated code, and tags `code_type` as
-  /// `anonymous` so the server (and downstream analyses) can distinguish
-  /// these participants from panel-recruited ones.
-  static Future<ValidationResult> registerAnonymousParticipant() async {
-    try {
-      final random = Random.secure();
-      final chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      final suffix = List.generate(
-        8,
-        (_) => chars[random.nextInt(chars.length)],
-      ).join();
-      final anonCode = 'ANON-$suffix';
-      final hashedCode = _hashCode(anonCode);
-      await _store(hashedCode);
-      await _storeValidationSource('anonymous_self_registration');
-      await _storeCodeType('anonymous');
-      debugPrint(
-          '[ParticipantValidation] Registered anonymous participant: $anonCode');
-      return ValidationResult(isValid: true);
-    } catch (e) {
-      debugPrint(
-          '[ParticipantValidation] Error registering anonymous participant: $e');
-      return ValidationResult(
-        isValid: false,
-        error: 'Could not register without a code. Please try again.',
-      );
-    }
-  }
-
   /// Validates [participantCode] against the research server.
   ///
   /// Falls back to debug-only local codes when the server is unreachable and
