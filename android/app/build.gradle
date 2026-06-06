@@ -114,6 +114,11 @@ android {
                     "Release signing is not configured. Create android/key.properties and set storeFile/keyAlias/storePassword/keyPassword."
                 )
             }
+            // Generate native symbol tables for Play Console so native crashes
+            // and ANRs (Flutter engine / plugin .so files) are symbolicated.
+            ndk {
+                debugSymbolLevel 'SYMBOL_TABLE'
+            }
             signingConfig signingConfigs.release
             shrinkResources false
         }
@@ -127,6 +132,24 @@ android {
 
 flutter {
     source '../..'
+}
+
+// Produce an explicit native-symbols archive for Play Console from the
+// unstripped merged native libraries. Some AGP/Flutter combinations generate
+// symbol intermediates but do not emit a zip under build/app/outputs.
+tasks.register('packageProductionReleaseNativeSymbols', Zip) {
+    dependsOn 'mergeProductionReleaseNativeLibs'
+    from("$buildDir/intermediates/merged_native_libs/productionRelease/out/lib") {
+        include '**/*.so'
+    }
+    destinationDirectory = file("$buildDir/outputs/native-debug-symbols/productionRelease")
+    archiveFileName = 'native-debug-symbols.zip'
+}
+
+afterEvaluate {
+    tasks.named('bundleProductionRelease').configure {
+        finalizedBy(tasks.named('packageProductionReleaseNativeSymbols'))
+    }
 }
 
 dependencies {
