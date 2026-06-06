@@ -35,6 +35,18 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// Resolve keystore paths relative to android/ (rootProject), not android/app/.
+def resolveKeystoreFile(String storeFilePath) {
+    if (storeFilePath == null || storeFilePath.trim().isEmpty()) {
+        return null
+    }
+    def candidate = new File(storeFilePath)
+    if (candidate.isAbsolute()) {
+        return candidate
+    }
+    return rootProject.file(storeFilePath)
+}
+
 android {
     namespace 'com.github.activityspacelab.wellbeingmapper'
     compileSdk 35  // Updated to support latest plugins
@@ -87,15 +99,22 @@ android {
         release {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storeFile resolveKeystoreFile(keystoreProperties['storeFile'])
             storePassword keystoreProperties['storePassword']
         }
     }
 
     buildTypes {
         release {
-            // Use debug signing for CI/CD builds when keystore is not available
-            signingConfig keystoreProperties['storeFile'] ? signingConfigs.release : signingConfigs.debug
+            // Never fall back to debug signing for release artifacts.
+            // If signing is not configured, fail fast so Play Console uploads
+            // cannot accidentally use a debug certificate.
+            if (!keystorePropertiesFile.exists() || !keystoreProperties['storeFile']) {
+                throw new GradleException(
+                    "Release signing is not configured. Create android/key.properties and set storeFile/keyAlias/storePassword/keyPassword."
+                )
+            }
+            signingConfig signingConfigs.release
             shrinkResources false
         }
         debug {
