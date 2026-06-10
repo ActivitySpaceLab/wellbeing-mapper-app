@@ -76,7 +76,6 @@ android/key.properties
 /build/
 
 # Web related
-lib/generated_plugin_registrant.dart
 
 # packages file containing multi-root paths
 .packages.generated
