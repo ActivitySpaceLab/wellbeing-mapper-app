@@ -87,7 +87,7 @@ Based on `_mapConsentToQualtrics()` function:
 | QID6 | health_consent | I GIVE MY CONSENT to being asked about my health (1=yes, 0=no) |
 | QID7 | sexual_orientation_consent | I GIVE MY CONSENT to being asked about my sexual orientation (1=yes, 0=no) |
 | QID8 | location_mobility_consent | I GIVE MY CONSENT to being asked about my location and mobility (1=yes, 0=no) |
-| QID9 | data_transfer_consent | I GIVE MY CONSENT to transferring my personal data to countries outside South Africa (1=yes, 0=no) |
+| QID9 | data_transfer_consent | I GIVE MY CONSENT to transferring my personal data to countries outside Italy (1=yes, 0=no) |
 | QID10 | public_reporting_consent | I GIVE MY CONSENT to researchers reporting what I contribute publicly without my full name (1=yes, 0=no) |
 | QID11 | data_sharing_researchers_consent | I GIVE MY CONSENT to what I contribute being shared with national and international researchers (1=yes, 0=no) |
 | QID12 | further_research_consent | I GIVE MY CONSENT to what I contribute being used for further research or teaching purposes (1=yes, 0=no) |

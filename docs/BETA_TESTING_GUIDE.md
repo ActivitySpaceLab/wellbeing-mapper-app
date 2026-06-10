@@ -210,8 +210,6 @@ Update contact information:
 
 ### Research Release Phase
 - **Research Team**: 
-  - Linda Theron: linda.theron@up.ac.za
-  - Caradee Wright: Caradee.Wright@mrc.ac.za
   - John Palmer: john.palmer@upf.edu
 - **Ethics Committee**: secretaria.cirep@upf.edu
 - **Technical Issues**: Development team

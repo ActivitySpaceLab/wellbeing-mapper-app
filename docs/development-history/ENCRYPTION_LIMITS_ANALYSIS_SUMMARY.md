@@ -2,7 +2,7 @@
 
 ## Summary
 
-Successfully completed comprehensive encryption size limits analysis for the Gauteng Wellbeing Mapper's GPS location tracking system. The analysis tested the hybrid AES/RSA encryption performance across 6 realistic scenarios ranging from low-frequency (15-minute intervals) to extreme high-frequency (5-second intervals) GPS tracking over 2-week periods.
+Successfully completed comprehensive encryption size limits analysis for the Wellbeing Mapper's GPS location tracking system. The analysis tested the hybrid AES/RSA encryption performance across 6 realistic scenarios ranging from low-frequency (15-minute intervals) to extreme high-frequency (5-second intervals) GPS tracking over 2-week periods.
 
 ## Key Findings
 
@@ -40,7 +40,7 @@ Successfully completed comprehensive encryption size limits analysis for the Gau
 - **Memory efficiency**: Reasonable memory usage even for extreme scenarios
 
 ### Analysis Script Features
-- **Realistic data generation**: Johannesburg-area GPS coordinates with movement patterns
+- **Realistic data generation**: City-area GPS coordinates with movement patterns
 - **Comprehensive testing**: Both AES-CBC and XOR encryption methods
 - **Performance metrics**: Size, time, memory usage, and data integrity verification
 - **Detailed reporting**: Markdown report with recommendations and technical details
@@ -93,7 +93,7 @@ All components work together to provide a comprehensive research data management
 
 ## Status: ✅ COMPLETE
 
-This completes the final task in the data processing pipeline development. The Gauteng Wellbeing Mapper now has:
+This completes the final task in the data processing pipeline development. The Wellbeing Mapper now has:
 
 - Complete end-to-end data processing pipeline
 - Comprehensive encryption performance analysis

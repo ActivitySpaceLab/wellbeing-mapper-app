@@ -16,7 +16,7 @@ The app now uses these working test survey URLs:
 
 ### Step 1: Create Qualtrics Account
 1. Go to [Qualtrics.com](https://www.qualtrics.com)
-2. Sign up for an account (University of Pretoria may have institutional access)
+2. Sign up for an account (your institution may have institutional access)
 3. Create a new project
 
 ### Step 2: Create Initial Survey

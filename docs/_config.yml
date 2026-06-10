@@ -1,6 +1,6 @@
-title: "Gauteng Wellbeing Mapper"
-description: "Documentation for the Gauteng Wellbeing Mapper app"
-baseurl: "/gauteng-wellbeing-mapper-app"
+title: "Wellbeing Mapper"
+description: "Documentation for the Wellbeing Mapper app"
+baseurl: "/wellbeing-mapper-app"
 url: "https://activityspacelab.github.io"
 
 # GitHub Pages settings
@@ -41,7 +41,7 @@ social:
   - name: Planet4Health Website
     url: https://planet4health.eu
   - name: GitHub
-    url: https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app
+    url: https://github.com/ActivitySpaceLab/wellbeing-mapper-app
 
 # Exclude files
 exclude:

@@ -184,7 +184,7 @@ static const bool _isBetaPhase = false;
 **Impact**: Full research functionality
 
 #### Planned Features
-- 🔄 **Multi-Site Support**: Gauteng and Barcelona research configurations
+- 🔄 **Multi-Site Support**: Configurable research site configurations
 - 🔄 **Advanced Analytics**: Research-grade data collection and validation
 - 🔄 **Compliance Features**: Full research ethics and privacy compliance
 - 🔄 **Research Team Tools**: Advanced diagnostic and management features

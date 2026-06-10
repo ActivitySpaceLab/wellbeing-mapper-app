@@ -1,16 +1,16 @@
 ---
 layout: default
 title: Server Setup
-description: Backend configuration for the Gauteng Wellbeing Mapper research infrastructure
+description: Backend configuration for the Wellbeing Mapper research infrastructure
 ---
 
-# Server Setup Guide for Gauteng Wellbeing Mapper Research Data Collection
+# Server Setup Guide for Wellbeing Mapper Research Data Collection
 
-This guide provides comprehensive instructions for setting up secure data collection servers for the Gauteng Wellbeing Mapper app's research participation features.
+This guide provides comprehensive instructions for setting up secure data collection servers for the Wellbeing Mapper app's research participation features.
 
 ## Overview
 
-The Gauteng Wellbeing Mapper app supports encrypted data collection for the research study in Gauteng, South Africa.
+The Wellbeing Mapper app supports encrypted data collection for the research study in Italy.
 
 The study site requires:
 1. A dedicated HTTPS server with REST API endpoints

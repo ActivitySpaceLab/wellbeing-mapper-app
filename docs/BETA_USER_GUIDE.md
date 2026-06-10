@@ -23,7 +23,7 @@ The easiest way to get the latest version is through our GitHub releases:
 > **Note**: The first release is currently being processed by our automated build system and should be available shortly at the releases page.
 
 #### Step 1: Download the APK
-1. Go to the **[Releases page](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/releases)**
+1. Go to the **[Releases page](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/releases)**
 2. Find the latest release (should be at the top)
 3. Look for the **Assets** section
 4. Download one of the APK files:
@@ -45,7 +45,7 @@ The easiest way to get the latest version is through our GitHub releases:
    - Tap **"Open"** to launch the app
 
 #### Alternative: Direct Download on Device
-1. Open your Android browser and go to the [Releases page](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/releases)
+1. Open your Android browser and go to the [Releases page](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/releases)
 2. Download the `.apk` file directly to your device
 3. Follow steps 2-3 above to install
 

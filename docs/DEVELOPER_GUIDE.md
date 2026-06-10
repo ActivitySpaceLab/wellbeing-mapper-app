@@ -1,16 +1,16 @@
 ---
 layout: default
 title: Developer Guide
-description: Setup, build, and development instructions for the Gauteng Wellbeing Mapper app
+description: Setup, build, and development instructions for the Wellbeing Mapper app
 ---
 
-# Gauteng Wellbeing Mapper - Developer Guide
+# Wellbeing Mapper - Developer Guide
 
 ## Overview
 
-Gauteng Wellbeing Mapper is a privacy-focused Flutter mobile application that enables users to map their mental wellbeing in environmental & climate context. As part of the Planet4Health project case study, the app facilitates research into how environmental and climate factors impact psychological health by allowing users to correlate location data with mental wellbeing indicators.
+Wellbeing Mapper is a privacy-focused Flutter mobile application that enables users to map their mental wellbeing in environmental & climate context. As part of the Planet4Health project case study, the app facilitates research into how environmental and climate factors impact psychological health by allowing users to correlate location data with mental wellbeing indicators.
 
-This version is specifically configured for the **Gauteng research study** with end-to-end encryption for secure data transmission to research servers in Gauteng, South Africa.
+This version is configured for the **research study in Italy** with end-to-end encryption for secure data transmission to research servers.
 
 ### App Configuration
 - **Bundle ID**: `com.github.activityspacelab.wellbeingmapper.gauteng`

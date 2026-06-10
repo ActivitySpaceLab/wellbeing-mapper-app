@@ -1,14 +1,14 @@
 ---
 layout: default
 title: User Guide
-description: Complete guide to using the Gauteng Wellbeing Mapper app
+description: Complete guide to using the Wellbeing Mapper app
 ---
 
-# Gauteng Wellbeing Mapper - User Guide
+# Wellbeing Mapper - User Guide
 
 ## 📱 Getting Started: Install the App
 
-**New to the app?** Before you can use Gauteng Wellbeing Mapper, you need to install it on your device. Our comprehensive installation guide covers all platforms and installation methods:
+**New to the app?** Before you can use Wellbeing Mapper, you need to install it on your device. Our comprehensive installation guide covers all platforms and installation methods:
 
 **[📥 Installation Guide](INSTALLATION_GUIDE.md)** - Choose from:
 - **Android**: Google Play Store or manual APK installation  
@@ -21,7 +21,7 @@ The installation guide includes troubleshooting steps and system requirements fo
 
 ## Welcome
 
-Wellbeing Mapper helps people learn more about the ways in which mental wellbeing depends on environmental conditions. You can use it privately to study your own movements and wellbeing. If you live in Gauteng, South Africa and have volunteered to be part of the **Planet4Health** study on mental wellbeing in environmental & climate context, you can use the app to respond to surveys and share your information anonymously with researchers.
+Wellbeing Mapper helps people learn more about the ways in which mental wellbeing depends on environmental conditions. You can use it privately to study your own movements and wellbeing. If you live in Italy and have been recruited to take part in the **Planet4Health** study on mental wellbeing in environmental & climate context, you can use the app to respond to surveys and share your information anonymously with researchers.
 
 This app is part of the larger [Planet4Health project](https://planet4health.eu), a Horizon Europe research initiative investigating how environmental factors affect mental wellbeing and developing evidence-based interventions for healthier communities.
 
@@ -251,4 +251,4 @@ If you have questions or need assistance:
 
 ---
 
-*Thank you for using Gauteng Wellbeing Mapper! Your participation helps researchers understand how communities and environments affect wellbeing in South Africa.*
+*Thank you for using Wellbeing Mapper! Your participation helps researchers understand how communities and environments affect wellbeing in Italy.*

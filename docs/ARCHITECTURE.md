@@ -1,16 +1,16 @@
 ---
 layout: default
 title: Architecture
-description: App structure and design patterns for the Gauteng Wellbeing Mapper
+description: App structure and design patterns for the Wellbeing Mapper
 ---
 
-# Gauteng Wellbeing Mapper - Architecture Overview
+# Wellbeing Mapper - Architecture Overview
 
 ## System Architecture Overview
 
-Gauteng Wellbeing Mapper follows a layered architecture pattern designed for maintainability, testability, and scalability. The application is built using Flutter and implements a clean separation of concerns to support mental wellbeing mapping in environmental & climate context as part of the Planet4Health research project.
+Wellbeing Mapper follows a layered architecture pattern designed for maintainability, testability, and scalability. The application is built using Flutter and implements a clean separation of concerns to support mental wellbeing mapping in environmental & climate context as part of the Planet4Health research project.
 
-The architecture includes research participation with end-to-end encryption for secure data transmission from participants' phones to researchers in South Africa.
+The architecture includes research participation with end-to-end encryption for secure data transmission from participants' phones to the research team.
 
 ## Architectural Layers
 

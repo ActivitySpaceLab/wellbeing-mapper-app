@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explains the new Git Flow + Build Flavors approach implemented for the Gauteng Wellbeing Mapper app. This system separates production releases from beta testing builds using build-time configuration instead of runtime mode switching.
+This document explains the new Git Flow + Build Flavors approach implemented for the Wellbeing Mapper app. This system separates production releases from beta testing builds using build-time configuration instead of runtime mode switching.
 
 ## Key Benefits
 
@@ -37,7 +37,7 @@ This document explains the new Git Flow + Build Flavors approach implemented for
 ```
 
 **Configuration:**
-- App Name: "Gauteng Wellbeing Mapper"
+- App Name: "Wellbeing Mapper"
 - Bundle ID: `com.github.activityspacelab.wellbeingmapper.gauteng`
 - Available Modes: Private, Research only
 - Build Flag: `APP_FLAVOR=production`
@@ -49,7 +49,7 @@ This document explains the new Git Flow + Build Flavors approach implemented for
 ```
 
 **Configuration:**
-- App Name: "Gauteng Wellbeing Mapper Beta"
+- App Name: "Wellbeing Mapper Beta"
 - Bundle ID: `com.github.activityspacelab.wellbeingmapper.gauteng.beta`
 - Available Modes: Private, Research, App Testing
 - Build Flag: `APP_FLAVOR=beta`

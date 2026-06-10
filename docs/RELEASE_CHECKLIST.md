@@ -26,7 +26,7 @@
 ### Play Console Setup
 - [ ] Create app in Google Play Console
 - [ ] App name: "Wellbeing Mapper"
-- [ ] Default language: en-ZA (English - South Africa)
+- [ ] Default language: English
 - [ ] Category: Health & Fitness
 - [ ] Content rating completed
 
@@ -59,7 +59,7 @@
 ### App Store Connect Setup
 - [ ] Create app in App Store Connect
 - [ ] App name: "Wellbeing Mapper"
-- [ ] Primary language: English (South Africa) or English
+- [ ] Primary language: English
 - [ ] Bundle ID: com.github.activityspacelab.wellbeingmapper.gauteng
 - [ ] Category: Health & Fitness
 
@@ -72,7 +72,7 @@
 
 ### Pricing and Availability
 - [ ] Set to Free
-- [ ] Geographic availability set (focus on South Africa)
+- [ ] Geographic availability set (focus on Italy)
 
 ### App Privacy
 - [ ] Data collection practices declared
@@ -111,7 +111,7 @@
 
 ## 🎉 First Beta Release
 
-This is the initial beta release of Wellbeing Mapper for the Gauteng study site.
+This is the initial beta release of Wellbeing Mapper for the study.
 
 ### ✨ Features
 - Privacy-focused location tracking
@@ -159,7 +159,7 @@ This is a beta release for testing purposes. Please report issues via the app's 
 2. **Health Data**: App collects wellbeing data - compliance with health data regulations required
 3. **Research Context**: Clearly explain academic research purpose in all materials
 4. **Privacy**: Emphasize local data storage and user control
-5. **Geographic Focus**: App is designed for Gauteng study - consider regional marketing
+5. **Geographic Focus**: App is designed for the study in Italy - consider regional marketing
 
 ## 📞 Support Contacts
 

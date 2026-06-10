@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Gauteng Wellbeing Mapper now includes an advanced data sharing consent system that gives research participants complete control over their location data sharing preferences. This system was implemented to enhance user privacy and comply with research ethics requirements.
+The Wellbeing Mapper now includes an advanced data sharing consent system that gives research participants complete control over their location data sharing preferences. This system was implemented to enhance user privacy and comply with research ethics requirements.
 
 ## Key Features
 

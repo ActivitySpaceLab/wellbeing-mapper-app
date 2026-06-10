@@ -10,7 +10,7 @@ This document explains how to deploy and maintain the Wellbeing Mapper documenta
 
 ## Overview
 
-The documentation website is built using Jekyll and the Cayman theme, customized with South African colors to match the app's branding. It provides comprehensive documentation for both app users and developers.
+The documentation website is built using Jekyll and the Cayman theme, customized to match the app's branding. It provides comprehensive documentation for both app users and developers.
 
 ## Files Structure
 

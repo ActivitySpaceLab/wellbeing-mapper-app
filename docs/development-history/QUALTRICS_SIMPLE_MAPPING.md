@@ -1,4 +1,4 @@
-# Gauteng Wellbeing Mapper - Qualtrics Survey Mapping
+# Wellbeing Mapper - Qualtrics Survey Mapping
 
 ## Overview
 This document provides the definitive mapping between the Flutter app's survey data and the simplified Qualtrics surveys. All Qualtrics questions are text fields for maximum reliability.
@@ -30,7 +30,7 @@ This document provides the definitive mapping between the Flutter app's survey d
 | QID5 | race_ethnicity | Race/ethnicity | Black, Coloured, Indian, White, Other, Prefer not to say |
 | QID6 | gender_identity | Gender identity | Male, Female, Transmale, Transfemale, Non-binary, Prefer not to say |
 | QID7 | sexual_orientation | Sexual orientation | Heterosexual/straight, Lesbian, Gay, Bisexual, Queer, Other, Prefer not to say |
-| QID8 | place_of_birth | Place of birth | South Africa, Other African country, Other country, Prefer not to say |
+| QID8 | place_of_birth | Place of birth | Italy, Other European country, Other country, Prefer not to say |
 | QID9 | building_type | Building type | A brick house, A townhouse in a complex, An RDP house, A flat or apartment, A backyard room, Informal dwelling, Other |
 | QID10 | household_items | Household items (comma-separated) | radio, television, refrigerator, microwave, internet access, computer, cellular smartphone, car, electric cooling devices |
 | QID11 | education | Education level | Less than high school, High school, TVET college, Bachelor's degree, Professional degree, Post-graduate degree, Prefer not to say |

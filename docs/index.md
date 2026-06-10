@@ -8,7 +8,7 @@ Welcome to the **Wellbeing Mapper** documentation website. Wellbeing Mapper is a
 
 ## Current Status: Pilot Testing
 
-The app is currently in **pilot testing phase** with research participants in Gauteng, South Africa.
+The app is currently in **pilot testing phase** with research participants in Italy.
 
 ### Available App Modes
 - **Private Mode**: Use the app for personal wellbeing tracking (all data stays on your device)
@@ -64,10 +64,10 @@ We take your privacy seriously:
 - **Full user control** over data sharing and participation
 - **GDPR compliant** data handling practices
 
-## 📂 [GitHub](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app)
-- **[Source Code](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app)**
-- **[Issues](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/issues)**
-- **[Releases](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/releases)**
+## 📂 [GitHub](https://github.com/ActivitySpaceLab/wellbeing-mapper-app)
+- **[Source Code](https://github.com/ActivitySpaceLab/wellbeing-mapper-app)**
+- **[Issues](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/issues)**
+- **[Releases](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/releases)**
 
 ---
 
@@ -109,7 +109,7 @@ The beta version offers two modes for different user needs:
 - Perfect for personal movement tracking
 - Export your own data anytime
 
-**🔬 Research Mode** *(Gauteng residents only)*
+**🔬 Research Mode** *(recruited study participants only)*
 - Anonymous, encrypted data sharing
 - Contribute to Planet4Health study
 - Bi-weekly wellbeing surveys
@@ -128,10 +128,10 @@ The beta version offers two modes for different user needs:
 ### Quick Setup
 ```bash
 # Clone the repository
-git clone https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app.git
+git clone https://github.com/ActivitySpaceLab/wellbeing-mapper-app.git
 
 # Navigate to the project
-cd gauteng-wellbeing-mapper-app/wellbeing-mapper-app
+cd wellbeing-mapper-app/wellbeing-mapper-app
 
 # Install dependencies
 flutter pub get
@@ -155,7 +155,7 @@ flutter run
 
 ## 🔬 Research
 
-This app is part of the **Planet4Health** study investigating how environmental factors affect mental wellbeing. This version of the app has been designed specifically for the case study in Gauteng, South Africa.
+This app is part of the **Planet4Health** study investigating how environmental factors affect mental wellbeing. This version of the app has been designed specifically for the case study in Italy.
 
 ### Study Goals
 - Understand relationships between place and mental health
@@ -170,9 +170,9 @@ This app is part of the **Planet4Health** study investigating how environmental 
 - **Ethical**: Approved by university research ethics committees
 
 ### Principal Investigators
-- **Linda Theron**: linda.theron@up.ac.za (University of Pretoria)
-- **Caradee Wright**: Caradee.Wright@mrc.ac.za (South African Medical Research Council)
 - **John Palmer**: john.palmer@upf.edu (Universitat Pompeu Fabra, Barcelona)
+
+Participants are recruited through a survey panel provider.
 
 
 ## 🛡️ Privacy & Security
@@ -195,8 +195,8 @@ We take your privacy seriously:
 - **Website**: Visit the [Planet4Health website](https://planet4health.eu)
 
 ### For Developers
-- **Issues**: [GitHub Issues](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/discussions)
+- **Issues**: [GitHub Issues](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/discussions)
 - **Pull Requests**: [Contributing Guidelines](DEVELOPER_GUIDE.md#contributing)
 
 ## 📄 License

@@ -1,14 +1,14 @@
 ---
 layout: default
 title: Research Features
-description: Study participation tools and features for the Gauteng Wellbeing Mapper
+description: Study participation tools and features for the Wellbeing Mapper
 ---
 
-# Gauteng Wellbeing Mapper - Research Features Summary
+# Wellbeing Mapper - Research Features Summary
 
 ## Overview
 
-This document summarizes the major features of the Gauteng Wellbeing Mapper app to support research participation with end-to-end encryption. These features enable secure data collection for the research study in Gauteng, South Africa.
+This document summarizes the major features of the Wellbeing Mapper app to support research participation with end-to-end encryption. These features enable secure data collection for the research study in Italy.
 
 ## Key Features
 
@@ -17,7 +17,7 @@ This document summarizes the major features of the Gauteng Wellbeing Mapper app 
 Users can now choose between two modes when starting the app:
 
 - **🏠 Private Mode**: Personal use only, no data sharing
-- **🇿🇦 Gauteng Research**: Participate in South African research study
+- **🔬 Research Mode**: Participate in the study
 
 **Implementation:**
 - `ParticipationSelectionScreen`: New UI for mode selection
@@ -96,12 +96,12 @@ Users can now choose between two modes when starting the app:
 - Platform-specific permission handling and diagnostics
 - Dual notification strategy for maximum research reliability
 
-### 5. Gauteng Research Features 🌍
+### 5. Research Features 🌍
 
-**Gauteng Research:**
-- South African demographics (ethnicity, building type)
+**Research:**
+- Local demographics (building type)
 - Health status tracking (general health questions)
-- Suburb/area tracking for environmental correlation
+- Area tracking for environmental correlation
 - Local privacy compliance
 
 **Implementation:**

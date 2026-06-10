@@ -1,16 +1,16 @@
 ---
 layout: default
 title: API Reference
-description: Complete API documentation for the Gauteng Wellbeing Mapper app
+description: Complete API documentation for the Wellbeing Mapper app
 ---
 
-# Gauteng Wellbeing Mapper - API Reference
+# Wellbeing Mapper - API Reference
 
 ## Overview
 
-This document provides detailed information about the Gauteng Wellbeing Mapper codebase APIs, including class methods, database schemas, encryption services, and integration points. This reference is intended for developers working on the codebase for the Planet4Health project case study on mental wellbeing in environmental & climate context.
+This document provides detailed information about the Wellbeing Mapper codebase APIs, including class methods, database schemas, encryption services, and integration points. This reference is intended for developers working on the codebase for the Planet4Health project case study on mental wellbeing in environmental & climate context.
 
-The app supports research participation with end-to-end encryption for secure data transmission to research servers in Gauteng, South Africa.
+The app supports research participation with end-to-end encryption for secure data transmission to research servers.
 
 ## Research Participation APIs
 
@@ -653,7 +653,7 @@ Grouped location data for privacy-conscious display and selection.
 ```dart
 class LocationCluster {
   // Properties
-  String areaName;                    // General area name (e.g., "Johannesburg CBD")
+  String areaName;                    // General area name (e.g., "City Centre")
   int trackCount;                     // Number of location records in cluster
   double centerLatitude;              // Cluster center coordinates
   double centerLongitude;

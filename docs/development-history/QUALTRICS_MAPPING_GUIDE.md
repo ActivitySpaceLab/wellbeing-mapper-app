@@ -112,7 +112,7 @@ Based on the Planet4Health Consent Form 2025 PILOT blueprint, the consent survey
 | `health_consent` | QID6 | I give my consent to being asked about my health | Text (1=Yes, 0=No) |
 | `sexual_orientation_consent` | QID7 | I give my consent to being asked about my sexual orientation | Text (1=Yes, 0=No) |
 | `location_mobility_consent` | QID8 | I give my consent to being asked about my location and mobility | Text (1=Yes, 0=No) |
-| `data_transfer_consent` | QID9 | I give my consent to transferring my personal data to countries outside South Africa | Text (1=Yes, 0=No) |
+| `data_transfer_consent` | QID9 | I give my consent to transferring my personal data to countries outside Italy | Text (1=Yes, 0=No) |
 | `public_reporting_consent` | QID10 | I give my consent to researchers reporting what I contribute publicly without my full name | Text (1=Yes, 0=No) |
 | `data_sharing_researchers_consent` | QID11 | I give my consent to what I contribute being shared with national and international researchers | Text (1=Yes, 0=No) |
 | `further_research_consent` | QID12 | I give my consent to what I contribute being used for further research or teaching purposes | Text (1=Yes, 0=No) |

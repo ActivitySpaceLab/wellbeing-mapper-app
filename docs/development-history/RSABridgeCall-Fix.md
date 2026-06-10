@@ -2,7 +2,7 @@
 
 ## Problem Summary
 
-The Gauteng Wellbeing Mapper app experienced critical failures in production iOS builds due to the `RSABridgeCall` symbol being stripped by the iOS linker during release optimization. This resulted in runtime crashes when the app attempted to encrypt survey data for secure transmission.
+The Wellbeing Mapper app experienced critical failures in production iOS builds due to the `RSABridgeCall` symbol being stripped by the iOS linker during release optimization. This resulted in runtime crashes when the app attempted to encrypt survey data for secure transmission.
 
 ### Error Symptoms
 - App worked perfectly in debug builds

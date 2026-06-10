@@ -1,6 +1,6 @@
 # Installation Guide
 
-The Gauteng Wellbeing Mapper app is available for both Android and iOS devices. Choose the installation method that best suits your device and preferences.
+The Wellbeing Mapper app is available for both Android and iOS devices. Choose the installation method that best suits your device and preferences.
 
 ## Android Installation Options
 
@@ -10,7 +10,7 @@ The easiest way to install the app on Android devices is through the official Go
 
 **Steps:**
 1. Open the **Google Play Store** app on your Android device
-2. Search for **"Gauteng Wellbeing Mapper"** or visit the direct link: [https://play.google.com/store/apps/details?id=com.github.activityspacelab.wellbeingmapper.gauteng](https://play.google.com/store/apps/details?id=com.github.activityspacelab.wellbeingmapper.gauteng)
+2. Search for **"Wellbeing Mapper"** or visit the direct link: [https://play.google.com/store/apps/details?id=com.github.activityspacelab.wellbeingmapper.gauteng](https://play.google.com/store/apps/details?id=com.github.activityspacelab.wellbeingmapper.gauteng)
 3. Tap **"Install"**
 4. Wait for the app to download and install automatically
 5. Open the app from your home screen or app drawer
@@ -91,7 +91,7 @@ Currently, the iOS version is available through Apple's TestFlight program.
 1. **Install TestFlight** from the App Store (if not already installed)
 2. Join our program by visiting: [https://testflight.apple.com/join/JXdaTSNU](https://testflight.apple.com/join/JXdaTSNU)
 3. Tap **"Accept"** to join. (TestFlight characterizes the app as a Beta version but this is the same production version that we have on Google Play.)
-4. **Install** Gauteng Wellbeing Mapper through TestFlight
+4. **Install** Wellbeing Mapper through TestFlight
 5. Open the app from your home screen
 
 **Benefits of TestFlight:**

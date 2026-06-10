@@ -38,10 +38,10 @@ This ensures images are encrypted during transmission while maintaining efficien
 ---
 layout: default
 title: Encryption Setup
-description: Data security implementation for the Gauteng Wellbeing Mapper
+description: Data security implementation for the Wellbeing Mapper
 ---
 
-# Gauteng Wellbeing Mapper - Encryption and Security Setup
+# Wellbeing Mapper - Encryption and Security Setup
 
 ## Step 1: Generate RSA Key Pairs
 
@@ -242,7 +242,7 @@ The decrypted JSON payload contains:
       "responses": {
         "wellbeingScore": 7,
         "stressLevel": 3,
-        "suburb": "Sandton",  // Gauteng only
+        "suburb": "City Centre",  // Research-site specific
         "generalHealth": "good",  // Gauteng only
         // ... other survey fields
       }

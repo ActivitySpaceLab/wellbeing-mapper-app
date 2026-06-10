@@ -10,7 +10,7 @@ This guide provides comprehensive information for researchers using the Wellbein
 
 ## Overview
 
-The Wellbeing Mapper app is designed to collect anonymous, encrypted data about participants' mobility patterns and mental wellbeing in Gauteng, South Africa, and Barcelona, Spain.
+The Wellbeing Mapper app is designed to collect anonymous, encrypted data about participants' mobility patterns and mental wellbeing in Italy.
 
 ## Data Collection & Analysis
 
@@ -124,14 +124,12 @@ The Wellbeing Mapper app is designed to collect anonymous, encrypted data about 
 ## Support & Contact
 
 ### Technical Support
-- **Developer Team** - [GitHub Issues](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/issues)
+- **Developer Team** - [GitHub Issues](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/issues)
 - **Documentation** - Complete technical guides
 - **Integration Support** - Analysis tool integration
 
 ### Research Team
-- **Principal Investigators**:
-  - Linda Theron: linda.theron@up.ac.za (University of Pretoria)
-  - Caradee Wright: Caradee.Wright@mrc.ac.za (South African Medical Research Council)
+- **Principal Investigator**:
   - John Palmer: john.palmer@upf.edu (Universitat Pompeu Fabra, Barcelona)
 
 ### Study Coordination
@@ -153,4 +151,4 @@ The Wellbeing Mapper app is designed to collect anonymous, encrypted data about 
 
 ---
 
-*For questions about this guide, contact the research team or open an issue on [GitHub](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/issues).*
+*For questions about this guide, contact the research team or open an issue on [GitHub](https://github.com/ActivitySpaceLab/wellbeing-mapper-app/issues).*
