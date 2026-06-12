@@ -1,0 +1,22 @@
+{
+    "side_drawer_title": "Menu di Wellbeing Mapper",
+    "locations_history": "Cronologia delle posizioni",
+    "share_locations": "Condividi posizioni",
+    "report_an_issue": "Segnala un problema",
+    "report_summary": "Aiutaci a migliorare segnalando un problema o richiedendo una nuova funzionalità.",
+    "github_description": "Segnala i problemi su GitHub per ottenere la soluzione più rapida.",
+    "github_button": "Vai a GitHub Issues",
+    "email_description": "In alternativa, puoi inviarci un'email.",
+    "report_email_btn1": "Segnala un problema via email",
+    "report_email_btn2": "Richiedi una funzionalità via email",
+    "activity": "Attività",
+    "speed": "Velocità",
+    "altitude": "Altitudine",
+    "show_all_datapoints": "Mostra tutti i punti dati",
+    "submit": "Invia",
+    "reset": "Reimposta",
+    "gender": "genere",
+    "visit_project_website": "Visita il sito web del progetto",
+    "consent_form" : "Consenso informato",
+    "do_you_agree_to_share_your_anonymous_location_with" : "Questo questionario è riservato ai soli partecipanti autorizzati. Per partecipare, devi aver già fornito il consenso informato direttamente al gruppo di ricerca. Ogni volta che invii un modulo del questionario, l'app trasmetterà automaticamente anche la cronologia delle tue posizioni, a partire dalla data in cui hai iniziato a partecipare. Selezionando questa casella, confermi di aver compreso queste informazioni, di essere autorizzato a partecipare e di aver già fornito il consenso informato all'utilizzo in questo modo dei dati che condividi."
+}

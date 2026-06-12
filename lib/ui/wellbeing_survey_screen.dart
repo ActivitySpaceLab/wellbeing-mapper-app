@@ -19,6 +19,10 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
   AppLocation? _currentLocation;
   String? _locationError;
 
+  // Shows Italian when the app locale is Italian; English otherwise.
+  bool get _isItalian => Localizations.localeOf(context).languageCode == 'it';
+  String _t(String en, String it) => _isItalian ? it : en;
+
   @override
   void initState() {
     super.initState();
@@ -99,18 +103,21 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '🧪 Beta Testing Mode',
+                  _t('🧪 Beta Testing Mode', '🧪 Modalità beta testing'),
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 SizedBox(height: 4),
                 Text(
                   hasAnswer 
-                    ? 'Your happiness rating of ${_happinessScore!.toStringAsFixed(1)} would have been submitted if this was research mode, but no data was transmitted since this is beta testing.'
-                    : 'Your survey would have been submitted if this was research mode, but no data was transmitted since this is beta testing.',
+                    ? _t('Your happiness rating of ${_happinessScore!.toStringAsFixed(1)} would have been submitted if this was research mode, but no data was transmitted since this is beta testing.',
+                        'La tua valutazione di felicità di ${_happinessScore!.toStringAsFixed(1)} sarebbe stata inviata in modalità di ricerca, ma nessun dato è stato trasmesso trattandosi di beta testing.')
+                    : _t('Your survey would have been submitted if this was research mode, but no data was transmitted since this is beta testing.',
+                        'Il tuo questionario sarebbe stato inviato in modalità di ricerca, ma nessun dato è stato trasmesso trattandosi di beta testing.'),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  '💙 Thank you for beta testing the Wellbeing Mapper!',
+                  _t('💙 Thank you for beta testing the Wellbeing Mapper!',
+                      '💙 Grazie per aver partecipato al beta testing di Wellbeing Mapper!'),
                   style: TextStyle(fontWeight: FontWeight.w500),
                 ),
               ],
@@ -125,8 +132,10 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
           SnackBar(
             content: Text(
               hasAnswer 
-                ? 'Wellbeing survey submitted successfully! Happiness rating: ${_happinessScore!.toStringAsFixed(1)}/10'
-                : 'Wellbeing survey submitted successfully!',
+                ? _t('Wellbeing survey submitted successfully! Happiness rating: ${_happinessScore!.toStringAsFixed(1)}/10',
+                    'Questionario sul benessere inviato con successo! Valutazione di felicità: ${_happinessScore!.toStringAsFixed(1)}/10')
+                : _t('Wellbeing survey submitted successfully!',
+                    'Questionario sul benessere inviato con successo!'),
             ),
             backgroundColor: SouthAfricanTheme.success,
           ),
@@ -139,7 +148,8 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
       debugPrint('[WellbeingSurveyScreen] Error submitting survey: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error submitting survey. Please try again.'),
+          content: Text(_t('Error submitting survey. Please try again.',
+              'Errore durante l\'invio del questionario. Riprova.')),
           backgroundColor: SouthAfricanTheme.error,
         ),
       );
@@ -164,7 +174,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
           ),
           SizedBox(width: 8),
           Text(
-            'Capturing location...',
+            _t('Capturing location...', 'Acquisizione della posizione...'),
             style: TextStyle(
               fontSize: 12,
               color: SouthAfricanTheme.primaryBlue,
@@ -183,7 +193,8 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
           ),
           SizedBox(width: 4),
           Text(
-            'Location captured (±${_currentLocation!.coords.accuracy.round()}m)',
+            _t('Location captured (±${_currentLocation!.coords.accuracy.round()}m)',
+                'Posizione acquisita (±${_currentLocation!.coords.accuracy.round()} m)'),
             style: TextStyle(
               fontSize: 12,
               color: Colors.green,
@@ -202,7 +213,8 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
           SizedBox(width: 4),
           Expanded(
             child: Text(
-              'Location unavailable - survey will be saved without location',
+              _t('Location unavailable - survey will be saved without location',
+                  'Posizione non disponibile - il questionario verrà salvato senza posizione'),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.orange,
@@ -226,7 +238,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              question.text,
+              _t(question.text, 'Quanto sei felice in questo momento?'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
@@ -249,7 +261,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        question.minLabel,
+                        _t(question.minLabel, 'Per niente felice'),
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                       Text(
@@ -263,7 +275,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
                         ),
                       ),
                       Text(
-                        question.maxLabel,
+                        _t(question.maxLabel, 'Estremamente felice'),
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
@@ -293,7 +305,8 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
                         border: Border.all(color: Colors.blue[200]!),
                       ),
                       child: Text(
-                        'Please move the slider to rate your happiness before submitting.',
+                        _t('Please move the slider to rate your happiness before submitting.',
+                            'Sposta il cursore per valutare la tua felicità prima di inviare.'),
                         style: TextStyle(fontSize: 12, color: Colors.blue[700]),
                       ),
                     ),
@@ -320,7 +333,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Happiness Survey'),
+        title: Text(_t('Happiness Survey', 'Questionario sulla felicità')),
         backgroundColor: SouthAfricanTheme.primaryBlue,
         foregroundColor: SouthAfricanTheme.pureWhite,
       ),
@@ -335,7 +348,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Happiness Survey',
+                  _t('Happiness Survey', 'Questionario sulla felicità'),
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -344,7 +357,8 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Rate how happy you are feeling right now using the slider below.',
+                  _t('Rate how happy you are feeling right now using the slider below.',
+                      'Valuta quanto ti senti felice in questo momento usando il cursore qui sotto.'),
                   style: TextStyle(
                     fontSize: 14,
                     color: SouthAfricanTheme.darkGrey,
@@ -391,11 +405,11 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
                             ),
                           ),
                           SizedBox(width: 12),
-                          Text('Submitting...'),
+                          Text(_t('Submitting...', 'Invio in corso...')),
                         ],
                       )
                     : Text(
-                        'Submit Survey',
+                        _t('Submit Survey', 'Invia questionario'),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

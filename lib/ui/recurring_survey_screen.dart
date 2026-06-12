@@ -150,6 +150,62 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       ? _siteRelationshipOptions 
       : _barcelonaRelationshipOptions;
 
+  // ---------------------------------------------------------------------------
+  // Localization helpers (see initial_survey_screen.dart for rationale).
+  // Survey shows Italian when the app locale is Italian; stored answer values
+  // remain canonical English so research data is language-stable.
+  // ---------------------------------------------------------------------------
+
+  bool get _isItalian => Localizations.localeOf(context).languageCode == 'it';
+
+  String _t(String en, String it) => _isItalian ? it : en;
+
+  static const Map<String, String> _itOptionLabels = {
+    // Activities
+    'Unemployed, looking for work': 'Disoccupato/a, in cerca di lavoro',
+    'Unemployed but NOT looking for work': 'Disoccupato/a ma NON in cerca di lavoro',
+    'Temporary/seasonal labour': 'Lavoro temporaneo/stagionale',
+    'Part-time employed': 'Occupato/a part-time',
+    'Full-time employed': 'Occupato/a a tempo pieno',
+    'Self employed': 'Lavoratore/trice autonomo/a',
+    'Skills development course (e.g. learnership)':
+        'Corso di formazione professionale (es. apprendistato)',
+    'Student': 'Studente/ssa',
+    'Retired': 'In pensione',
+    'Homemaker': 'Casalingo/a',
+    'Caring for children/ill relatives': 'Cura di figli/parenti malati',
+    'Volunteered': 'Volontariato',
+    'Exercised': 'Attività fisica',
+    'Vacation': 'Vacanza',
+    'Other': 'Altro',
+    // Living arrangement
+    'alone': 'da solo/a',
+    'others': 'con altri',
+    // Relationship status
+    'Single': 'Single',
+    'In a committed relationship/married': 'In una relazione stabile/sposato/a',
+    'Separated': 'Separato/a',
+    'Divorced': 'Divorziato/a',
+    'Widowed': 'Vedovo/a',
+    // General health
+    'Excellent': 'Eccellente',
+    'Very good': 'Molto buona',
+    'Good': 'Buona',
+    'Fair': 'Discreta',
+    'Poor': 'Scarsa',
+  };
+
+  String _optLabel(String value) =>
+      _isItalian ? (_itOptionLabels[value] ?? value) : value;
+
+  List<FormBuilderFieldOption<String>> _opts(List<String> values) =>
+      values
+          .map((v) => FormBuilderFieldOption<String>(
+                value: v,
+                child: Text(_optLabel(v)),
+              ))
+          .toList();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,7 +213,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         title: FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
-            'Bi-weekly Wellbeing Survey',
+            _t('Bi-weekly Wellbeing Survey', 'Questionario quindicinale sul benessere'),
             style: TextStyle(fontWeight: FontWeight.bold),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -209,12 +265,13 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Bi-weekly Wellbeing Check-in',
+              _t('Bi-weekly Wellbeing Check-in', 'Check-in quindicinale sul benessere'),
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Text(
-              'Please take a few minutes to reflect on your wellbeing over the past two weeks.',
+              _t('Please take a few minutes to reflect on your wellbeing over the past two weeks.',
+                  'Prenditi qualche minuto per riflettere sul tuo benessere nelle ultime due settimane.'),
               style: TextStyle(fontSize: 16),
             ),
           ],
@@ -226,15 +283,14 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   Widget _buildActivitiesSection() {
     return _buildSectionCard(
       title: _researchSite == 'wellbeing_mapper' 
-          ? 'What did you do with your time in the last two weeks?' 
-          : 'Current Activities',
-      subtitle: 'Mark ALL the choices that apply',
+          ? _t('What did you do with your time in the last two weeks?',
+              'Cosa hai fatto del tuo tempo nelle ultime due settimane?') 
+          : _t('Current Activities', 'Attività attuali'),
+      subtitle: _t('Mark ALL the choices that apply', 'Seleziona TUTTE le opzioni pertinenti'),
       child: FormBuilderCheckboxGroup<String>(
         name: 'activities',
         decoration: InputDecoration(border: InputBorder.none),
-        options: _activityOptions.map((option) => 
-          FormBuilderFieldOption(value: option, child: Text(option))
-        ).toList(),
+        options: _opts(_activityOptions),
         // validator: FormBuilderValidators.required(errorText: 'Please select at least one activity'), // Removed - now optional
       ),
     );
@@ -243,14 +299,13 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   Widget _buildLivingArrangementSection() {
     return _buildSectionCard(
       title: _researchSite == 'wellbeing_mapper'
-          ? 'In the last two weeks, did you live alone or with others?'
-          : 'Living Arrangement',
+          ? _t('In the last two weeks, did you live alone or with others?',
+              'Nelle ultime due settimane hai vissuto da solo/a o con altri?')
+          : _t('Living Arrangement', 'Situazione abitativa'),
       child: FormBuilderRadioGroup<String>(
         name: 'livingArrangement',
         decoration: InputDecoration(border: InputBorder.none),
-        options: _livingArrangementOptions.map((option) => 
-          FormBuilderFieldOption(value: option, child: Text(option))
-        ).toList(),
+        options: _opts(_livingArrangementOptions),
         // validator: FormBuilderValidators.required(errorText: 'Please select an option'), // Removed - now optional
       ),
     );
@@ -259,14 +314,13 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
   Widget _buildRelationshipSection() {
     return _buildSectionCard(
       title: _researchSite == 'wellbeing_mapper'
-          ? 'What is your current relationship status? (Select the single best option)'
-          : 'Relationship Status',
+          ? _t('What is your current relationship status? (Select the single best option)',
+              'Qual è il tuo stato sentimentale attuale? (Seleziona la sola opzione migliore)')
+          : _t('Relationship Status', 'Stato sentimentale'),
       child: FormBuilderRadioGroup<String>(
         name: 'relationshipStatus',
         decoration: InputDecoration(border: InputBorder.none),
-        options: _relationshipOptions.map((option) => 
-          FormBuilderFieldOption(value: option, child: Text(option))
-        ).toList(),
+        options: _opts(_relationshipOptions),
         // validator: FormBuilderValidators.required(errorText: 'Please select an option'), // Removed - now optional
       ),
     );
@@ -274,17 +328,11 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
 
   Widget _buildHealthSection() {
     return _buildSectionCard(
-      title: 'General Health',
+      title: _t('General Health', 'Salute generale'),
       child: FormBuilderRadioGroup<String>(
         name: 'generalHealth',
         decoration: InputDecoration(border: InputBorder.none),
-        options: [
-          FormBuilderFieldOption(value: 'Excellent', child: Text('Excellent')),
-          FormBuilderFieldOption(value: 'Very good', child: Text('Very good')),
-          FormBuilderFieldOption(value: 'Good', child: Text('Good')),
-          FormBuilderFieldOption(value: 'Fair', child: Text('Fair')),
-          FormBuilderFieldOption(value: 'Poor', child: Text('Poor')),
-        ],
+        options: _opts(const ['Excellent', 'Very good', 'Good', 'Fair', 'Poor']),
         // validator: FormBuilderValidators.required(errorText: 'Please select an option'), // Removed - now optional
       ),
     );
@@ -292,15 +340,17 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
 
   Widget _buildWellbeingSection() {
     return _buildSectionCard(
-      title: 'Wellbeing Questions',
-      subtitle: 'Over the past two weeks, how much of the time... (Scale: 0=Never, 5=All the time)',
+      title: _t('Wellbeing Questions', 'Domande sul benessere'),
+      subtitle: _t(
+          'Over the past two weeks, how much of the time... (Scale: 0=Never, 5=All the time)',
+          'Nelle ultime due settimane, per quanto tempo... (Scala: 0=Mai, 5=Sempre)'),
       child: Column(
         children: [
-          _buildRatingQuestion('cheerfulSpirits', 'Have you been in good spirits?', 0, 5),
-          _buildRatingQuestion('calmRelaxed', 'Have you felt calm and relaxed?', 0, 5),
-          _buildRatingQuestion('activeVigorous', 'Have you felt active and vigorous?', 0, 5),
-          _buildRatingQuestion('wokeUpFresh', 'Did you wake up feeling fresh and rested?', 0, 5),
-          _buildRatingQuestion('dailyLifeInteresting', 'Has your daily life been filled with things that interest you?', 0, 5),
+          _buildRatingQuestion('cheerfulSpirits', _t('Have you been in good spirits?', 'Ti sei sentito/a di buon umore?'), 0, 5),
+          _buildRatingQuestion('calmRelaxed', _t('Have you felt calm and relaxed?', 'Ti sei sentito/a calmo/a e rilassato/a?'), 0, 5),
+          _buildRatingQuestion('activeVigorous', _t('Have you felt active and vigorous?', 'Ti sei sentito/a attivo/a e pieno/a di energia?'), 0, 5),
+          _buildRatingQuestion('wokeUpFresh', _t('Did you wake up feeling fresh and rested?', 'Ti sei svegliato/a fresco/a e riposato/a?'), 0, 5),
+          _buildRatingQuestion('dailyLifeInteresting', _t('Has your daily life been filled with things that interest you?', 'La tua vita quotidiana è stata ricca di cose che ti interessano?'), 0, 5),
         ],
       ),
     );
@@ -308,27 +358,29 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
 
   Widget _buildPersonalCharacteristicsSection() {
     return _buildSectionCard(
-      title: 'Personal Characteristics',
-      subtitle: 'Please rate how well each statement describes you (Scale: 1=Not at all, 5=Completely)',
+      title: _t('Personal Characteristics', 'Caratteristiche personali'),
+      subtitle: _t(
+          'Please rate how well each statement describes you (Scale: 1=Not at all, 5=Completely)',
+          'Indica quanto ciascuna affermazione ti descrive (Scala: 1=Per niente, 5=Completamente)'),
       child: Column(
         children: [
-          _buildRatingQuestion('cooperateWithPeople', 'I find it easy to cooperate with people', 1, 5),
-          _buildRatingQuestion('improvingSkills', 'I am always improving my skills', 1, 5),
-          _buildRatingQuestion('socialSituations', 'I feel comfortable in social situations', 1, 5),
-          _buildRatingQuestion('familySupport', 'There is always someone in my family who can give me support', 1, 5),
-          _buildRatingQuestion('familyKnowsMe', 'There is always someone in my family who really knows me', 1, 5),
-          _buildRatingQuestion('accessToFood', 'I have access to the food I need', 1, 5),
-          _buildRatingQuestion('peopleEnjoyTime', 'There are people with whom I enjoy spending time', 1, 5),
-          _buildRatingQuestion('talkToFamily', 'I can talk about my problems with my family', 1, 5),
-          _buildRatingQuestion('friendsSupport', 'My friends really try to help me', 1, 5),
-          _buildRatingQuestion('belongInCommunity', 'I really feel like I belong in my community', 1, 5),
-          _buildRatingQuestion('familyStandsByMe', 'My family really tries to stand by me', 1, 5),
-          _buildRatingQuestion('friendsStandByMe', 'My friends really try to stand by me', 1, 5),
-          _buildRatingQuestion('treatedFairly', 'I am treated fairly in my community', 1, 5),
-          _buildRatingQuestion('opportunitiesResponsibility', 'I have opportunities to take responsibility', 1, 5),
-          _buildRatingQuestion('secureWithFamily', 'I feel secure with my family', 1, 5),
-          _buildRatingQuestion('opportunitiesAbilities', 'I have opportunities to show my abilities', 1, 5),
-          _buildRatingQuestion('enjoyCulturalTraditions', 'I enjoy my community\'s cultural and traditional events', 1, 5),
+          _buildRatingQuestion('cooperateWithPeople', _t('I find it easy to cooperate with people', 'Trovo facile collaborare con le persone'), 1, 5),
+          _buildRatingQuestion('improvingSkills', _t('I am always improving my skills', 'Miglioro costantemente le mie competenze'), 1, 5),
+          _buildRatingQuestion('socialSituations', _t('I feel comfortable in social situations', 'Mi sento a mio agio nelle situazioni sociali'), 1, 5),
+          _buildRatingQuestion('familySupport', _t('There is always someone in my family who can give me support', 'C\'è sempre qualcuno nella mia famiglia che può sostenermi'), 1, 5),
+          _buildRatingQuestion('familyKnowsMe', _t('There is always someone in my family who really knows me', 'C\'è sempre qualcuno nella mia famiglia che mi conosce davvero'), 1, 5),
+          _buildRatingQuestion('accessToFood', _t('I have access to the food I need', 'Ho accesso al cibo di cui ho bisogno'), 1, 5),
+          _buildRatingQuestion('peopleEnjoyTime', _t('There are people with whom I enjoy spending time', 'Ci sono persone con cui mi piace passare il tempo'), 1, 5),
+          _buildRatingQuestion('talkToFamily', _t('I can talk about my problems with my family', 'Posso parlare dei miei problemi con la mia famiglia'), 1, 5),
+          _buildRatingQuestion('friendsSupport', _t('My friends really try to help me', 'I miei amici cercano davvero di aiutarmi'), 1, 5),
+          _buildRatingQuestion('belongInCommunity', _t('I really feel like I belong in my community', 'Sento davvero di appartenere alla mia comunità'), 1, 5),
+          _buildRatingQuestion('familyStandsByMe', _t('My family really tries to stand by me', 'La mia famiglia cerca davvero di starmi vicino'), 1, 5),
+          _buildRatingQuestion('friendsStandByMe', _t('My friends really try to stand by me', 'I miei amici cercano davvero di starmi vicino'), 1, 5),
+          _buildRatingQuestion('treatedFairly', _t('I am treated fairly in my community', 'Sono trattato/a in modo equo nella mia comunità'), 1, 5),
+          _buildRatingQuestion('opportunitiesResponsibility', _t('I have opportunities to take responsibility', 'Ho opportunità di assumermi delle responsabilità'), 1, 5),
+          _buildRatingQuestion('secureWithFamily', _t('I feel secure with my family', 'Mi sento al sicuro con la mia famiglia'), 1, 5),
+          _buildRatingQuestion('opportunitiesAbilities', _t('I have opportunities to show my abilities', 'Ho opportunità di mostrare le mie capacità'), 1, 5),
+          _buildRatingQuestion('enjoyCulturalTraditions', _t('I enjoy my community\'s cultural and traditional events', 'Mi piacciono gli eventi culturali e tradizionali della mia comunità'), 1, 5),
         ],
       ),
     );
@@ -342,14 +394,16 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Digital Diary',
+              _t('Digital Diary', 'Diario digitale'),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
             
             // First prompt as a wrapped paragraph
             Text(
-              'What environmental challenges have you experienced recently? Please share as much detail as you can. Feel free to upload 1 image, along with an explanation of what it means.',
+              _t(
+                  'What environmental challenges have you experienced recently? Please share as much detail as you can. Feel free to upload 1 image, along with an explanation of what it means.',
+                  'Quali sfide ambientali hai affrontato di recente? Condividi più dettagli possibile. Se vuoi, puoi caricare 1 immagine insieme a una spiegazione del suo significato.'),
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             SizedBox(height: 8),
@@ -357,7 +411,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
               name: 'environmentalChallenges',
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                hintText: 'Please describe any environmental challenges...',
+                hintText: _t('Please describe any environmental challenges...',
+                    'Descrivi eventuali sfide ambientali...'),
               ),
               maxLines: 3,
               minLines: 2,
@@ -366,15 +421,17 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
             SizedBox(height: 20),
             
             // Second prompt as a slider question
-            _buildRatingQuestion('challengesStressLevel', 'How stressful were these environmental challenges for you?', 1, 5),
+            _buildRatingQuestion('challengesStressLevel', _t('How stressful were these environmental challenges for you?', 'Quanto sono state stressanti per te queste sfide ambientali?'), 1, 5),
             
             SizedBox(height: 20),
             
             // Third prompt as a wrapped paragraph
             Text(
               _researchSite == 'wellbeing_mapper'
-                  ? 'Who or what helped you to manage/cope with these environmental challenges?'
-                  : 'What has helped you cope with these challenges?',
+                  ? _t('Who or what helped you to manage/cope with these environmental challenges?',
+                      'Chi o cosa ti ha aiutato a gestire/affrontare queste sfide ambientali?')
+                  : _t('What has helped you cope with these challenges?',
+                      'Cosa ti ha aiutato ad affrontare queste sfide?'),
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             SizedBox(height: 8),
@@ -382,7 +439,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
               name: 'copingHelp',
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                hintText: 'Please describe what helped you cope...',
+                hintText: _t('Please describe what helped you cope...',
+                    'Descrivi cosa ti ha aiutato ad affrontarle...'),
               ),
               maxLines: 3,
               minLines: 2,
@@ -418,7 +476,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                   border: Border.all(color: Colors.orange[200]!),
                 ),
                 child: Text(
-                  'Optional',
+                  _t('Optional', 'Facoltativo'),
                   style: TextStyle(
                     fontSize: 10,
                     color: Colors.orange[700],
@@ -430,7 +488,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           ),
           SizedBox(height: 4),
           Text(
-            'Move the slider to provide your rating (starts at default position)',
+            _t('Move the slider to provide your rating (starts at default position)',
+                'Sposta il cursore per indicare la tua valutazione (parte dalla posizione predefinita)'),
             style: TextStyle(fontSize: 11, color: Colors.blue[600], fontWeight: FontWeight.w500),
           ),
           SizedBox(height: 8),
@@ -471,7 +530,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                       Text('$min', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                       Text(
                         _sliderValues[name] == null 
-                          ? 'Not selected' 
+                          ? _t('Not selected', 'Non selezionato')
                           : '${_sliderValues[name]!.round()}',
                         style: TextStyle(
                           fontSize: 14, 
@@ -484,7 +543,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    '$min = ${min == 0 ? 'Never' : 'Not at all'}, $max = ${max == 5 ? 'All the time' : 'Completely'}',
+                    '$min = ${min == 0 ? _t('Never', 'Mai') : _t('Not at all', 'Per niente')}, $max = ${max == 5 ? _t('All the time', 'Sempre') : _t('Completely', 'Completamente')}',
                     style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                   ),
                   SizedBox(height: 8),
@@ -509,7 +568,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
               Padding(
                 padding: EdgeInsets.only(top: 4),
                 child: Text(
-                  'Please move the slider to select a rating',
+                  _t('Please move the slider to select a rating',
+                      'Sposta il cursore per selezionare una valutazione'),
                   style: TextStyle(fontSize: 11, color: Colors.red[600]),
                 ),
               ),
@@ -772,14 +832,15 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                     Icon(Icons.location_on, color: SouthAfricanTheme.primaryBlue),
                     SizedBox(width: 8),
                     Text(
-                      'Location Data Sharing',
+                      _t('Location Data Sharing', 'Condivisione dei dati di posizione'),
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
                 SizedBox(height: 12),
                 Text(
-                  'Choose how much location data to share with your survey responses:',
+                  _t('Choose how much location data to share with your survey responses:',
+                      'Scegli quanti dati di posizione condividere insieme alle tue risposte:'),
                   style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                 ),
                 SizedBox(height: 16),
@@ -820,7 +881,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                               ? Colors.white 
                               : Colors.grey[700],
                         ),
-                        label: Text('Share All', style: TextStyle(fontSize: 12)),
+                        label: Text(_t('Share All', 'Condividi tutto'), style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _locationSharingOption == LocationSharingOption.fullData 
                               ? SouthAfricanTheme.primaryBlue 
@@ -843,7 +904,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                               ? Colors.white 
                               : Colors.grey[700],
                         ),
-                        label: Text('Select', style: TextStyle(fontSize: 12)),
+                        label: Text(_t('Select', 'Seleziona'), style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _locationSharingOption == LocationSharingOption.partialData 
                               ? SouthAfricanTheme.primaryBlue 
@@ -866,7 +927,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                               ? Colors.white 
                               : Colors.grey[700],
                         ),
-                        label: Text('None', style: TextStyle(fontSize: 12)),
+                        label: Text(_t('None', 'Nessuno'), style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _locationSharingOption == LocationSharingOption.surveyOnly 
                               ? SouthAfricanTheme.primaryBlue 
@@ -902,19 +963,25 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     switch (_locationSharingOption) {
       case LocationSharingOption.fullData:
         if (_totalLocationCount > 0) {
-          return 'Sharing all $_totalLocationCount location records from the last 2 weeks';
+          return _t('Sharing all $_totalLocationCount location records from the last 2 weeks',
+              'Condivisione di tutti i $_totalLocationCount record di posizione delle ultime 2 settimane');
         }
-        return 'Sharing complete location data (analyzing available data...)';
+        return _t('Sharing complete location data (analyzing available data...)',
+            'Condivisione completa dei dati di posizione (analisi dei dati disponibili...)');
       case LocationSharingOption.partialData:
         final selectedCount = _totalLocationCount - _erasedLocationIndices.length;
         if (_totalLocationCount > 0 && _erasedLocationIndices.isNotEmpty) {
-          return 'Sharing $selectedCount of $_totalLocationCount location records (custom selection)';
+          return _t('Sharing $selectedCount of $_totalLocationCount location records (custom selection)',
+              'Condivisione di $selectedCount su $_totalLocationCount record di posizione (selezione personalizzata)');
         } else if (_totalLocationCount > 0) {
-          return 'Sharing all $_totalLocationCount location records (no locations removed)';
+          return _t('Sharing all $_totalLocationCount location records (no locations removed)',
+              'Condivisione di tutti i $_totalLocationCount record di posizione (nessuna posizione rimossa)');
         }
-        return 'Custom location selection (open map to choose locations)';
+        return _t('Custom location selection (open map to choose locations)',
+            'Selezione personalizzata delle posizioni (apri la mappa per scegliere le posizioni)');
       case LocationSharingOption.surveyOnly:
-        return 'No location data will be shared - survey responses only';
+        return _t('No location data will be shared - survey responses only',
+            'Nessun dato di posizione verrà condiviso - solo le risposte al questionario');
     }
   }
 
@@ -936,7 +1003,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     if (_recentLocationTracks.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No location data available for selection'),
+          content: Text(_t('No location data available for selection',
+              'Nessun dato di posizione disponibile per la selezione')),
           backgroundColor: Colors.orange,
         ),
       );
@@ -1029,7 +1097,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(
-            'Location Selection Guide',
+            _t('Location Selection Guide', 'Guida alla selezione delle posizioni'),
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           content: SingleChildScrollView(
@@ -1038,7 +1106,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'You can choose exactly which locations to share:',
+                  _t('You can choose exactly which locations to share:',
+                      'Puoi scegliere esattamente quali posizioni condividere:'),
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 SizedBox(height: 16),
@@ -1056,7 +1125,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Remove Mode: Tap or drag to exclude locations from sharing',
+                        _t('Remove Mode: Tap or drag to exclude locations from sharing',
+                            'Modalità Rimuovi: tocca o trascina per escludere le posizioni dalla condivisione'),
                         style: TextStyle(fontSize: 14),
                       ),
                     ),
@@ -1077,7 +1147,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Restore Mode: Tap or drag to restore locations for sharing',
+                        _t('Restore Mode: Tap or drag to restore locations for sharing',
+                            'Modalità Ripristina: tocca o trascina per ripristinare le posizioni da condividere'),
                         style: TextStyle(fontSize: 14),
                       ),
                     ),
@@ -1098,7 +1169,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Navigate Mode: Pan, zoom, and explore the map freely',
+                        _t('Navigate Mode: Pan, zoom, and explore the map freely',
+                            'Modalità Naviga: sposta, ingrandisci ed esplora liberamente la mappa'),
                         style: TextStyle(fontSize: 14),
                       ),
                     ),
@@ -1107,7 +1179,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                 SizedBox(height: 16),
                 
                 Text(
-                  'When done, tap Submit to return to the survey form.',
+                  _t('When done, tap Submit to return to the survey form.',
+                      'Al termine, tocca Invia per tornare al modulo del questionario.'),
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ],
@@ -1116,7 +1189,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancel'),
+              child: Text(_t('Cancel', 'Annulla')),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
@@ -1124,7 +1197,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                 backgroundColor: SouthAfricanTheme.primaryBlue,
               ),
               child: Text(
-                'Got It!',
+                _t('Got It!', 'Ho capito!'),
                 style: TextStyle(color: Colors.white),
               ),
             ),
@@ -1172,7 +1245,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         child: _isSubmitting
             ? CircularProgressIndicator(color: Colors.white)
             : Text(
-                'Submit Survey',
+                _t('Submit Survey', 'Invia questionario'),
                 style: TextStyle(fontSize: 18, color: Colors.white),
               ),
       ),
@@ -1436,7 +1509,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error saving survey: $e'),
+          content: Text(_t('Error saving survey: ', 'Errore nel salvataggio del questionario: ') + '$e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -1594,13 +1667,14 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text('Survey Submitted!'),
+        title: Text(_t('Survey Submitted!', 'Questionario inviato!')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Thank you for completing the wellbeing survey. Your responses have been saved locally.'),
+              Text(_t('Thank you for completing the wellbeing survey. Your responses have been saved locally.',
+                  'Grazie per aver completato il questionario sul benessere. Le tue risposte sono state salvate localmente.')),
               SizedBox(height: 16),
               Container(
                 padding: EdgeInsets.all(12),
@@ -1613,12 +1687,13 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '🧪 Beta Testing Mode',
+                      _t('🧪 Beta Testing Mode', '🧪 Modalità beta testing'),
                       style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]),
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Your data is stored locally for testing purposes. No data was transmitted to research servers.',
+                      _t('Your data is stored locally for testing purposes. No data was transmitted to research servers.',
+                          'I tuoi dati sono salvati localmente a scopo di test. Nessun dato è stato trasmesso ai server di ricerca.'),
                       style: TextStyle(fontSize: 13),
                     ),
                   ],
@@ -1650,12 +1725,13 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text('Survey Submitted!'),
+        title: Text(_t('Survey Submitted!', 'Questionario inviato!')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Thank you for completing the wellbeing survey. Your responses and location preferences have been saved.'),
+            Text(_t('Thank you for completing the wellbeing survey. Your responses and location preferences have been saved.',
+                'Grazie per aver completato il questionario sul benessere. Le tue risposte e le preferenze di posizione sono state salvate.')),
             SizedBox(height: 16),
             Container(
               padding: EdgeInsets.all(12),
@@ -1668,12 +1744,13 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Research Participation',
+                    _t('Research Participation', 'Partecipazione alla ricerca'),
                     style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[700]),
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Your data will be securely uploaded to research servers. This helps contribute to scientific research while protecting your privacy.',
+                    _t('Your data will be securely uploaded to research servers. This helps contribute to scientific research while protecting your privacy.',
+                        'I tuoi dati saranno caricati in modo sicuro sui server di ricerca. Questo contribuisce alla ricerca scientifica proteggendo al contempo la tua privacy.'),
                     style: TextStyle(fontSize: 13),
                   ),
                 ],
@@ -1703,7 +1780,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Survey submitted successfully!'),
+        content: Text(_t('Survey submitted successfully!', 'Questionario inviato con successo!')),
         backgroundColor: Colors.green,
       ),
     );
