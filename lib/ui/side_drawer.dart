@@ -2,6 +2,7 @@ import 'package:wellbeing_mapper/models/app_localizations.dart';
 import 'package:wellbeing_mapper/models/app_mode.dart';
 import 'package:wellbeing_mapper/services/app_mode_service.dart';
 import 'package:wellbeing_mapper/services/initial_survey_service.dart';
+import 'package:wellbeing_mapper/services/locale_service.dart';
 import 'package:wellbeing_mapper/services/survey_navigation_service.dart';
 import 'package:wellbeing_mapper/theme/south_african_theme.dart';
 // import 'package:wellbeing_mapper/debug/ios_location_debug.dart'; // Commented out with iOS Location Debug menu (August 5, 2025)
@@ -107,6 +108,66 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
     } else {
       throw 'Could not launch $url';
     }
+  }
+
+  /// Label for the currently active language (override, or device default).
+  String _currentLanguageLabel(BuildContext context) {
+    final override = LocaleService.localeOverride.value;
+    if (override == null) {
+      final active = Localizations.localeOf(context).languageCode;
+      final defaultLabel =
+          AppLocalizations.of(context)?.translate("system_default") ?? "System default";
+      return '$defaultLabel (${LocaleService.displayName(active)})';
+    }
+    return LocaleService.displayName(override.languageCode);
+  }
+
+  /// Show a dialog letting the user pick the app language (or follow device).
+  void _showLanguagePicker() {
+    final override = LocaleService.localeOverride.value;
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(context)?.translate("language") ?? "Language"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<String?>(
+                value: null,
+                groupValue: override?.languageCode,
+                title: Text(
+                  AppLocalizations.of(context)?.translate("system_default") ?? "System default",
+                ),
+                onChanged: (_) async {
+                  await LocaleService.setLocale(null);
+                  if (mounted) setState(() {});
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
+              ...LocaleService.supportedLocales.map((locale) {
+                return RadioListTile<String?>(
+                  value: locale.languageCode,
+                  groupValue: override?.languageCode,
+                  title: Text(LocaleService.displayName(locale.languageCode)),
+                  onChanged: (_) async {
+                    await LocaleService.setLocale(locale);
+                    if (mounted) setState(() {});
+                    Navigator.of(dialogContext).pop();
+                  },
+                );
+              }).toList(),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(AppLocalizations.of(context)?.translate("cancel") ?? "Cancel"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -268,6 +329,15 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
                 onTap: () {
                   Navigator.of(context).pushNamed('/help');
                 },
+              ),
+            ),
+            // Language picker - switch app language without changing device settings
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(AppLocalizations.of(context)?.translate("language") ?? "Language"),
+                subtitle: Text(_currentLanguageLabel(context)),
+                onTap: _showLanguagePicker,
               ),
             ),
             // Visit Project Website - Second to last

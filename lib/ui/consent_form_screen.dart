@@ -47,7 +47,6 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   bool _healthConsent2 = false;
   bool _sexualOrientationConsent2 = false;
   bool _locationConsent2 = false;
-  bool _dataTransferConsent2 = false;
   bool _publicReportingConsent = false;
   bool _dataShareConsent = false;
   bool _futureResearchConsent = false;
@@ -87,24 +86,49 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     debugPrint('[ConsentForm] No existing consent found - showing consent form');
   }
 
+  // Localization helper: returns the string for the active app language,
+  // falling back to English for any unsupported locale.
+  String _t3(String en, String it, String es) {
+    switch (Localizations.localeOf(context).languageCode) {
+      case 'it':
+        return it;
+      case 'es':
+        return es;
+      default:
+        return en;
+    }
+  }
+
   // Site-specific content getters
   String get _siteTitle {
     if (widget.researchSite == 'wellbeing_mapper') {
-      return 'Mental wellbeing in climate and environmental context (Case Study 4 of the PLANET4HEALTH project) – Southern Europe Study Site';
+      return _t3(
+        'Mental wellbeing in climate and environmental context (Case Study 4 of the PLANET4HEALTH project) – Italy Study Site',
+        'Benessere mentale nel contesto climatico e ambientale (Caso di studio 4 del progetto PLANET4HEALTH) – Sito di studio Italia',
+        'Bienestar mental en el contexto climático y ambiental (Caso de estudio 4 del proyecto PLANET4HEALTH) – Sede de estudio de Italia',
+      );
     }
     return 'Mental wellbeing in climate and environmental context (Case Study 4 of the PLANET4HEALTH project) – Barcelona Study Site';
   }
 
   String get _inclusionCriteria {
     if (widget.researchSite == 'wellbeing_mapper') {
-      return 'To participate in this study you must be at least 18 years old and living in the Southern Europe.';
+      return _t3(
+        'To participate in this study you must be at least 18 years old and living in Italy.',
+        'Per partecipare a questo studio devi avere almeno 18 anni e risiedere in Italia.',
+        'Para participar en este estudio debe tener al menos 18 años y residir en Italia.',
+      );
     }
     return 'To participate in this study you must be at least 18 years old and living in the Barcelona Metropolitan Area.';
   }
 
   String get _ethicsContact {
     if (widget.researchSite == 'wellbeing_mapper') {
-      return 'If you have doubts, complaints, or questions about this study or about your rights as a research participant, you may contact the University of Pretoria\'s Faculty of Health Sciences Research Ethics Committee or the South African Medical Research Council\'s Ethics Committee.';
+      return _t3(
+        "If you have doubts, complaints, or questions about this study or about your rights as a research participant, you may contact UPF's Institutional Committee for the Ethical Review of Projects (CIREP) by phone (+34 93 542 21 86) or by email (secretaria.cirep@upf.edu). CIREP is not part of the research team and will treat any information you send confidentially.",
+        "In caso di dubbi, reclami o domande su questo studio o sui tuoi diritti come partecipante alla ricerca, puoi contattare il Comitato Istituzionale per la Revisione Etica dei Progetti (CIREP) dell'UPF per telefono (+34 93 542 21 86) o via email (secretaria.cirep@upf.edu). Il CIREP non fa parte del gruppo di ricerca e tratterà in modo riservato qualsiasi informazione tu invii.",
+        "Si tiene dudas, quejas o preguntas sobre este estudio o sobre sus derechos como participante en la investigación, puede ponerse en contacto con el Comité Institucional para la Revisión Ética de Proyectos (CIREP) de la UPF por teléfono (+34 93 542 21 86) o por correo electrónico (secretaria.cirep@upf.edu). El CIREP no forma parte del equipo de investigación y tratará de forma confidencial cualquier información que envíe.",
+      );
     }
     return 'If you have doubts, complaints, or questions about this study or about your rights as a research participant, you may contact UPF\'s Institutional Committee for the Ethical Review of Projects (CIREP) by phone (+34 93 542 21 86) or by email (secretaria.cirep@upf.edu).';
   }
@@ -117,8 +141,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           fit: BoxFit.scaleDown,
           child: Text(
             widget.isTestingMode 
-              ? '🧪 ${_showInformationSheet ? 'Information Sheet' : 'Consent Form'} (Testing)'
-              : _showInformationSheet ? 'Information Sheet' : 'Consent Form',
+              ? '🧪 ${_showInformationSheet ? _t3('Information Sheet', 'Foglio informativo', 'Hoja de información') : _t3('Consent Form', 'Modulo di consenso', 'Formulario de consentimiento')} (Testing)'
+              : _showInformationSheet ? _t3('Information Sheet', 'Foglio informativo', 'Hoja de información') : _t3('Consent Form', 'Modulo di consenso', 'Formulario de consentimiento'),
             style: TextStyle(fontWeight: FontWeight.bold),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -199,326 +223,96 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
           ],
           if (widget.researchSite == 'wellbeing_mapper') ...[
-            Card(
-              margin: EdgeInsets.only(bottom: 16),
+            Center(
               child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // University of Pretoria Logo
-                    Center(
-                      child: Container(
-                        height: 80,
-                        margin: EdgeInsets.only(bottom: 20),
-                        child: Image.asset(
-                          'assets/images/up_ed_logo.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              height: 80,
-                              child: Icon(Icons.school, size: 60, color: Colors.blue),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    
-                    // Title
-                    Center(
-                      child: Text(
-                        'Information Sheet',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    
-                    // Greeting
-                    Text('Hello', style: TextStyle(fontSize: 16, height: 1.5)),
-                    SizedBox(height: 12),
-                    
-                    // Introduction
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'We invite you to take part in a project called '),
-                          TextSpan(text: 'Mental wellbeing in climate and environmental context', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: ' (Case Study 4 of the PLANET4HEALTH project) -- Southern Europe Study Site.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    
-                    Text(
-                      'This project has been approved by the Research Ethics Committee of the Faculty of Education, University of Pretoria with clearance number EDU092/24.',
-                      style: TextStyle(fontSize: 16, height: 1.5),
-                    ),
-                    SizedBox(height: 16),
-                    
-                    // Institutions
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Institutions involved in this project: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'University of Pretoria (UP, South Africa), the South African Medical Research Council (SAMRC), the Universitat Pompeu Fabra (UPF, Spain) and Institut Za Medicinska Istra Ivanja (Serbia)'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    
-                    // Principal researchers
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Principal researchers: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'Linda Theron (linda.theron@up.ac.za), Caradee Wright (Caradee.Wright@mrc.ac.za), John Palmer (john.palmer@upf.edu) and Suzana Blesic (blesic.suzana@gmail.com)'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    
-                    // Research Assistant
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Research Assistant: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'Mudalo Ndou (planet4health.research@gmail.com) and +27 64 898 6212)'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    
-                    // Funding body
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Funding body: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'This project is funded by the European Union as part of the PLANET4HEALTH Project (https://planet4health.eu).'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    
-                    // Purpose
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'The purpose of this project: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'We want to learn how climate change and the environment affect the mental wellbeing of people living in Southern Europe and what might support human resilience to climate change-related challenges.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    
-                    // Voluntary participation
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Voluntary participation: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'In South Africa, we are inviting 300 participants to join the study. Participation is on a voluntary basis; participants may withdraw from the study at any time without having to justify their decision.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    
-                    // Who can participate
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Who can participate: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'Anyone who (i) is 18 years old or older; (ii) lives in Southern Europe; (iii) has a smart mobile device and regular access to the internet; (iv) is OK reading and writing basic English; and (v) can install the Space Mapper App onto their smart mobile device.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    
-                    // What participants will be asked to do
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'What participants will be asked to do: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'This study involves a mobile phone application called Space Mapper, which keeps track of where participants spend time, and lets participants share this information, '),
-                          TextSpan(text: 'if they choose to', style: TextStyle(fontStyle: FontStyle.italic)),
-                          TextSpan(text: ', with the researchers. It also involves a series of surveys. Participants can participate by installing Space Mapper on their mobile phone and letting it track their locations for up to six months. They will receive surveys (questions and digital diary prompts) every two weeks, in which they will be asked a series of questions about themselves and about their mental wellbeing. When responding to the survey, they will have the opportunity to share the locations tracked by Space Mapper during the previous two weeks. Participants can choose which questions they wish to answer and whether they wish to share their locations. Among other things, the surveys will ask about participants\' race/ethnicity, health, sexual orientation, location and mobility, wellbeing, environmental challenges in the past two weeks, and supports that help them cope with challenges.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    
-                    // What the data will be used for
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'What the data will be used for: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'The data will be used to better understand how to protect the wellbeing of people who experience environmental and climate change challenges (e.g., exposure to air pollution or extreme heat events). This understanding will inform various products (e.g., resilience toolkits or early warning systems) that can be used by mental health professionals, service providers and policy makers.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'The aggregate or anonymised results of this study may be presented at academic conferences, used for academic publications and lecture content, and when reporting the study on the study website ('),
-                          TextSpan(text: 'https://planet4health.eu/', style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue)),
-                          TextSpan(text: '), in the popular press, or on social media. A similar project is being done in Barcelona, Spain, and we could compare the South African and Spanish results.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'We request participant permission to use the data, confidentially and anonymously, for further research purposes, as the data sets are the intellectual property of the University of Pretoria and partner institutions. Further research will focus on climate challenges and human wellbeing and what enables wellbeing when environmental conditions are challenging and may include secondary data analysis and using the data for teaching purposes. The confidentiality and privacy applicable to this study will be binding on future research studies (i.e., secondary analyses of the data to further investigate climate challenges and human wellbeing, and what enables wellbeing when environmental conditions are challenging).'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    
-                    // Data protection
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Data protection: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'We will keep the data for 10 years. To protect participants\' privacy, we will not identify their data with their name, but rather with a code (a participant number) that will only be known to the research team members. Only the researcher team and partners directly involved in this project (see names at the beginning of this information sheet) will have access to the survey responses. We will use a participant number to identify data (i.e., no data can be linked to someone\'s name). To make participants\' location data only accessible to research team members, this data will be protected using end-to-end encryption and it will be stored with access control systems. In the event of data publication, only anonymous data will be published. Anonymized data may be hosted or published in a public repository. If you would like your data to be deleted, you can request this by emailing the PIs and including in the email your participant UUID, which can be found in the Space Mapper application on the device you are using to collect it. Please note that the survey is being conducted with the help of Qualtrics (they have their own privacy and security policies that you can read about at https://www.qualtrics.com/privacy-statement/).'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    // Possible risks and benefits
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Possible risks and benefits of participation: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'It is not expected that anything that participants will be asked to do in this study will pose a risk to their health. However, it is very important that participants do not interact with their mobile phone while driving or engaged in any activity that requires their attention. Using a mobile phone while driving can increase risk of injury or death.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Participation also involves some risk to participant privacy because you will be asked to share information about where you spend time. However, you can choose not to. If you choose to share this information, it will be kept confidential by the research team using encryption and standard data protection techniques.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Participation will involve answering questions about your mental wellbeing and about climate change. In case these make you anxious or uncomfortable in any way, we will recommend a set of resources that you can turn to at the end of every survey. These include: '),
-                          TextSpan(text: 'South African Depression and Anxiety Group (SADAG; SMS: 31393 or 32312, WhatsApp Chat: 076 882 2775, or Call: 0800 21 22 23 or 0800 70 80 90 or 0800 456 789, or Suicide Helpline: 0800 567 567)', style: TextStyle(fontWeight: FontWeight.w500)),
-                          TextSpan(text: ' or '),
-                          TextSpan(text: 'Lifeline (Pretoria: 012 804 3619 or 0861 322 322; Johannesburg: 011 728 1347 or 0861 322 322; Alexandra: 011 443 3555; Soweto: 011 988 0155 or 0861 322 322; Vaal Triangle: 016 428 1740 or 016 428 5959; WhatsApp counselling: 065 989 9238 or 072 677 9090)', style: TextStyle(fontWeight: FontWeight.w500)),
-                          TextSpan(text: '.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'We cannot and do not guarantee that you will receive any benefits from this study, but we are hopeful that that the project will help us better understand how climate change is impacting mental wellbeing and what can be done to support human resilience to climate change and environmental challenges. We will disseminate our results broadly. Participants can follow the progress of the study and read a summary of the results on the study website ('),
-                          TextSpan(text: 'https://planet4health.eu/', style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue)),
-                          TextSpan(text: ').'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    // Token of appreciation
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Token of appreciation for study participation: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'We offer participants a Shoprite | Checkers shopping voucher after every two surveys completed – meaning one voucher per month of completed research activity. The voucher is sent electronically to the cellular phone number that participants register with the study. The value of the vouchers will be R100 (Month 1), R 150 (Month 2), R 200 (Month 3), R 250 (Month 4), R 300 (Month 5) and R 500 (Month 6). These vouchers are not redeemable for cash and cannot be replaced if lost or stolen.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    // Further information
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Further information about the project: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'If participants have any questions, they are encouraged to contact Mudalo Ndou at (planet4health.research@gmail.com) or +27 64 898 6212)'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Alternatively, contact the project leader, Professor Linda Theron, at Linda.theron@up.ac.za or phone her on 012 420 6211.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    // Ethics contact
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Questions relating to ethics of this project: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'If participants have any concerns or complaints regarding the ethical procedures of this study, they are welcome to contact the Chair of the Faculty of Education Research Ethics Committee: Prof Funke Omidire at Funke.omidire@up.ac.za.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    // Closing
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Thank you for considering our invitation.'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                        children: [
-                          TextSpan(text: 'Yours sincerely,'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    
-                    RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87, fontWeight: FontWeight.w500),
-                        children: [
-                          TextSpan(text: 'Linda Theron, Mudalo Ndou and Research Team'),
-                        ],
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  _t3('Information Sheet', 'Foglio informativo', 'Hoja de información'),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
+            _buildInfoSection(
+              _t3('Title of the project', 'Titolo del progetto', 'Título del proyecto'),
+              _siteTitle,
+            ),
+            _buildInfoSection(
+              _t3('Institution', 'Istituzione', 'Institución'),
+              'Universitat Pompeu Fabra',
+            ),
+            _buildInfoSection(
+              _t3('Principal Investigators', 'Ricercatori principali', 'Investigadores principales'),
+              _t3(
+                'John Palmer (john.palmer@upf.edu), Linda Theron (linda.theron@up.ac.za), and Caradee Wright (Caradee.Wright@mrc.ac.za). If you have questions you may contact the principal investigators at the email addresses listed above.',
+                'John Palmer (john.palmer@upf.edu), Linda Theron (linda.theron@up.ac.za) e Caradee Wright (Caradee.Wright@mrc.ac.za). In caso di domande puoi contattare i ricercatori principali agli indirizzi email sopra indicati.',
+                'John Palmer (john.palmer@upf.edu), Linda Theron (linda.theron@up.ac.za) y Caradee Wright (Caradee.Wright@mrc.ac.za). Si tiene preguntas, puede ponerse en contacto con los investigadores principales en las direcciones de correo electrónico indicadas arriba.',
+              ),
+            ),
+            _buildInfoSection(
+              _t3('Ethics review contact', 'Contatto per la revisione etica', 'Contacto de revisión ética'),
+              _ethicsContact,
+            ),
+            _buildInfoSection(
+              _t3('Funding body', 'Ente finanziatore', 'Entidad financiadora'),
+              _t3(
+                'This project is funded by the European Union as part of the PLANET4HEALTH Project (https://planet4health.eu).',
+                'Questo progetto è finanziato dall\'Unione Europea nell\'ambito del progetto PLANET4HEALTH (https://planet4health.eu).',
+                'Este proyecto está financiado por la Unión Europea como parte del proyecto PLANET4HEALTH (https://planet4health.eu).',
+              ),
+            ),
+            _buildInfoSection(
+              _t3('Objectives of the project', 'Obiettivi del progetto', 'Objetivos del proyecto'),
+              _t3(
+                "The goal of this study is to learn more about how climate change and other changes in the environment affect people's mental wellbeing.",
+                'L\'obiettivo di questo studio è capire meglio come il cambiamento climatico e altri cambiamenti ambientali influiscono sul benessere mentale delle persone.',
+                'El objetivo de este estudio es conocer mejor cómo el cambio climático y otros cambios en el medio ambiente afectan al bienestar mental de las personas.',
+              ),
+            ),
+            _buildInfoSection(
+              _t3('Methodology and participation', 'Metodologia e partecipazione', 'Metodología y participación'),
+              _t3(
+                'This study involves a mobile phone application called Wellbeing Mapper, which keeps track of where you spend time, and lets you share this information, if you choose to, with the researchers carrying out this study. It also involves a series of surveys. You can participate by installing Wellbeing Mapper on your phone and letting it track your locations for up to six months. You will then be given the option of responding to up to 12 surveys, one every two weeks, in which you will be asked a series of questions about yourself and about your mental wellbeing. The first survey includes additional information about yourself and takes approximately 5 minutes to complete; the subsequent 11 surveys take 2-5 minutes. When you respond to the survey, you will have the opportunity to share the locations tracked by Wellbeing Mapper during the previous two weeks. You can choose which questions you answer and whether to share your locations. The survey will include questions about, among other things, your: race/ethnicity; health; sexual orientation; and location and mobility.',
+                'Questo studio prevede un\'applicazione per telefono cellulare chiamata Wellbeing Mapper, che tiene traccia di dove trascorri il tuo tempo e ti consente di condividere queste informazioni, se lo desideri, con i ricercatori che conducono questo studio. Prevede inoltre una serie di questionari. Puoi partecipare installando Wellbeing Mapper sul tuo telefono e consentendogli di tracciare le tue posizioni per un massimo di sei mesi. Avrai poi la possibilità di rispondere fino a 12 questionari, uno ogni due settimane, in cui ti verranno poste alcune domande su di te e sul tuo benessere mentale. Il primo questionario include informazioni aggiuntive su di te e richiede circa 5 minuti; i successivi 11 questionari richiedono 2-5 minuti. Quando rispondi al questionario, avrai la possibilità di condividere le posizioni tracciate da Wellbeing Mapper nelle due settimane precedenti. Puoi scegliere a quali domande rispondere e se condividere le tue posizioni. Il questionario includerà domande, tra le altre cose, su: origine etnica; salute; orientamento sessuale; posizione e mobilità.',
+                'Este estudio utiliza una aplicación para teléfono móvil llamada Wellbeing Mapper, que registra dónde pasa su tiempo y le permite compartir esta información, si así lo decide, con el equipo investigador que lleva a cabo este estudio. También incluye una serie de cuestionarios. Puede participar instalando Wellbeing Mapper en su teléfono y permitiendo que registre sus ubicaciones durante un máximo de seis meses. Después tendrá la opción de responder hasta 12 cuestionarios, uno cada dos semanas, en los que se le harán una serie de preguntas sobre usted y sobre su bienestar mental. El primer cuestionario incluye información adicional sobre usted y dura aproximadamente 5 minutos; los 11 cuestionarios siguientes duran de 2 a 5 minutos. Al responder el cuestionario, tendrá la oportunidad de compartir las ubicaciones registradas por Wellbeing Mapper durante las dos semanas anteriores. Puede elegir qué preguntas responde y si comparte sus ubicaciones. El cuestionario incluirá preguntas sobre, entre otras cosas: raza/etnia; salud; orientación sexual; y ubicación y movilidad.',
+              ),
+            ),
+            _buildInfoSection(
+              _t3('Inclusion criteria', 'Criteri di inclusione', 'Criterios de inclusión'),
+              _inclusionCriteria,
+            ),
+            _buildInfoSection(
+              _t3('Voluntary participation', 'Partecipazione volontaria', 'Participación voluntaria'),
+              _t3(
+                'Your participation in this study is on a voluntary basis and you may withdraw from the study at any time without having to justify your decision.',
+                'La tua partecipazione a questo studio è volontaria e puoi ritirarti dallo studio in qualsiasi momento senza dover giustificare la tua decisione.',
+                'Su participación en este estudio es voluntaria y puede retirarse del estudio en cualquier momento sin tener que justificar su decisión.',
+              ),
+            ),
+            _buildInfoSection(
+              _t3('Risks and benefits', 'Rischi e benefici', 'Riesgos y beneficios'),
+              _t3(
+                'It is not expected that anything you will be asked to do while participating in this study will pose a risk to your health. However, it is very important that you not interact with your mobile phone while driving or engaged in any activity that requires your attention. Using a mobile phone while driving can increase your risk of injury or death, and to participate in the mobile phone component of this project, you must agree not to interact with the application or otherwise interact with your phone for this project while driving. Participation also involves some risk to your privacy because you will be asked to share information about where you spend time. However, this information will be kept confidential by the research team using encryption and standard data protection techniques. Participation will involve answering questions about your mental wellbeing and about climate change. In case these make you anxious or uncomfortable in any way, we will recommend a set of resources that you can turn to at the end of the survey. We cannot and do not guarantee that you will receive any benefits from this study.',
+                'Non si prevede che nulla di ciò che ti verrà chiesto di fare durante la partecipazione a questo studio comporti un rischio per la tua salute. Tuttavia, è molto importante che tu non interagisca con il telefono cellulare mentre guidi o svolgi qualsiasi attività che richieda la tua attenzione. Usare il telefono mentre si guida può aumentare il rischio di lesioni o morte e, per partecipare alla componente con il telefono cellulare di questo progetto, devi accettare di non interagire con l\'applicazione né con il telefono per questo progetto mentre guidi. La partecipazione comporta anche un certo rischio per la tua privacy, poiché ti verrà chiesto di condividere informazioni su dove trascorri il tuo tempo. Tuttavia, queste informazioni saranno mantenute riservate dal gruppo di ricerca tramite crittografia e tecniche standard di protezione dei dati. La partecipazione prevede di rispondere a domande sul tuo benessere mentale e sul cambiamento climatico. Nel caso queste ti rendano ansioso/a o a disagio in qualunque modo, ti consiglieremo una serie di risorse a cui rivolgerti al termine del questionario. Non possiamo garantire e non garantiamo che riceverai alcun beneficio da questo studio.',
+                'No se espera que nada de lo que se le pida hacer durante su participación en este estudio suponga un riesgo para su salud. Sin embargo, es muy importante que no interactúe con su teléfono móvil mientras conduce o realiza cualquier actividad que requiera su atención. Usar el teléfono móvil mientras se conduce puede aumentar el riesgo de lesiones o muerte y, para participar en el componente con teléfono móvil de este proyecto, debe aceptar no interactuar con la aplicación ni con su teléfono para este proyecto mientras conduce. La participación también implica cierto riesgo para su privacidad, ya que se le pedirá que comparta información sobre dónde pasa su tiempo. No obstante, esta información se mantendrá confidencial por el equipo de investigación mediante cifrado y técnicas estándar de protección de datos. La participación implicará responder preguntas sobre su bienestar mental y sobre el cambio climático. En caso de que esto le genere ansiedad o malestar de algún modo, le recomendaremos una serie de recursos a los que podrá acudir al final del cuestionario. No podemos garantizar ni garantizamos que vaya a recibir ningún beneficio de este estudio.',
+              ),
+            ),
+            _buildInfoSection(
+              _t3('Compensation', 'Compenso', 'Compensación'),
+              _t3(
+                'Your participation will not be compensated by the research team but it may be compensated by the survey panel provider that sent you here, based on the agreement you have with that provider.',
+                'La tua partecipazione non sarà compensata dal gruppo di ricerca, ma potrebbe essere compensata dal fornitore del panel di indagine che ti ha indirizzato qui, in base all\'accordo che hai con tale fornitore.',
+                'Su participación no será compensada por el equipo de investigación, pero podría ser compensada por el proveedor del panel de encuestas que le envió aquí, según el acuerdo que tenga con dicho proveedor.',
+              ),
+            ),
+            _buildInfoSection(
+              _t3('Data protection', 'Protezione dei dati', 'Protección de datos'),
+              _t3(
+                'In order to protect your privacy, we will not identify your data with your name, but rather with a code that will only be known to the research team members. In order to make your location data only accessible to research team members, this data will be protected using end-to-end encryption and it will be stored with access control systems. In the event of data publication, only anonymous data will be published. Anonymized data may be hosted or published in a public repository and will not be able to be used to identify you. If you would like your data to be deleted, you can request this by emailing the PIs and including in the email your participant UUID, which can be found in the Wellbeing Mapper application on the device you are using to collect it. Please note that the survey is being conducted with the help of the survey panel provider that you are working with, which is not affiliated with UPF and has its own privacy and security policies that you can find at its websites.',
+                'Per proteggere la tua privacy, non identificheremo i tuoi dati con il tuo nome, ma con un codice noto solo ai membri del gruppo di ricerca. Per rendere i tuoi dati di posizione accessibili solo ai membri del gruppo di ricerca, questi dati saranno protetti tramite crittografia end-to-end e conservati con sistemi di controllo degli accessi. In caso di pubblicazione dei dati, saranno pubblicati solo dati anonimi. I dati anonimizzati potranno essere ospitati o pubblicati in un repository pubblico e non potranno essere utilizzati per identificarti. Se desideri che i tuoi dati vengano cancellati, puoi richiederlo inviando un\'email ai ricercatori principali e includendo il tuo UUID di partecipante, che puoi trovare nell\'applicazione Wellbeing Mapper sul dispositivo che stai usando. Tieni presente che l\'indagine è condotta con l\'aiuto del fornitore del panel con cui collabori, che non è affiliato a UPF e ha proprie politiche di privacy e sicurezza consultabili sui suoi siti web.',
+                'Para proteger su privacidad, no identificaremos sus datos con su nombre, sino con un código que solo conocerán los miembros del equipo de investigación. Para que sus datos de ubicación solo sean accesibles para los miembros del equipo de investigación, estos datos se protegerán mediante cifrado de extremo a extremo y se almacenarán con sistemas de control de acceso. En caso de publicación de datos, solo se publicarán datos anónimos. Los datos anonimizados podrán alojarse o publicarse en un repositorio público y no podrán utilizarse para identificarle. Si desea que se eliminen sus datos, puede solicitarlo enviando un correo electrónico a los investigadores principales e incluyendo su UUID de participante, que se encuentra en la aplicación Wellbeing Mapper en el dispositivo que está usando. Tenga en cuenta que la encuesta se realiza con la ayuda del proveedor del panel de encuestas con el que trabaja, que no está afiliado a la UPF y tiene sus propias políticas de privacidad y seguridad disponibles en sus sitios web.',
+              ),
+            ),
+            _buildGDPRSection(),
           ] else ...[
             _buildInfoSection('Study Title', _siteTitle),
             _buildInfoSection('Institution', 
@@ -562,7 +356,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 });
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              child: Text('Continue to Consent Form', style: TextStyle(fontSize: 16, color: Colors.white)),
+              child: Text(_t3('Continue to Consent Form', 'Continua al modulo di consenso', 'Continuar al formulario de consentimiento'), style: TextStyle(fontSize: 16, color: Colors.white)),
             ),
           ),
           SizedBox(height: 16),
@@ -608,62 +402,73 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           ],
           Text(
             widget.researchSite == 'wellbeing_mapper' 
-              ? 'Participant Informed Consent'
+              ? _t3('Informed Consent Form', 'Modulo di consenso informato', 'Formulario de consentimiento informado')
               : 'Informed Consent Form',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           if (widget.researchSite == 'wellbeing_mapper') ...[
             SizedBox(height: 8),
             Text(
-              'Mental wellbeing in climate and environmental context (Case Study 4 of the PLANET4HEALTH project) – Southern Europe Study Site.',
+              _siteTitle,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ],
           SizedBox(height: 8),
           Text(
-            'Participant Code: ${widget.participantCode}',
+            '${_t3('Participant Code', 'Codice partecipante', 'Código de participante')}: ${widget.participantCode}',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           SizedBox(height: 24),
           
-          _buildConsentSection('I HEREBY CONFIRM that:', [
-            _buildBulletPoint('I have read the information sheet regarding the research project,'),
-            _buildBulletPoint('The information sheet is written in a language with which I am fluent enough to understand all content,'),
-            _buildBulletPoint('I have been able to ask questions and I have received enough information on the project,'),
-            _buildBulletPoint('I fulfill the inclusion criteria, and I am at least 18 years old,'),
-            _buildBulletPoint('I understand that my participation is voluntary and that I can withdraw from or opt out of the study at any time without any need to justify my decision,'),
-            _buildBulletPoint('I understand that once researchers start to analyse the data (e.g., add what I answered to what everybody else answered) and/or the findings of the study are in the process of publication, I cannot withdraw the information that I contributed to the study'),
-            _buildBulletPoint('I understand that I could be asked to leave the study before it has finished, if the researcher thinks it is in my best interests'),
-            _buildBulletPoint('I understand that I can follow the project\'s progress on the study website (https://planet4health.eu) and that I will be able to access a summary of the findings on that website when the study is complete'),
+          _buildConsentSection(
+            _t3('I HEREBY CONFIRM that:', 'CONFERMO CHE:', 'CONFIRMO QUE:'),
+            [
+            _buildBulletPoint(_t3(
+              'I have read the information sheet regarding the research project,',
+              'Ho letto il foglio informativo relativo al progetto di ricerca,',
+              'He leído la hoja de información sobre el proyecto de investigación,')),
+            _buildBulletPoint(_t3(
+              'I have been able to formulate questions and I have received enough information on the project,',
+              'Ho potuto formulare domande e ho ricevuto informazioni sufficienti sul progetto,',
+              'He podido formular preguntas y he recibido suficiente información sobre el proyecto,')),
+            _buildBulletPoint(_t3(
+              'I fulfill the inclusion criteria, and I am at least 18 years old.',
+              'Soddisfo i criteri di inclusione e ho almeno 18 anni.',
+              'Cumplo los criterios de inclusión y tengo al menos 18 años.')),
           ]),
 
           if (widget.researchSite == 'wellbeing_mapper') ...[
-            _buildConsentSection('I GIVE MY CONSENT:', [
+            _buildConsentSection(
+              _t3('I UNDERSTAND that:', 'COMPRENDO CHE:', 'ENTIENDO QUE:'),
+              [
+              _buildBulletPoint(_t3(
+                'My participation is voluntary and that I can withdraw from or opt out of the study at any time without any need to justify my decision.',
+                'La mia partecipazione è volontaria e posso ritirarmi o uscire dallo studio in qualsiasi momento senza dover giustificare la mia decisione.',
+                'Mi participación es voluntaria y puedo retirarme o abandonar el estudio en cualquier momento sin necesidad de justificar mi decisión.')),
+            ]),
+            _buildConsentSection(
+              _t3('I GIVE MY CONSENT:', 'DO IL MIO CONSENSO:', 'DOY MI CONSENTIMIENTO:'),
+              [
               _buildCheckbox(_healthConsent, (value) => setState(() => _healthConsent = value!),
-                'to participate in this study'),
-              _buildCheckbox(_sexualOrientationConsent, (value) => setState(() => _sexualOrientationConsent = value!),
-                'for my personal data to be processed by Qualtrics, under their terms and conditions'),
+                _t3('to participate in this study',
+                    'a partecipare a questo studio',
+                    'a participar en este estudio')),
               _buildCheckbox(_locationConsent, (value) => setState(() => _locationConsent = value!),
-                'to being asked about by race/ethnicity'),
+                _t3('to being asked about my race/ethnicity',
+                    'a che mi vengano poste domande sulla mia origine etnica',
+                    'a que se me pregunte sobre mi raza/etnia')),
               _buildCheckbox(_healthConsent2, (value) => setState(() => _healthConsent2 = value!),
-                'to being asked about my health'),
+                _t3('to being asked about my health condition',
+                    'a che mi vengano poste domande sul mio stato di salute',
+                    'a que se me pregunte sobre mi estado de salud')),
               _buildCheckbox(_sexualOrientationConsent2, (value) => setState(() => _sexualOrientationConsent2 = value!),
-                'to being asked about my sexual orientation'),
+                _t3('to being asked about my sexual orientation',
+                    'a che mi vengano poste domande sul mio orientamento sessuale',
+                    'a que se me pregunte sobre mi orientación sexual')),
               _buildCheckbox(_locationConsent2, (value) => setState(() => _locationConsent2 = value!),
-                'to being asked about my location and mobility'),
-              _buildCheckbox(_dataTransferConsent2, (value) => setState(() => _dataTransferConsent2 = value!),
-                'to transferring my personal data to countries outside South Africa'),
-              _buildCheckbox(_publicReportingConsent, (value) => setState(() => _publicReportingConsent = value!),
-                'to researchers reporting what I contribute (what I answer) publicly (e.g., in reports, books, magazines, websites) without my full name being included'),
-              _buildCheckbox(_dataShareConsent, (value) => setState(() => _dataShareConsent = value!),
-                'to what I contribute being shared with national and international researchers and partners involved in this project'),
-              _buildCheckbox(_futureResearchConsent, (value) => setState(() => _futureResearchConsent = value!),
-                'to what I contribute being used for further research or teaching purposes by the University of Pretoria and project partners'),
-              _buildCheckbox(_repositoryConsent, (value) => setState(() => _repositoryConsent = value!),
-                'to what I contribute being placed in a public repository in a deidentified or anonymised form once the project is complete'),
-              _buildCheckbox(_followUpConsent, (value) => setState(() => _followUpConsent = value!),
-                'to being contacted about participation in possible follow-up studies',
-                isRequired: false),
+                _t3('to being asked about my location and mobility',
+                    'a che mi vengano poste domande sulla mia posizione e mobilità',
+                    'a que se me pregunte sobre mi ubicación y movilidad')),
             ]),
           ] else ...[
             _buildConsentSection('I UNDERSTAND that:', [
@@ -832,11 +637,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
   Widget _buildSubmitButton() {
     final bool allRequired = widget.researchSite == 'wellbeing_mapper'
-        ? _healthConsent && _sexualOrientationConsent && _locationConsent && 
-          _healthConsent2 && _sexualOrientationConsent2 && _locationConsent2 && 
-          _dataTransferConsent2 && _publicReportingConsent && _dataShareConsent && 
-          _futureResearchConsent && _repositoryConsent
-          // Note: _followUpConsent is now optional as requested
+        ? _healthConsent && _locationConsent &&
+          _healthConsent2 && _sexualOrientationConsent2 && _locationConsent2
         : _voluntaryParticipation && _generalConsent && _raceEthnicityConsent && 
           _healthConsent && _sexualOrientationConsent && _locationConsent && 
           _dataTransferConsent;
@@ -858,7 +660,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Please check all required consent items (marked with *) to continue.',
+                    _t3('Please check all required consent items (marked with *) to continue.',
+                        'Seleziona tutte le voci di consenso obbligatorie (contrassegnate con *) per continuare.',
+                        'Marque todos los elementos de consentimiento obligatorios (marcados con *) para continuar.'),
                     style: TextStyle(color: Colors.orange[800]),
                   ),
                 ),
@@ -876,13 +680,13 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             child: _isSubmitting
                 ? CircularProgressIndicator(color: Colors.white)
-                : Text('Submit', style: TextStyle(fontSize: 18, color: Colors.white)),
+                : Text(_t3('Submit', 'Invia', 'Enviar'), style: TextStyle(fontSize: 18, color: Colors.white)),
           ),
         ),
         SizedBox(height: 8),
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: Text('Cancel'),
+          child: Text(_t3('Cancel', 'Annulla', 'Cancelar')),
         ),
       ],
     );
@@ -916,12 +720,14 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         participantSignature: widget.participantCode, // Using participant code as signature
         // Map site-specific consent questions correctly - FIX CRITICAL BUG
         consentParticipate: widget.researchSite == 'wellbeing_mapper' ? _healthConsent : _generalConsent,
-        consentQualtricsData: widget.researchSite == 'wellbeing_mapper' ? _sexualOrientationConsent : _generalConsent,
+        // Italy site no longer asks about third-party (LimeSurvey) processing or
+        // transfer outside the EEA, so these are recorded as not-applicable (false).
+        consentQualtricsData: widget.researchSite == 'wellbeing_mapper' ? false : _generalConsent,
         consentRaceEthnicity: widget.researchSite == 'wellbeing_mapper' ? _locationConsent : _raceEthnicityConsent,
         consentHealth: widget.researchSite == 'wellbeing_mapper' ? _healthConsent2 : _healthConsent,
         consentSexualOrientation: widget.researchSite == 'wellbeing_mapper' ? _sexualOrientationConsent2 : _sexualOrientationConsent,
         consentLocationMobility: widget.researchSite == 'wellbeing_mapper' ? _locationConsent2 : _locationConsent,
-        consentDataTransfer: widget.researchSite == 'wellbeing_mapper' ? _dataTransferConsent2 : _dataTransferConsent,
+        consentDataTransfer: widget.researchSite == 'wellbeing_mapper' ? false : _dataTransferConsent,
         consentPublicReporting: widget.researchSite == 'wellbeing_mapper' ? _publicReportingConsent : false,
         consentResearcherSharing: widget.researchSite == 'wellbeing_mapper' ? _dataShareConsent : false,
         consentFurtherResearch: widget.researchSite == 'wellbeing_mapper' ? _futureResearchConsent : false,
@@ -1011,17 +817,21 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text('Consent Recorded'),
+        title: Text(_t3('Consent Recorded', 'Consenso registrato', 'Consentimiento registrado')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Thank you for consenting to participate in the research study.'),
+            Text(_t3('Thank you for consenting to participate in the research study.',
+                'Grazie per aver acconsentito a partecipare allo studio di ricerca.',
+                'Gracias por dar su consentimiento para participar en el estudio de investigación.')),
             SizedBox(height: 16),
-            Text('Your Participant UUID:', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(_t3('Your Participant UUID:', 'Il tuo UUID di partecipante:', 'Su UUID de participante:'), style: TextStyle(fontWeight: FontWeight.bold)),
             SelectableText(uuid, style: TextStyle(fontFamily: 'monospace')),
             SizedBox(height: 8),
-            Text('Please save this UUID. You will need it if you want to withdraw from the study or request data deletion.', 
+            Text(_t3('Please save this UUID. You will need it if you want to withdraw from the study or request data deletion.',
+                'Conserva questo UUID. Ti servirà se vorrai ritirarti dallo studio o richiedere la cancellazione dei dati.',
+                'Guarde este UUID. Lo necesitará si desea retirarse del estudio o solicitar la eliminación de sus datos.'),
                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           ],
         ),
@@ -1051,7 +861,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 }
               }
             },
-            child: Text('Continue to App'),
+            child: Text(_t3('Continue to App', 'Continua all\'app', 'Continuar a la app')),
           ),
         ],
       ),
@@ -1062,7 +872,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Error'),
+        title: Text(_t3('Error', 'Errore', 'Error')),
         content: Text(message),
         actions: [
           TextButton(

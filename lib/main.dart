@@ -14,6 +14,7 @@ import 'services/app_mode_service.dart';
 import 'services/consent_tracking_service.dart';
 import 'services/geo_location_service.dart';
 import 'services/global_notification_service.dart';
+import 'services/locale_service.dart';
 import 'services/notification_service.dart';
 import 'theme/south_african_theme.dart';
 import 'util/env.dart';
@@ -64,6 +65,9 @@ void main() {
 
     GlobalData.userUUID = userUUID;
 
+    // Load any in-app language override before building the UI.
+    await LocaleService.load();
+
     // Initialise services.
     try {
       await NotificationService.initialize();
@@ -94,36 +98,44 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      scaffoldMessengerKey: GlobalNotificationService.scaffoldMessengerKey,
-      title: 'Wellbeing Mapper',
-      debugShowCheckedModeBanner: false,
-      theme: SouthAfricanTheme.materialTheme,
-      supportedLocales: const [
-        Locale('en', ''), // English (default)
-        Locale('es', ''), // Spanish
-        Locale('it', ''), // Italian
-        // TODO(i18n): Re-enable Catalan once translations are complete.
-        // Locale('ca', ''),
-      ],
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ],
-      localeResolutionCallback: (locale, supportedLocales) {
-        if (locale == null) return supportedLocales.first;
-        for (final supported in supportedLocales) {
-          if (supported.languageCode == locale.languageCode) {
-            return supported;
-          }
-        }
-        return supportedLocales.first;
+    return ValueListenableBuilder<Locale?>(
+      valueListenable: LocaleService.localeOverride,
+      builder: (context, localeOverride, _) {
+        return MaterialApp(
+          navigatorKey: navigatorKey,
+          scaffoldMessengerKey: GlobalNotificationService.scaffoldMessengerKey,
+          title: 'Wellbeing Mapper',
+          debugShowCheckedModeBanner: false,
+          theme: SouthAfricanTheme.materialTheme,
+          // When set, this overrides the device locale so users can switch
+          // languages inside the app. Null = follow device language.
+          locale: localeOverride,
+          supportedLocales: const [
+            Locale('en', ''), // English (default)
+            Locale('es', ''), // Spanish
+            Locale('it', ''), // Italian
+            // TODO(i18n): Re-enable Catalan once translations are complete.
+            // Locale('ca', ''),
+          ],
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          localeResolutionCallback: (locale, supportedLocales) {
+            if (locale == null) return supportedLocales.first;
+            for (final supported in supportedLocales) {
+              if (supported.languageCode == locale.languageCode) {
+                return supported;
+              }
+            }
+            return supportedLocales.first;
+          },
+          onGenerateRoute: RouteGenerator.generateRoute,
+          initialRoute: '/',
+        );
       },
-      onGenerateRoute: RouteGenerator.generateRoute,
-      initialRoute: '/',
     );
   }
 }
