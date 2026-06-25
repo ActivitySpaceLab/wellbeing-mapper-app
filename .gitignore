@@ -4,6 +4,11 @@ untracked
 # local path for active development). See docs/CONTRIBUTOR_SETUP.md.
 pubspec_overrides.yaml
 
+# Local Copilot / agent instructions and generated workspace metadata
+.agents/
+rules.md
+skills-lock.json
+
 # Keys
 android/key.properties
 *.pem

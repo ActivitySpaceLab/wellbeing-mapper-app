@@ -7,8 +7,10 @@ echo "🚀 Building Wellbeing Mapper for release..."
 
 # Sync version information first to ensure correct version
 echo "🔄 Syncing version information..."
-if [ -f "../sync-version.sh" ]; then
-    cd .. && ./sync-version.sh && cd gauteng-wellbeing-mapper-app
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
+if [ -f "$SCRIPT_DIR/sync-version.sh" ]; then
+    (cd "$SCRIPT_DIR" && ./sync-version.sh)
 else
     echo "⚠️  sync-version.sh not found, proceeding with current version..."
 fi
@@ -22,37 +24,120 @@ fvm flutter clean
 echo "📦 Getting dependencies..."
 fvm flutter pub get
 
+# Initialize status variables
+AAB_STATUS="Not built"
+APK_STATUS="Not built"
+IOS_APP_STATUS="Not built"
+IOS_IPA_STATUS="Not built"
+BUILD_SUCCESS=true
+
 # Build Android App Bundle (recommended for Play Store)
 echo "🤖 Building Android App Bundle..."
-fvm flutter build appbundle --flavor production
+if fvm flutter build appbundle --flavor production; then
+    AAB_STATUS="✅ build/app/outputs/bundle/production/release/app-production-release.aab"
+else
+    AAB_STATUS="❌ Build failed"
+    BUILD_SUCCESS=false
+fi
+echo ""
 
 # Build Android APKs (alternative distribution)
 echo "🤖 Building Android APKs..."
-fvm flutter build apk --split-per-abi --flavor production
+if fvm flutter build apk --split-per-abi --flavor production; then
+    APK_STATUS="✅ build/app/outputs/flutter-apk/ (app-*-production-release.apk)"
+else
+    APK_STATUS="❌ Build failed"
+    BUILD_SUCCESS=false
+fi
+echo ""
 
 # Install iOS dependencies
 echo "🍎 Installing iOS dependencies..."
-cd ios && pod install && cd ..
+if (cd "$SCRIPT_DIR/ios" && pod install); then
+    echo "✅ Pods installed successfully."
+else
+    echo "⚠️  Failed to install Pods."
+fi
+echo ""
 
 # Build iOS (for later archiving in Xcode)
 echo "🍎 Building iOS..."
-fvm flutter build ios --release --no-codesign
+if fvm flutter build ios --release --no-codesign; then
+    IOS_APP_STATUS="✅ build/ios/iphoneos/Runner.app"
+else
+    IOS_APP_STATUS="❌ Build failed"
+    BUILD_SUCCESS=false
+fi
+echo ""
 
 # Build iOS IPA (for App Store distribution via Transporter)
 echo "🍎 Building iOS IPA..."
-fvm flutter build ipa
 
-echo "✅ Build complete!"
+# If App Store Connect API key variables are provided, allow Xcode to
+# automatically download/create provisioning profiles during archive/export.
+# Required env vars for this path:
+#   APPSTORE_API_KEY_ID
+#   APPSTORE_API_ISSUER_ID
+#   APPSTORE_API_KEY_PATH
+IPA_BUILD_CMD=(fvm flutter build ipa --export-options-plist=ios/ExportOptions.plist)
+if [ -n "$APPSTORE_API_KEY_ID" ] && [ -n "$APPSTORE_API_ISSUER_ID" ] && [ -n "$APPSTORE_API_KEY_PATH" ]; then
+    echo "🔐 Using App Store Connect API key for provisioning updates..."
+    IPA_BUILD_CMD+=(
+        --export-method=app-store
+        --
+        -allowProvisioningUpdates
+        -authenticationKeyID "$APPSTORE_API_KEY_ID"
+        -authenticationKeyIssuerID "$APPSTORE_API_ISSUER_ID"
+        -authenticationKeyPath "$APPSTORE_API_KEY_PATH"
+    )
+fi
+
+if "${IPA_BUILD_CMD[@]}"; then
+    # Dynamically locate the built IPA across common output locations.
+    IPA_FILE=$(find "$SCRIPT_DIR/build/ios" -type f -name "*.ipa" 2>/dev/null | head -n 1)
+    if [ -n "$IPA_FILE" ]; then
+        # Make path relative to script directory for cleaner display
+        REL_IPA_FILE=${IPA_FILE#"$SCRIPT_DIR/"}
+        IOS_IPA_STATUS="✅ $REL_IPA_FILE"
+    else
+        ARCHIVE_FILE=$(find "$SCRIPT_DIR/build/ios/archive" -maxdepth 2 -name "*.xcarchive" 2>/dev/null | head -n 1)
+        if [ -n "$ARCHIVE_FILE" ]; then
+            IOS_IPA_STATUS="⚠️  Archive created but IPA not exported (check signing/export options)"
+        else
+            IOS_IPA_STATUS="⚠️  Build succeeded but IPA file not found under build/ios/"
+        fi
+    fi
+else
+    PROFILE_COUNT=$(find "$HOME/Library/MobileDevice/Provisioning Profiles" -maxdepth 1 -name "*.mobileprovision" 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$PROFILE_COUNT" = "0" ]; then
+        IOS_IPA_STATUS="❌ Build failed (no provisioning profiles installed locally)"
+    else
+        IOS_IPA_STATUS="❌ Build failed (check provisioning profile name/team/bundle ID alignment)"
+    fi
+fi
+echo ""
+
+if [ "$BUILD_SUCCESS" = true ] && [[ "$IOS_IPA_STATUS" == ✅* ]]; then
+    echo "✅ Build complete!"
+else
+    echo "⚠️  Build finished with some errors or warnings."
+fi
 echo ""
 echo "📁 Output files:"
-echo "  Android App Bundle: build/app/outputs/bundle/production/release/app-production-release.aab"
-echo "  Android APKs: build/app/outputs/flutter-apk/ (app-*-production-release.apk)"
-echo "  iOS App: build/ios/iphoneos/Runner.app"
-echo "  iOS IPA: build/ios/ipa/gauteng_wellbeing_mapper_app.ipa"
+echo "  Android App Bundle: $AAB_STATUS"
+echo "  Android APKs:       $APK_STATUS"
+echo "  iOS App:            $IOS_APP_STATUS"
+echo "  iOS IPA:            $IOS_IPA_STATUS"
 echo ""
 echo "📋 Next steps:"
 echo "  1. Upload Android AAB to Google Play Console"
-echo "  2. Upload iOS IPA to App Store Connect via Transporter"
-echo "  3. Create GitHub release with both builds"
+if [[ "$IOS_IPA_STATUS" == ✅* ]]; then
+    echo "  2. Upload iOS IPA to App Store Connect via Transporter"
+else
+    echo "  2. Distribute iOS app manually in Xcode using the archive:"
+    echo "     open build/ios/archive/Runner.xcarchive"
+    echo "     Tip: set APPSTORE_API_KEY_ID/APPSTORE_API_ISSUER_ID/APPSTORE_API_KEY_PATH to let CI/script auto-manage profiles"
+fi
+echo "  3. Create GitHub release with the builds"
 echo ""
 echo "⚠️  Note: Android minSdkVersion updated to 23 for record package compatibility"
