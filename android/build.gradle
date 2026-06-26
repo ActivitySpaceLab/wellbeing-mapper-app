@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.9.0'
+    ext.kotlin_version = '1.9.24'
     ext {
         compileSdkVersion   = 35               // Updated to support latest plugins
         targetSdkVersion    = 35               // Updated to support latest plugins
@@ -12,7 +12,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.4'  // Updated to support SDK 35
+        classpath 'com.android.tools.build:gradle:8.5.2'  // 16 KB page-size compatible packaging for Play bundles
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }

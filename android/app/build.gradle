@@ -26,7 +26,7 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
-ext.kotlin_version = '1.9.0'  // Update to the desired Kotlin version
+ext.kotlin_version = '1.9.24'  // Keep module Kotlin aligned with AGP-supported toolchain
 
 
 def keystoreProperties = new Properties()
@@ -62,6 +62,7 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
@@ -153,6 +154,7 @@ afterEvaluate {
 }
 
 dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.1.1'
