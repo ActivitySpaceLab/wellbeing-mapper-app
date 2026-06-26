@@ -47,8 +47,8 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
       final location = await GeoLocationService.instance.getCurrentPosition(
         persist: false,
         desiredAccuracy: 40,
-        maximumAge: 10000,
-        timeout: 30,
+        maximumAge: 300000,
+        timeout: 75,
         samples: 3,
       );
       

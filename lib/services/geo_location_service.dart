@@ -215,15 +215,17 @@ class GeoLocationService {
       return null;
     }
 
+    AppLocation? lastKnownLocation;
     try {
       final state = await obl.OpenBackgroundLocator.getState();
       final lastUpdate = state.lastUpdate;
       if (lastUpdate != null) {
+        lastKnownLocation = _convert(lastUpdate);
         final ageMs = DateTime.now()
             .difference(lastUpdate.timestamp.toUtc())
             .inMilliseconds;
         if (ageMs >= 0 && ageMs <= maximumAge) {
-          return _convert(lastUpdate);
+          return lastKnownLocation;
         }
       }
 
@@ -240,7 +242,9 @@ class GeoLocationService {
       } on TimeoutException {
         debugPrint(
             '[GeoLocationService] getCurrentPosition timed out after ${timeout}s');
-        return null;
+        // Prefer a stale but usable location over returning null for
+        // map-linked survey entries.
+        return lastKnownLocation;
       } finally {
         if (didStart) {
           // We started the tracker just to get one fix; restore previous
@@ -253,7 +257,7 @@ class GeoLocationService {
       }
     } catch (e) {
       debugPrint('[GeoLocationService] getCurrentPosition error: $e');
-      return null;
+      return lastKnownLocation;
     }
   }
 
