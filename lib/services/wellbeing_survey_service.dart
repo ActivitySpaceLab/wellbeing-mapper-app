@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../models/wellbeing_survey_models.dart';
+import '../models/survey_models.dart';
 import '../db/survey_database.dart';
 
 class WellbeingSurveyService {
@@ -28,10 +29,56 @@ class WellbeingSurveyService {
       'wellbeing_survey_responses', 
       orderBy: 'timestamp DESC',
     );
-    
-    return List.generate(maps.length, (i) {
+    final responses = List.generate(maps.length, (i) {
       return WellbeingSurveyResponse.fromJson(maps[i]);
     });
+
+    return _attachNearbyLocationsIfMissing(responses);
+  }
+
+  Future<List<WellbeingSurveyResponse>> _attachNearbyLocationsIfMissing(
+    List<WellbeingSurveyResponse> responses,
+  ) async {
+    final needsLocation = responses.any(
+      (response) => response.latitude == null || response.longitude == null,
+    );
+    if (!needsLocation) return responses;
+
+    final tracks = await SurveyDatabase().getAllLocationTracks();
+    if (tracks.isEmpty) return responses;
+
+    const maxOffsetSeconds = 15 * 60;
+    return responses.map((response) {
+      if (response.latitude != null && response.longitude != null) {
+        return response;
+      }
+
+      LocationTrack? closestTrack;
+      int? smallestOffset;
+
+      for (final track in tracks) {
+        final offset =
+            (track.timestamp.difference(response.timestamp)).inSeconds.abs();
+        if (offset > maxOffsetSeconds) continue;
+        if (smallestOffset == null || offset < smallestOffset) {
+          smallestOffset = offset;
+          closestTrack = track;
+        }
+      }
+
+      if (closestTrack == null) return response;
+
+      return WellbeingSurveyResponse(
+        id: response.id,
+        timestamp: response.timestamp,
+        happinessScore: response.happinessScore,
+        latitude: closestTrack.latitude,
+        longitude: closestTrack.longitude,
+        accuracy: closestTrack.accuracy,
+        locationTimestamp: closestTrack.timestamp.toIso8601String(),
+        isSynced: response.isSynced,
+      );
+    }).toList();
   }
 
   /// Get unsynced wellbeing survey responses for research users

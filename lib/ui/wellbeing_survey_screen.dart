@@ -1,11 +1,14 @@
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 import '../models/app_mode.dart';
 import '../models/wellbeing_survey_models.dart';
 import '../services/app_mode_service.dart';
 import '../services/geo_location_service.dart';
 import '../services/wellbeing_survey_service.dart';
 import '../theme/south_african_theme.dart';
+import '../util/env.dart';
 
 class WellbeingSurveyScreen extends StatefulWidget {
   @override
@@ -43,6 +46,8 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
         });
         return;
       }
+
+      await _ensureLocationServiceConfigured();
       
       final location = await GeoLocationService.instance.getCurrentPosition(
         persist: false,
@@ -72,6 +77,32 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
       });
       debugPrint('[WellbeingSurveyScreen] Location capture error: $error');
     }
+  }
+
+  Future<void> _ensureLocationServiceConfigured() async {
+    if (GeoLocationService.instance.isConfigured) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    String? userUUID = prefs.getString('user_uuid');
+    String? sampleId = prefs.getString('sample_id');
+
+    if (userUUID == null || userUUID.isEmpty) {
+      userUUID = const Uuid().v4();
+      await prefs.setString('user_uuid', userUUID);
+    }
+    if (sampleId == null || sampleId.isEmpty) {
+      sampleId = ENV.DEFAULT_SAMPLE_ID;
+    }
+
+    if (userUUID.isEmpty || sampleId.isEmpty) {
+      debugPrint('[WellbeingSurveyScreen] Missing user/sample id for location configure');
+      return;
+    }
+
+    await GeoLocationService.instance.configure(
+      userId: userUUID,
+      sampleId: sampleId,
+    );
   }
 
   Future<void> _submitSurvey() async {
