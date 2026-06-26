@@ -27,6 +27,8 @@ fvm flutter pub get
 # Initialize status variables
 AAB_STATUS="Not built"
 APK_STATUS="Not built"
+ANDROID_NATIVE_SYMBOLS_STATUS="Not found"
+ANDROID_MAPPING_STATUS="Not found"
 IOS_APP_STATUS="Not built"
 IOS_IPA_STATUS="Not built"
 BUILD_SUCCESS=true
@@ -48,6 +50,28 @@ if fvm flutter build apk --split-per-abi --flavor production; then
 else
     APK_STATUS="❌ Build failed"
     BUILD_SUCCESS=false
+fi
+echo ""
+
+# Collect Android symbol artifacts for Play Console crash/ANR symbolication.
+echo "🧩 Collecting Android symbol artifacts..."
+SYMBOLS_OUT_DIR="$SCRIPT_DIR/build_outputs/android-symbols"
+mkdir -p "$SYMBOLS_OUT_DIR"
+
+NATIVE_SYMBOLS_FILE=$(find "$SCRIPT_DIR/build/app/outputs/native-debug-symbols" -type f -name "*native-debug-symbols*.zip" 2>/dev/null | head -n 1)
+if [ -n "$NATIVE_SYMBOLS_FILE" ]; then
+    cp "$NATIVE_SYMBOLS_FILE" "$SYMBOLS_OUT_DIR/native-debug-symbols.zip"
+    ANDROID_NATIVE_SYMBOLS_STATUS="✅ build_outputs/android-symbols/native-debug-symbols.zip"
+else
+    ANDROID_NATIVE_SYMBOLS_STATUS="⚠️  Not found (check Android Gradle native symbol config)"
+fi
+
+MAPPING_FILE=$(find "$SCRIPT_DIR/build/app/outputs/mapping" -type f -name "mapping.txt" 2>/dev/null | head -n 1)
+if [ -n "$MAPPING_FILE" ]; then
+    cp "$MAPPING_FILE" "$SYMBOLS_OUT_DIR/mapping.txt"
+    ANDROID_MAPPING_STATUS="✅ build_outputs/android-symbols/mapping.txt"
+else
+    ANDROID_MAPPING_STATUS="⚠️  Not found"
 fi
 echo ""
 
@@ -126,11 +150,21 @@ echo ""
 echo "📁 Output files:"
 echo "  Android App Bundle: $AAB_STATUS"
 echo "  Android APKs:       $APK_STATUS"
+echo "  Android Symbols:    $ANDROID_NATIVE_SYMBOLS_STATUS"
+echo "  Android Mapping:    $ANDROID_MAPPING_STATUS"
 echo "  iOS App:            $IOS_APP_STATUS"
 echo "  iOS IPA:            $IOS_IPA_STATUS"
 echo ""
 echo "📋 Next steps:"
 echo "  1. Upload Android AAB to Google Play Console"
+if [[ "$ANDROID_NATIVE_SYMBOLS_STATUS" == ✅* ]]; then
+    echo "  1b. Upload Android native symbols zip in Play Console:"
+    echo "      build_outputs/android-symbols/native-debug-symbols.zip"
+fi
+if [[ "$ANDROID_MAPPING_STATUS" == ✅* ]]; then
+    echo "  1c. Upload Android mapping file if requested:"
+    echo "      build_outputs/android-symbols/mapping.txt"
+fi
 if [[ "$IOS_IPA_STATUS" == ✅* ]]; then
     echo "  2. Upload iOS IPA to App Store Connect via Transporter"
 else
