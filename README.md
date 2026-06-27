@@ -69,6 +69,34 @@ If you've just cloned this repo and want to build it on your own machine, follow
 
 > **Safety note for collaborators:** by default the app's research-server URL is a placeholder, and every upload path refuses to send data when the placeholder is in use. You must explicitly pass `--dart-define=SERVER_BASE_URL=...` to direct uploads anywhere. This app should **never** post to the Gauteng Wellbeing Mapper production server.
 
+## Direct Android phone testing (USB)
+
+For quick local testing on a real Android phone (without store release flow), use:
+
+```bash
+./scripts/deploy-android-phone.sh
+```
+
+Defaults:
+- flavor: `production`
+- ABI: `arm64-v8a`
+
+Examples:
+
+```bash
+./scripts/deploy-android-phone.sh production arm64-v8a
+./scripts/deploy-android-phone.sh beta armeabi-v7a
+./scripts/deploy-android-phone.sh production arm64-v8a --serial RZCW90B03FV
+./scripts/deploy-android-phone.sh production arm64-v8a --reset-keys
+```
+
+If you hit `device unauthorized`, the script will pause and prompt you to:
+1. keep phone unlocked,
+2. switch USB mode to File transfer,
+3. accept the "Allow USB debugging" prompt.
+
+If the phone prompt never appears, run once with `--reset-keys` and re-accept fingerprint authorization.
+
 ## How to contribute
 Do you want to contribute?
 
