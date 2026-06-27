@@ -97,33 +97,8 @@ echo ""
 # Build iOS IPA (for App Store distribution via Transporter)
 echo "🍎 Building iOS IPA..."
 
-# Allow Xcode to update/download provisioning profiles during archive/export.
-# This works with a signed-in local Xcode account, or with API key auth below.
-IPA_BUILD_CMD=(
-    fvm flutter build ipa
-    --export-options-plist=ios/ExportOptions.plist
-    --
-    -allowProvisioningUpdates
-)
-
-# If App Store Connect API key variables are provided, authenticate xcodebuild
-# explicitly (useful for CI or headless/local runs without Xcode UI login).
-# Required env vars for this path:
-#   APPSTORE_API_KEY_ID
-#   APPSTORE_API_ISSUER_ID
-#   APPSTORE_API_KEY_PATH
-if [ -n "$APPSTORE_API_KEY_ID" ] && [ -n "$APPSTORE_API_ISSUER_ID" ] && [ -n "$APPSTORE_API_KEY_PATH" ]; then
-    echo "🔐 Using App Store Connect API key for provisioning updates..."
-    IPA_BUILD_CMD+=(
-        -authenticationKeyID "$APPSTORE_API_KEY_ID"
-        -authenticationKeyIssuerID "$APPSTORE_API_ISSUER_ID"
-        -authenticationKeyPath "$APPSTORE_API_KEY_PATH"
-    )
-else
-    echo "🔐 Using local Xcode account for provisioning updates (if signed in)."
-fi
-
-if "${IPA_BUILD_CMD[@]}"; then
+echo "🔐 Using Xcode automatic signing + local IPA export (ios/ExportOptions.plist)."
+if fvm flutter build ipa --export-options-plist=ios/ExportOptions.plist; then
     # Dynamically locate the built IPA across common output locations.
     IPA_FILE=$(find "$SCRIPT_DIR/build/ios" -type f -name "*.ipa" 2>/dev/null | head -n 1)
     if [ -n "$IPA_FILE" ]; then
@@ -141,9 +116,9 @@ if "${IPA_BUILD_CMD[@]}"; then
 else
     PROFILE_COUNT=$(find "$HOME/Library/MobileDevice/Provisioning Profiles" -maxdepth 1 -name "*.mobileprovision" 2>/dev/null | wc -l | tr -d ' ')
     if [ "$PROFILE_COUNT" = "0" ]; then
-        IOS_IPA_STATUS="❌ Build failed (no provisioning profiles installed locally; sign in to Xcode and download profiles, or use API key env vars)"
+        IOS_IPA_STATUS="❌ Build failed (no provisioning profiles installed locally; sign in to Xcode and download profiles)"
     else
-        IOS_IPA_STATUS="❌ Build failed (check provisioning profile name/team/bundle ID alignment)"
+        IOS_IPA_STATUS="❌ Build failed (check Xcode Signing & Capabilities, Team, Bundle ID, and ExportOptions.plist settings)"
     fi
 fi
 echo ""
@@ -177,7 +152,7 @@ if [[ "$IOS_IPA_STATUS" == ✅* ]]; then
 else
     echo "  2. Distribute iOS app manually in Xcode using the archive:"
     echo "     open build/ios/archive/Runner.xcarchive"
-    echo "     Tip: set APPSTORE_API_KEY_ID/APPSTORE_API_ISSUER_ID/APPSTORE_API_KEY_PATH to let CI/script auto-manage profiles"
+    echo "     Tip: confirm Runner Release uses Automatic signing in Xcode"
 fi
 echo "  3. Create GitHub release with the builds"
 echo ""
