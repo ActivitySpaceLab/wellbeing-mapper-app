@@ -170,8 +170,9 @@ class _InitialRouteDeciderState extends State<InitialRouteDecider> {
     try {
       // A pending notification payload takes priority over everything else.
       final notificationPayload = NotificationService.getPendingNotificationPayload();
-      if (notificationPayload == '/wellbeing_survey') {
-        return '/wellbeing_survey';
+      if (notificationPayload == '/recurring_survey' ||
+          notificationPayload == '/wellbeing_survey') {
+        return '/recurring_survey';
       }
 
       final currentMode = await AppModeService.getCurrentMode();

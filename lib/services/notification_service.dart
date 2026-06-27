@@ -20,6 +20,8 @@ class NotificationService {
   static const String _pendingSurveyKey = 'pending_survey_prompt';
   static const String _testingIntervalKey = 'testing_notification_interval_minutes';
   static const int _notificationIntervalDays = 14; // 2 weeks - default for production
+  static const String _surveyRoute = '/recurring_survey';
+  static const String _legacySurveyRoute = '/wellbeing_survey';
   
   // Device notification settings
   static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
@@ -72,6 +74,10 @@ class NotificationService {
     final payload = _pendingNotificationPayload;
     _pendingNotificationPayload = null;
     return payload;
+  }
+
+  static bool _isSurveyPayload(String? payload) {
+    return payload == _surveyRoute || payload == _legacySurveyRoute;
   }
 
   /// Initialize local notifications
@@ -211,20 +217,20 @@ class NotificationService {
     try {
       final NavigatorState? navigator = navigatorKey.currentState;
       debugPrint('[NotificationService] Navigator available: ${navigator != null}');
-      debugPrint('[NotificationService] Payload matches survey route: ${response.payload == '/wellbeing_survey'}');
+      debugPrint('[NotificationService] Payload matches survey route: ${_isSurveyPayload(response.payload)}');
       
-      if (navigator != null && response.payload == '/wellbeing_survey') {
-        debugPrint('[NotificationService] Attempting navigation to wellbeing survey...');
+      if (navigator != null && _isSurveyPayload(response.payload)) {
+        debugPrint('[NotificationService] Attempting navigation to biweekly survey...');
         
         // First try a simple push - this works better when app is already open
         try {
-          navigator.pushNamed('/wellbeing_survey');
+          navigator.pushNamed(_surveyRoute);
           debugPrint('[NotificationService] Simple navigation command sent successfully');
         } catch (e) {
           debugPrint('[NotificationService] Simple navigation failed, trying pushNamedAndRemoveUntil: $e');
           // If simple push fails, try the more aggressive approach
           navigator.pushNamedAndRemoveUntil(
-            '/wellbeing_survey',
+            _surveyRoute,
             (route) => route.isFirst, // Keep only the first route (home/initial)
           );
           debugPrint('[NotificationService] Aggressive navigation command sent');
@@ -234,8 +240,8 @@ class NotificationService {
         if (navigator == null) {
           debugPrint('[NotificationService] - Navigator is null');
         }
-        if (response.payload != '/wellbeing_survey') {
-          debugPrint('[NotificationService] - Payload mismatch: expected "/wellbeing_survey", got "${response.payload}"');
+        if (!_isSurveyPayload(response.payload)) {
+          debugPrint('[NotificationService] - Payload mismatch: expected "$_surveyRoute" (or legacy "$_legacySurveyRoute"), got "${response.payload}"');
         }
         debugPrint('[NotificationService] Setting pending survey prompt as fallback');
         // If navigation is not available, set a pending prompt flag
@@ -413,7 +419,7 @@ class NotificationService {
         'Wellbeing Survey Reminder',
         'Help researchers by participating in your biweekly wellbeing survey! Tap to contribute to important research.',
         platformChannelSpecifics,
-        payload: '/wellbeing_survey',
+        payload: _surveyRoute,
       );
       
       debugPrint('[NotificationService] Device notification shown successfully with ID: $notificationId');
@@ -484,7 +490,7 @@ class NotificationService {
   /// Navigate to the survey webview
   static void _navigateToSurvey(BuildContext context) {
     // Navigate to the biweekly wellbeing survey screen
-    Navigator.of(context).pushNamed('/wellbeing_survey');
+    Navigator.of(context).pushNamed(_surveyRoute);
   }
 
   /// Get notification statistics
@@ -654,7 +660,7 @@ class NotificationService {
                 interruptionLevel: InterruptionLevel.active,
               ),
             ),
-            payload: '/wellbeing_survey', // Add the payload for proper navigation
+            payload: _surveyRoute, // Add the payload for proper navigation
             uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           );
@@ -684,7 +690,7 @@ class NotificationService {
               interruptionLevel: InterruptionLevel.active,
             ),
           ),
-          payload: '/wellbeing_survey', // Add the payload for proper navigation
+          payload: _surveyRoute, // Add the payload for proper navigation
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           matchDateTimeComponents: DateTimeComponents.time,
@@ -891,7 +897,7 @@ class NotificationService {
           'Help researchers by participating in your biweekly wellbeing survey! Tap to contribute to important research.',
           tz.TZDateTime.from(scheduledDate, tz.local),
           platformChannelSpecifics,
-          payload: '/wellbeing_survey',
+          payload: _surveyRoute,
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         );
@@ -989,13 +995,13 @@ class NotificationService {
         'Background the app now! This notification will appear in 3 seconds. Tap to test navigation to survey screen!',
         scheduledTime,
         platformChannelSpecifics,
-        payload: '/wellbeing_survey',
+        payload: _surveyRoute,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
       
       debugPrint('[NotificationService] Scheduled iOS notification for 3 seconds with ID: $notificationId');
-      debugPrint('[NotificationService] Payload set to: /wellbeing_survey');
+      debugPrint('[NotificationService] Payload set to: $_surveyRoute');
       debugPrint('[NotificationService] IMPORTANT: Background the app NOW to see the notification!');
       
     } catch (e) {
@@ -1096,7 +1102,7 @@ class NotificationService {
         'This notification was scheduled for 5 seconds - minimize the app to see it!',
         tz.TZDateTime.from(scheduledDate, tz.local),
         notificationDetails,
-        payload: '/wellbeing_survey',
+        payload: _surveyRoute,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );

@@ -15,17 +15,10 @@
 	<key>manageAppVersionAndBuildNumber</key>
 	<false/>
 	<key>signingStyle</key>
-	<string>manual</string>
+	<string>automatic</string>
 	<key>stripSwiftSymbols</key>
 	<true/>
 	<key>destination</key>
-	<string>upload</string>
-	<key>provisioningProfiles</key>
-	<dict>
-		<key>com.github.activityspacelab.wellbeingmapper</key>
-		<string>Wellbeing Mapper Provisioning Profile</string>
-		<key>com.github.activityspacelab.wellbeingmapper.beta</key>
-		<string>match AppStore com.github.activityspacelab.wellbeingmapper.beta</string>
-	</dict>
+	<string>export</string>
 </dict>
 </plist>
