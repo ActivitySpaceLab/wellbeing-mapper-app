@@ -12,8 +12,12 @@ class WellbeingMapView extends StatefulWidget {
 class _WellbeingMapViewState extends State<WellbeingMapView> {
   List<WellbeingSurveyResponse> _surveyResponses = [];
   bool _isLoading = true;
-  bool _showHeatMap = false; // Toggle between points and heat map
+  bool _showHeatMap = false;
+  WellbeingMetric _selectedMetric = WellbeingMetric.composite;
   late MapController _mapController;
+
+  bool get _isItalian => Localizations.localeOf(context).languageCode == 'it';
+  String _t(String en, String it) => _isItalian ? it : en;
 
   @override
   void initState() {
@@ -22,28 +26,49 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
     _loadSurveyData();
   }
 
+  String _metricLabel(WellbeingMetric metric) {
+    switch (metric) {
+      case WellbeingMetric.composite:
+        return _t('Composite index', 'Indice composito');
+      case WellbeingMetric.cheerfulSpirits:
+        return _t('Good spirits', 'Buon umore');
+      case WellbeingMetric.calmRelaxed:
+        return _t('Calm and relaxed', 'Calma e rilassamento');
+      case WellbeingMetric.activeVigorous:
+        return _t('Active and vigorous', 'Attivo/a e pieno/a di energia');
+      case WellbeingMetric.wokeUpFresh:
+        return _t('Woke up fresh', 'Svegliato/a riposato/a');
+      case WellbeingMetric.dailyLifeInteresting:
+        return _t('Daily life interesting', 'Vita quotidiana interessante');
+    }
+  }
+
+  double _metricMax(WellbeingMetric metric) {
+    return metric == WellbeingMetric.composite ? 100.0 : 5.0;
+  }
+
+  String _metricUnit(WellbeingMetric metric) {
+    return metric == WellbeingMetric.composite ? '/100' : '/5';
+  }
+
   Future<void> _loadSurveyData() async {
     try {
       final responses = await WellbeingSurveyService().getAllWellbeingSurveys();
-      // Filter only responses with location data
-      final responsesWithLocation = responses.where((response) => 
-        response.latitude != null && response.longitude != null).toList();
-      
+      final responsesWithLocation = responses
+          .where((response) => response.latitude != null && response.longitude != null)
+          .toList();
+
       setState(() {
         _surveyResponses = responsesWithLocation;
         _isLoading = false;
       });
 
-      // Center map on first survey location if available
       if (_surveyResponses.isNotEmpty) {
-        final firstResponse = _surveyResponses.first;
-        _mapController.move(
-          LatLng(firstResponse.latitude!, firstResponse.longitude!), 
-          12.0
-        );
+        final first = _surveyResponses.first;
+        _mapController.move(LatLng(first.latitude!, first.longitude!), 12.0);
       }
     } catch (error) {
-      debugPrint('[WellbeingMapView] Error loading survey data: $error');
+      debugPrint('[WellbeingMapView] load error: $error');
       setState(() {
         _isLoading = false;
       });
@@ -54,21 +79,19 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Wellbeing Map'),
+        title: Text(_t('Wellbeing Map', 'Mappa del benessere')),
         backgroundColor: Colors.teal,
         actions: [
           IconButton(
             icon: Icon(_showHeatMap ? Icons.scatter_plot : Icons.blur_on),
-            tooltip: _showHeatMap ? 'Show Points' : 'Show Heat Map',
-            onPressed: () {
-              setState(() {
-                _showHeatMap = !_showHeatMap;
-              });
-            },
+            tooltip: _showHeatMap
+                ? _t('Show points', 'Mostra punti')
+                : _t('Show heat map', 'Mostra mappa di calore'),
+            onPressed: () => setState(() => _showHeatMap = !_showHeatMap),
           ),
           IconButton(
             icon: Icon(Icons.refresh),
-            tooltip: 'Refresh Data',
+            tooltip: _t('Refresh data', 'Aggiorna dati'),
             onPressed: _loadSurveyData,
           ),
         ],
@@ -79,14 +102,16 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
               ? _buildNoDataView()
               : Column(
                   children: [
+                    _buildMetricSelector(),
                     _buildLegend(),
                     Expanded(
                       child: FlutterMap(
                         mapController: _mapController,
                         options: MapOptions(
-                          initialCenter: _surveyResponses.isNotEmpty
-                              ? LatLng(_surveyResponses.first.latitude!, _surveyResponses.first.longitude!)
-                              : LatLng(51.5, -0.09), // Default to London
+                          initialCenter: LatLng(
+                            _surveyResponses.first.latitude!,
+                            _surveyResponses.first.longitude!,
+                          ),
                           initialZoom: 12.0,
                           minZoom: 2.0,
                           maxZoom: 18.0,
@@ -96,8 +121,8 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
                             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             userAgentPackageName: 'com.wellbeingmapper.app',
                           ),
-                          if (!_showHeatMap) _buildPointMarkers(),
                           if (_showHeatMap) _buildHeatMapLayer(),
+                          if (!_showHeatMap) _buildPointMarkers(),
                         ],
                       ),
                     ),
@@ -107,26 +132,51 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
     );
   }
 
+  Widget _buildMetricSelector() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(12, 10, 12, 4),
+      child: Row(
+        children: [
+          Text(
+            _t('Metric:', 'Metrica:'),
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: DropdownButton<WellbeingMetric>(
+              value: _selectedMetric,
+              isExpanded: true,
+              onChanged: (metric) {
+                if (metric == null) return;
+                setState(() {
+                  _selectedMetric = metric;
+                });
+              },
+              items: WellbeingMetric.values
+                  .map(
+                    (metric) => DropdownMenuItem<WellbeingMetric>(
+                      value: metric,
+                      child: Text(_metricLabel(metric)),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildNoDataView() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.location_off,
-            size: 64,
-            color: Colors.grey,
-          ),
+          Icon(Icons.location_off, size: 64, color: Colors.grey),
           SizedBox(height: 16),
           Text(
-            'No survey data with location found',
+            _t('No wellbeing data with location found', 'Nessun dato di benessere con posizione trovato'),
             style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Take some wellbeing surveys to see your data on the map!',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -134,9 +184,12 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
   }
 
   Widget _buildLegend() {
+    final maxValue = _metricMax(_selectedMetric);
+    final step = _selectedMetric == WellbeingMetric.composite ? 20.0 : 1.0;
+
     return Container(
       padding: EdgeInsets.all(8),
-      margin: EdgeInsets.all(8),
+      margin: EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -153,15 +206,32 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Happiness Score Legend',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            '${_metricLabel(_selectedMetric)} ${_t('legend', 'legenda')}',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              for (int score = 0; score <= 10; score += 2)
-                _buildLegendItem(score.toDouble()),
+              for (double value = 0; value <= maxValue; value += step)
+                Column(
+                  children: [
+                    Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: WellbeingSurveyResponse.colorForMetric(_selectedMetric, value),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      value.toInt().toString(),
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
             ],
           ),
         ],
@@ -169,58 +239,26 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
     );
   }
 
-  Widget _buildLegendItem(double score) {
-    return Column(
-      children: [
-        Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: WellbeingSurveyResponse.getWellbeingColor(score),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-          ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          score.toInt().toString(),
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
-
   Widget _buildPointMarkers() {
     return MarkerLayer(
       markers: _surveyResponses.map((response) {
+        final score = response.metricValue(_selectedMetric);
         return Marker(
           point: LatLng(response.latitude!, response.longitude!),
           child: GestureDetector(
             onTap: () => _showSurveyDetails(response),
             child: Container(
-              width: 30,
-              height: 30,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
-                color: WellbeingSurveyResponse.getWellbeingColor(response.wellbeingScore),
+                color: WellbeingSurveyResponse.colorForMetric(_selectedMetric, score),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: Offset(0, 2),
-                  ),
-                ],
               ),
               child: Center(
                 child: Text(
-                  response.wellbeingScore.toStringAsFixed(1),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 10,
-                  ),
+                  score.toStringAsFixed(score == score.roundToDouble() ? 0 : 1),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
                 ),
               ),
             ),
@@ -231,16 +269,18 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
   }
 
   Widget _buildHeatMapLayer() {
-    // For now, create larger, semi-transparent circles for heat map effect
-    // In future, could implement proper heat map rendering
+    final max = _metricMax(_selectedMetric);
+
     return CircleLayer(
       circles: _surveyResponses.map((response) {
+        final score = response.metricValue(_selectedMetric);
+        final normalized = (score / max).clamp(0.0, 1.0);
         return CircleMarker(
           point: LatLng(response.latitude!, response.longitude!),
-          radius: 30 + (response.wellbeingScore * 5), // Adjusted for 0-10 scale
-          color: WellbeingSurveyResponse.getWellbeingColor(response.wellbeingScore)
-              .withValues(alpha: 0.3),
-          borderColor: WellbeingSurveyResponse.getWellbeingColor(response.wellbeingScore),
+          radius: 26 + (normalized * 26),
+          color: WellbeingSurveyResponse.colorForMetric(_selectedMetric, score)
+              .withValues(alpha: 0.28),
+          borderColor: WellbeingSurveyResponse.colorForMetric(_selectedMetric, score),
           borderStrokeWidth: 2,
         );
       }).toList(),
@@ -248,48 +288,30 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
   }
 
   Widget _buildStatsPanel() {
-    if (_surveyResponses.isEmpty) return SizedBox.shrink();
-
-    final totalResponses = _surveyResponses.length;
-    final avgScore = _surveyResponses
-        .map((r) => r.wellbeingScore)
-        .reduce((a, b) => a + b) / totalResponses;
-    
-    final scoreDistribution = <int, int>{};
-    for (int i = 0; i <= 10; i++) {
-      scoreDistribution[i] = _surveyResponses.where((r) => r.wellbeingScore.round() == i).length;
-    }
+    final values = _surveyResponses.map((r) => r.metricValue(_selectedMetric)).toList();
+    final total = values.length;
+    final avg = values.reduce((a, b) => a + b) / total;
+    final max = values.reduce((a, b) => a > b ? a : b);
 
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.3),
+            color: Colors.grey.withValues(alpha: 0.25),
             spreadRadius: 1,
             blurRadius: 5,
             offset: Offset(0, -2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Text(
-            'Happiness Statistics',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStatItem('Total Surveys', totalResponses.toString()),
-              _buildStatItem('Average Score', avgScore.toStringAsFixed(1)),
-              _buildStatItem('Highest Score', 
-                _surveyResponses.map((r) => r.wellbeingScore).reduce((a, b) => a > b ? a : b).toStringAsFixed(1)),
-            ],
-          ),
+          _buildStatItem(_t('Total', 'Totale'), total.toString()),
+          _buildStatItem(_t('Average', 'Media'), '${avg.toStringAsFixed(1)}${_metricUnit(_selectedMetric)}'),
+          _buildStatItem(_t('Best', 'Migliore'), '${max.toStringAsFixed(1)}${_metricUnit(_selectedMetric)}'),
         ],
       ),
     );
@@ -300,7 +322,7 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
       children: [
         Text(
           value,
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.teal),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
         ),
         Text(
           label,
@@ -311,28 +333,25 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
   }
 
   void _showSurveyDetails(WellbeingSurveyResponse response) {
+    final value = response.metricValue(_selectedMetric);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Survey Details'),
+        title: Text(_t('Survey details', 'Dettagli questionario')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Date: ${response.timestamp.toString().split('.')[0]}'),
+            Text('${_t('Date', 'Data')}: ${response.timestamp.toString().split('.')[0]}'),
             SizedBox(height: 8),
-            Text('Happiness Score: ${response.wellbeingScore.toStringAsFixed(1)}/10'),
-            Text('Category: ${response.wellbeingCategory}'),
-            if (response.accuracy != null) ...[
-              SizedBox(height: 8),
-              Text('Location accuracy: ${response.accuracy!.toStringAsFixed(1)}m'),
-            ],
+            Text('${_metricLabel(_selectedMetric)}: ${value.toStringAsFixed(1)}${_metricUnit(_selectedMetric)}'),
+            Text('${_t('Category', 'Categoria')}: ${response.metricCategory(_selectedMetric)}'),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Close'),
+            child: Text(_t('Close', 'Chiudi')),
           ),
         ],
       ),

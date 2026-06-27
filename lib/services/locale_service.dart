@@ -14,14 +14,12 @@ class LocaleService {
   /// Keep in sync with `MyApp.supportedLocales` and the `lang/*.json` files.
   static const List<Locale> supportedLocales = [
     Locale('en', ''),
-    Locale('es', ''),
     Locale('it', ''),
   ];
 
   /// Human-readable names for the picker (shown in each language's own name).
   static const Map<String, String> languageNames = {
     'en': 'English',
-    'es': 'Español',
     'it': 'Italiano',
   };
 
@@ -35,7 +33,9 @@ class LocaleService {
       final prefs = await SharedPreferences.getInstance();
       final code = prefs.getString(_prefsKey);
       if (code != null && code.isNotEmpty) {
-        localeOverride.value = Locale(code, '');
+        final isSupported =
+            supportedLocales.any((locale) => locale.languageCode == code);
+        localeOverride.value = isSupported ? Locale(code, '') : null;
       }
     } catch (_) {
       // Ignore – fall back to device locale.

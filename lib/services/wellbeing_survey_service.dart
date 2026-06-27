@@ -71,7 +71,11 @@ class WellbeingSurveyService {
       return WellbeingSurveyResponse(
         id: response.id,
         timestamp: response.timestamp,
-        happinessScore: response.happinessScore,
+        cheerfulSpirits: response.cheerfulSpirits,
+        calmRelaxed: response.calmRelaxed,
+        activeVigorous: response.activeVigorous,
+        wokeUpFresh: response.wokeUpFresh,
+        dailyLifeInteresting: response.dailyLifeInteresting,
         latitude: closestTrack.latitude,
         longitude: closestTrack.longitude,
         accuracy: closestTrack.accuracy,
@@ -135,10 +139,13 @@ class WellbeingSurveyService {
     return result.first['count'] as int;
   }
 
-  /// Create a new wellbeing survey response with current timestamp and optional location
-  /// happinessScore: 0.0-10.0 from slider, null means not answered
+  /// Create a new wellbeing survey response with current timestamp and optional location.
   static WellbeingSurveyResponse createResponse({
-    double? happinessScore, // 0.0-10.0 from slider, null means not answered
+    required int cheerfulSpirits,
+    required int calmRelaxed,
+    required int activeVigorous,
+    required int wokeUpFresh,
+    required int dailyLifeInteresting,
     double? latitude,
     double? longitude,
     double? accuracy,
@@ -147,7 +154,11 @@ class WellbeingSurveyService {
     return WellbeingSurveyResponse(
       id: const Uuid().v4(),
       timestamp: DateTime.now(),
-      happinessScore: happinessScore,
+      cheerfulSpirits: cheerfulSpirits,
+      calmRelaxed: calmRelaxed,
+      activeVigorous: activeVigorous,
+      wokeUpFresh: wokeUpFresh,
+      dailyLifeInteresting: dailyLifeInteresting,
       latitude: latitude,
       longitude: longitude,
       accuracy: accuracy,

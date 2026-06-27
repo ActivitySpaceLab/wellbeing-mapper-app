@@ -376,6 +376,8 @@ class MapViewState extends State<MapView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+
     return Stack(
       children: [
         // Main map
@@ -414,8 +416,8 @@ class MapViewState extends State<MapView>
         
         // Map control buttons
         Positioned(
-          right: 16,
-          bottom: 100, // Position above typical FAB location
+          left: 16,
+          bottom: safeBottom + 16,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

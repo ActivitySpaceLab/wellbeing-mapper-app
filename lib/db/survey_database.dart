@@ -23,7 +23,7 @@ class SurveyDatabase {
     String path = join(await getDatabasesPath(), 'survey_database.db');
     return await openDatabase(
       path,
-      version: 10, // Fixed consent_responses schema inconsistencies
+      version: 11, // Rebuilt wellbeing schema around five-question WHO-5 style model
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -164,7 +164,11 @@ class SurveyDatabase {
       CREATE TABLE wellbeing_survey_responses (
         id TEXT PRIMARY KEY,
         timestamp TEXT NOT NULL,
-        happiness_score REAL,
+        cheerful_spirits INTEGER NOT NULL,
+        calm_relaxed INTEGER NOT NULL,
+        active_vigorous INTEGER NOT NULL,
+        woke_up_fresh INTEGER NOT NULL,
+        daily_life_interesting INTEGER NOT NULL,
         latitude REAL,
         longitude REAL,
         accuracy REAL,
@@ -489,6 +493,28 @@ class SurveyDatabase {
         // If there's an error, try to recreate the table
         await _recreateConsentResponsesTable(db);
       }
+    }
+
+    if (oldVersion < 11) {
+      // Intentionally destructive for pre-release testing: replace wellbeing
+      // schema with the five-question model.
+      await db.execute('DROP TABLE IF EXISTS wellbeing_survey_responses');
+      await db.execute('''
+        CREATE TABLE wellbeing_survey_responses (
+          id TEXT PRIMARY KEY,
+          timestamp TEXT NOT NULL,
+          cheerful_spirits INTEGER NOT NULL,
+          calm_relaxed INTEGER NOT NULL,
+          active_vigorous INTEGER NOT NULL,
+          woke_up_fresh INTEGER NOT NULL,
+          daily_life_interesting INTEGER NOT NULL,
+          latitude REAL,
+          longitude REAL,
+          accuracy REAL,
+          location_timestamp TEXT,
+          is_synced INTEGER DEFAULT 0
+        )
+      ''');
     }
   }
   

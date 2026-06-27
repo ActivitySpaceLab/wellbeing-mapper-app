@@ -25,6 +25,20 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
   String buildNumber = '';
   String userUuid = '';
 
+  bool get _isItalian => Localizations.localeOf(context).languageCode == 'it';
+  String _t(String en, String it) => _isItalian ? it : en;
+
+  String _modeLabel(AppMode mode) {
+    switch (mode) {
+      case AppMode.private:
+        return _t('Private', 'Privato');
+      case AppMode.research:
+        return _t('Research', 'Ricerca');
+      case AppMode.appTesting:
+        return _t('App Testing', 'Test app');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -40,7 +54,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
       
       // Get user UUID from shared preferences
       final prefs = await SharedPreferences.getInstance();
-      final uuid = prefs.getString("user_uuid") ?? 'Not available';
+      final uuid = prefs.getString("user_uuid") ?? _t('Not available', 'Non disponibile');
       
       setState(() {
         appVersion = packageInfo.version;
@@ -50,9 +64,9 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
     } catch (e) {
       debugPrint('Error loading app info: $e');
       setState(() {
-        appVersion = 'Unknown';
-        buildNumber = 'Unknown';
-        userUuid = 'Unknown';
+        appVersion = _t('Unknown', 'Sconosciuto');
+        buildNumber = _t('Unknown', 'Sconosciuto');
+        userUuid = _t('Unknown', 'Sconosciuto');
       });
     }
   }
@@ -61,7 +75,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label copied to clipboard'),
+        content: Text(_t('$label copied to clipboard', '$label copiato negli appunti')),
         duration: Duration(seconds: 2),
       ),
     );
@@ -194,17 +208,26 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
             Card(
               child: ListTile(
                 leading: const Icon(Icons.refresh),
-                title: Text("Loading..."),
+                title: Text(_t('Loading...', 'Caricamento...')),
               ),
             )
           else ...[
-            // App Mode - Always visible (moved to first position)
+            // Language picker - first menu option
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(AppLocalizations.of(context)?.translate("language") ?? _t('Language', 'Lingua')),
+                subtitle: Text(_currentLanguageLabel(context)),
+                onTap: _showLanguagePicker,
+              ),
+            ),
+            // App Mode - Always visible
             Card(
               child: ListTile(
                 leading: const Icon(Icons.settings),
-                title: Text("App Mode"),
-                subtitle: Text(currentMode.displayName),
-                trailing: Text("Change Mode", style: TextStyle(color: SouthAfricanTheme.primaryBlue)),
+                title: Text(_t('App Mode', 'Modalita app')),
+                subtitle: Text(_modeLabel(currentMode)),
+                trailing: Text(_t('Change Mode', 'Cambia modalita'), style: TextStyle(color: SouthAfricanTheme.primaryBlue)),
                 onTap: () {
                   _navigateToChangeMode();
                 },
@@ -214,8 +237,8 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
             Card(
               child: ListTile(
                 leading: const Icon(Icons.map_outlined),
-                title: Text("Wellbeing Map"),
-                subtitle: Text("View your wellbeing responses on map"),
+                title: Text(_t('Wellbeing Map', 'Mappa del benessere')),
+                subtitle: Text(_t('View your wellbeing responses on map', 'Visualizza le risposte sulla mappa')),
                 onTap: () {
                   Navigator.of(context).pushNamed('/wellbeing_map');
                 },
@@ -225,8 +248,8 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
             Card(
               child: ListTile(
                 leading: const Icon(Icons.timeline),
-                title: Text("Wellbeing Timeline"),
-                subtitle: Text("Track your wellbeing trends over time"),
+                title: Text(_t('Wellbeing Timeline', 'Cronologia del benessere')),
+                subtitle: Text(_t('Track your wellbeing trends over time', 'Segui l\'andamento del benessere nel tempo')),
                 onTap: () {
                   Navigator.of(context).pushNamed('/wellbeing_timeline');
                 },
@@ -240,10 +263,10 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
                     hasCompletedInitialSurvey ? Icons.assignment_turned_in : Icons.assignment,
                     color: hasCompletedInitialSurvey ? Colors.green : null,
                   ),
-                  title: Text("Initial Survey"),
+                    title: Text(_t('Initial Survey', 'Questionario iniziale')),
                   subtitle: Text(hasCompletedInitialSurvey 
-                    ? "Completed ✓" 
-                    : "Complete your initial survey"
+                      ? _t('Completed ✓', 'Completato ✓') 
+                      : _t('Complete your initial survey', 'Completa il questionario iniziale')
                   ),
                   trailing: hasCompletedInitialSurvey 
                     ? Icon(Icons.check_circle, color: Colors.green)
@@ -260,8 +283,8 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.assignment_turned_in),
-                  title: Text("Wellbeing Survey"),
-                  subtitle: Text("Bi-weekly wellbeing check-in"),
+                  title: Text(_t('Wellbeing Survey', 'Questionario sul benessere')),
+                  subtitle: Text(_t('Bi-weekly wellbeing check-in', 'Check-in quindicinale sul benessere')),
                   onTap: () async {
                     // Use the survey navigation service to support both Qualtrics and hardcoded surveys
                     await SurveyNavigationService.navigateToBiweeklySurvey(context);
@@ -271,8 +294,8 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.history),
-                  title: Text("Survey History"),
-                  subtitle: Text("View completed surveys"),
+                  title: Text(_t('Survey History', 'Cronologia questionari')),
+                  subtitle: Text(_t('View completed surveys', 'Visualizza i questionari completati')),
                   onTap: () {
                     Navigator.of(context).pushNamed('/survey_list');
                   },
@@ -281,7 +304,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.notifications_outlined),
-                  title: Text("Survey Notifications"),
+                  title: Text(_t('Survey Notifications', 'Notifiche questionari')),
                   onTap: () {
                     Navigator.of(context).pushNamed('/notification_settings');
                   },
@@ -290,8 +313,8 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.tune),
-                  title: Text("Settings"),
-                  subtitle: Text("Manage storage and map display"),
+                  title: Text(_t('Settings', 'Impostazioni')),
+                  subtitle: Text(_t('Manage storage and map display', 'Gestisci archivio e visualizzazione mappa')),
                   onTap: () {
                     Navigator.of(context).pushNamed('/storage_settings');
                   },
@@ -324,20 +347,11 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
             Card(
               child: ListTile(
                 leading: const Icon(Icons.help),
-                title: Text("Help & Guide"),
-                subtitle: Text("Learn how to use the app"),
+                title: Text(_t('Help & Guide', 'Aiuto e guida')),
+                subtitle: Text(_t('Learn how to use the app', 'Scopri come usare l\'app')),
                 onTap: () {
                   Navigator.of(context).pushNamed('/help');
                 },
-              ),
-            ),
-            // Language picker - switch app language without changing device settings
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.language),
-                title: Text(AppLocalizations.of(context)?.translate("language") ?? "Language"),
-                subtitle: Text(_currentLanguageLabel(context)),
-                onTap: _showLanguagePicker,
               ),
             ),
             // Visit Project Website - Second to last
@@ -369,12 +383,12 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
               color: Colors.grey[50],
               child: ExpansionTile(
                 leading: const Icon(Icons.info_outline),
-                title: Text("App Information"),
-                subtitle: Text("Version & User ID"),
+                title: Text(_t('App Information', 'Informazioni app')),
+                subtitle: Text(_t('Version & User ID', 'Versione e ID utente')),
                 children: [
                   ListTile(
                     dense: true,
-                    title: Text("App Version"),
+                    title: Text(_t('App Version', 'Versione app')),
                     subtitle: Text("$appVersion ($buildNumber)"),
                     trailing: IconButton(
                       icon: Icon(Icons.copy, size: 16),
@@ -386,8 +400,8 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
                   ),
                   ListTile(
                     dense: true,
-                    title: Text("App Mode"),
-                    subtitle: Text(currentMode.displayName),
+                    title: Text(_t('App Mode', 'Modalita app')),
+                    subtitle: Text(_modeLabel(currentMode)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -409,8 +423,8 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
                         IconButton(
                           icon: Icon(Icons.copy, size: 16),
                           onPressed: () => _copyToClipboard(
-                            "App Mode: ${currentMode.displayName}",
-                            "App mode"
+                            "App Mode: ${_modeLabel(currentMode)}",
+                            _t('App mode', 'Modalita app')
                           ),
                         ),
                       ],
@@ -418,21 +432,21 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
                   ),
                   ListTile(
                     dense: true,
-                    title: Text("User UUID"),
+                    title: Text(_t('User UUID', 'UUID utente')),
                     subtitle: Text(userUuid.length > 30 ? "${userUuid.substring(0, 30)}..." : userUuid),
                     trailing: IconButton(
                       icon: Icon(Icons.copy, size: 16),
-                      onPressed: () => _copyToClipboard(userUuid, "User UUID"),
+                      onPressed: () => _copyToClipboard(userUuid, _t('User UUID', 'UUID utente')),
                     ),
                   ),
                   ListTile(
                     dense: true,
-                    title: Text("Copy All Info"),
+                    title: Text(_t('Copy All Info', 'Copia tutte le info')),
                     trailing: IconButton(
                       icon: Icon(Icons.copy_all),
                       onPressed: () => _copyToClipboard(
-                        "App Version: $appVersion\nBuild Number: $buildNumber\nApp Mode: ${currentMode.displayName}\nUser UUID: $userUuid",
-                        "All app information"
+                        "App Version: $appVersion\nBuild Number: $buildNumber\nApp Mode: ${_modeLabel(currentMode)}\nUser UUID: $userUuid",
+                        _t('All app information', 'Tutte le informazioni app')
                       ),
                     ),
                   ),

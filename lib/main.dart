@@ -112,7 +112,6 @@ class MyApp extends StatelessWidget {
           locale: localeOverride,
           supportedLocales: const [
             Locale('en', ''), // English (default)
-            Locale('es', ''), // Spanish
             Locale('it', ''), // Italian
             // TODO(i18n): Re-enable Catalan once translations are complete.
             // Locale('ca', ''),

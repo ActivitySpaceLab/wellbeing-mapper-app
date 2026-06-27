@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:background_fetch/background_fetch.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -10,8 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../db/survey_database.dart';
-import '../models/app_mode.dart';
-import '../services/app_mode_service.dart';
 import '../services/consent_tracking_service.dart';
 import '../services/geo_location_service.dart';
 import '../services/initial_survey_service.dart';
@@ -45,6 +43,9 @@ class HomeViewState extends State<HomeView>
   final GlobalKey<MapViewState> _mapViewKey = GlobalKey<MapViewState>();
   bool _enabled = true;
   DateTime? _lastStationarySave;
+
+  bool get _isItalian => Localizations.localeOf(context).languageCode == 'it';
+  String _t(String en, String it) => _isItalian ? it : en;
 
   // All timers stored so they can be cancelled in dispose().
   Timer? _surveyPromptTimer;
@@ -577,7 +578,7 @@ class HomeViewState extends State<HomeView>
             icon: const Icon(Icons.gps_fixed),
             color: SouthAfricanTheme.accentYellow,
             onPressed: _onClickGetCurrentPosition,
-            tooltip: 'Update current position',
+            tooltip: _t('Update current position', 'Aggiorna posizione attuale'),
           ),
           Switch(
             value: _enabled,
@@ -608,12 +609,7 @@ class HomeViewState extends State<HomeView>
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           try {
-            final mode = await AppModeService.getCurrentMode();
-            if (mode == AppMode.research) {
-              await Navigator.of(context).pushNamed('/recurring_survey');
-            } else {
-              await Navigator.of(context).pushNamed('/wellbeing_survey');
-            }
+            await Navigator.of(context).pushNamed('/wellbeing_survey');
             _refreshMapAfterSurvey();
           } catch (e) {
             debugPrint('[HomeView] Survey navigation error: $e');
@@ -624,7 +620,7 @@ class HomeViewState extends State<HomeView>
         backgroundColor: SouthAfricanTheme.primaryBlue,
         foregroundColor: SouthAfricanTheme.pureWhite,
         icon: const Icon(Icons.add),
-        label: const Text('Survey'),
+        label: Text(_t('Survey', 'Questionario')),
       ),
     );
   }

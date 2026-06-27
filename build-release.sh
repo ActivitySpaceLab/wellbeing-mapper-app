@@ -97,23 +97,30 @@ echo ""
 # Build iOS IPA (for App Store distribution via Transporter)
 echo "🍎 Building iOS IPA..."
 
-# If App Store Connect API key variables are provided, allow Xcode to
-# automatically download/create provisioning profiles during archive/export.
+# Allow Xcode to update/download provisioning profiles during archive/export.
+# This works with a signed-in local Xcode account, or with API key auth below.
+IPA_BUILD_CMD=(
+    fvm flutter build ipa
+    --export-options-plist=ios/ExportOptions.plist
+    --
+    -allowProvisioningUpdates
+)
+
+# If App Store Connect API key variables are provided, authenticate xcodebuild
+# explicitly (useful for CI or headless/local runs without Xcode UI login).
 # Required env vars for this path:
 #   APPSTORE_API_KEY_ID
 #   APPSTORE_API_ISSUER_ID
 #   APPSTORE_API_KEY_PATH
-IPA_BUILD_CMD=(fvm flutter build ipa --export-options-plist=ios/ExportOptions.plist)
 if [ -n "$APPSTORE_API_KEY_ID" ] && [ -n "$APPSTORE_API_ISSUER_ID" ] && [ -n "$APPSTORE_API_KEY_PATH" ]; then
     echo "🔐 Using App Store Connect API key for provisioning updates..."
     IPA_BUILD_CMD+=(
-        --export-method=app-store
-        --
-        -allowProvisioningUpdates
         -authenticationKeyID "$APPSTORE_API_KEY_ID"
         -authenticationKeyIssuerID "$APPSTORE_API_ISSUER_ID"
         -authenticationKeyPath "$APPSTORE_API_KEY_PATH"
     )
+else
+    echo "🔐 Using local Xcode account for provisioning updates (if signed in)."
 fi
 
 if "${IPA_BUILD_CMD[@]}"; then
@@ -134,7 +141,7 @@ if "${IPA_BUILD_CMD[@]}"; then
 else
     PROFILE_COUNT=$(find "$HOME/Library/MobileDevice/Provisioning Profiles" -maxdepth 1 -name "*.mobileprovision" 2>/dev/null | wc -l | tr -d ' ')
     if [ "$PROFILE_COUNT" = "0" ]; then
-        IOS_IPA_STATUS="❌ Build failed (no provisioning profiles installed locally)"
+        IOS_IPA_STATUS="❌ Build failed (no provisioning profiles installed locally; sign in to Xcode and download profiles, or use API key env vars)"
     else
         IOS_IPA_STATUS="❌ Build failed (check provisioning profile name/team/bundle ID alignment)"
     fi
