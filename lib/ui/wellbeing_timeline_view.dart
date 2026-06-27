@@ -82,6 +82,12 @@ class _WellbeingTimelineViewState extends State<WellbeingTimelineView> {
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
   }
 
+  List<WellbeingSurveyResponse> get _metricResponses {
+    return _filteredResponses
+        .where((response) => response.metricValue(_selectedMetric) != null)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,6 +113,8 @@ class _WellbeingTimelineViewState extends State<WellbeingTimelineView> {
           ? Center(child: CircularProgressIndicator())
           : _filteredResponses.isEmpty
               ? _buildNoDataView()
+            : _metricResponses.isEmpty
+              ? _buildNoMetricDataView()
               : Column(
                   children: [
                     _buildMetricSelector(),
@@ -168,12 +176,38 @@ class _WellbeingTimelineViewState extends State<WellbeingTimelineView> {
     );
   }
 
+  Widget _buildNoMetricDataView() {
+    return Column(
+      children: [
+        _buildMetricSelector(),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.timeline, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  _t('No responses for selected metric', 'Nessuna risposta per la metrica selezionata'),
+                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildStatsCard() {
-    final values = _filteredResponses.map((r) => r.metricValue(_selectedMetric)).toList();
+    final values = _metricResponses
+        .map((r) => r.metricValue(_selectedMetric)!)
+        .toList();
     final avg = values.reduce((a, b) => a + b) / values.length;
     final maxValue = values.reduce((a, b) => a > b ? a : b);
     final minValue = values.reduce((a, b) => a < b ? a : b);
     final latestValue = values.last;
+    final noResponseCount = _filteredResponses.length - values.length;
 
     final trend = _computeTrend(values);
 
@@ -214,7 +248,10 @@ class _WellbeingTimelineViewState extends State<WellbeingTimelineView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('${_t('Trend', 'Tendenza')}: $trend', style: TextStyle(fontWeight: FontWeight.w500)),
-              Text('${_filteredResponses.length} ${_t('surveys', 'questionari')}', style: TextStyle(color: Colors.grey[600])),
+              Text(
+                '${values.length} ${_t('responses', 'risposte')} • $noResponseCount ${_t('no response', 'nessuna risposta')}',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
             ],
           ),
         ],
@@ -252,9 +289,9 @@ class _WellbeingTimelineViewState extends State<WellbeingTimelineView> {
     final spots = <FlSpot>[];
     final dateFormatter = DateFormat('MM/dd');
 
-    for (int i = 0; i < _filteredResponses.length; i++) {
-      final response = _filteredResponses[i];
-      spots.add(FlSpot(i.toDouble(), response.metricValue(_selectedMetric)));
+    for (int i = 0; i < _metricResponses.length; i++) {
+      final response = _metricResponses[i];
+      spots.add(FlSpot(i.toDouble(), response.metricValue(_selectedMetric)!));
     }
 
     return Container(
@@ -286,11 +323,11 @@ class _WellbeingTimelineViewState extends State<WellbeingTimelineView> {
                 interval: _getXAxisInterval(),
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
-                  if (index >= 0 && index < _filteredResponses.length) {
+                  if (index >= 0 && index < _metricResponses.length) {
                     return Transform.rotate(
                       angle: -0.5,
                       child: Text(
-                        dateFormatter.format(_filteredResponses[index].timestamp),
+                        dateFormatter.format(_metricResponses[index].timestamp),
                         style: TextStyle(fontSize: 10),
                       ),
                     );
@@ -316,7 +353,7 @@ class _WellbeingTimelineViewState extends State<WellbeingTimelineView> {
             border: Border.all(color: Colors.grey[300]!, width: 1),
           ),
           minX: 0,
-          maxX: (_filteredResponses.length - 1).toDouble(),
+          maxX: (_metricResponses.length - 1).toDouble(),
           minY: 0,
           maxY: _metricMax(_selectedMetric),
           lineBarsData: [
@@ -345,9 +382,9 @@ class _WellbeingTimelineViewState extends State<WellbeingTimelineView> {
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   final index = spot.x.toInt();
-                  final response = _filteredResponses[index];
+                  final response = _metricResponses[index];
                   final dateStr = DateFormat('MMM dd, yyyy').format(response.timestamp);
-                  final value = response.metricValue(_selectedMetric);
+                  final value = response.metricValue(_selectedMetric)!;
                   return LineTooltipItem(
                     '$dateStr\n${_metricLabel(_selectedMetric)}: ${value.toStringAsFixed(1)}${_metricUnit(_selectedMetric)}',
                     TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
@@ -385,7 +422,7 @@ class _WellbeingTimelineViewState extends State<WellbeingTimelineView> {
   }
 
   double _getXAxisInterval() {
-    final count = _filteredResponses.length;
+    final count = _metricResponses.length;
     if (count <= 6) return 1;
     if (count <= 15) return 2;
     if (count <= 30) return 5;

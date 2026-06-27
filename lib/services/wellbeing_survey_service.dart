@@ -141,11 +141,11 @@ class WellbeingSurveyService {
 
   /// Create a new wellbeing survey response with current timestamp and optional location.
   static WellbeingSurveyResponse createResponse({
-    required int cheerfulSpirits,
-    required int calmRelaxed,
-    required int activeVigorous,
-    required int wokeUpFresh,
-    required int dailyLifeInteresting,
+    int? cheerfulSpirits,
+    int? calmRelaxed,
+    int? activeVigorous,
+    int? wokeUpFresh,
+    int? dailyLifeInteresting,
     double? latitude,
     double? longitude,
     double? accuracy,

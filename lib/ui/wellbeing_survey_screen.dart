@@ -16,9 +16,9 @@ class WellbeingSurveyScreen extends StatefulWidget {
 }
 
 class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
-  final Map<WellbeingMetric, int> _answers = {
+  final Map<WellbeingMetric, double?> _answers = {
     for (final question in WellbeingSurveyQuestion.questions)
-      question.metric: 3,
+      question.metric: null,
   };
 
   bool _isSubmitting = false;
@@ -202,7 +202,9 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
   }
 
   Widget _buildQuestionCard(WellbeingSurveyQuestion question) {
-    final value = _answers[question.metric] ?? 3;
+    final value = _answers[question.metric];
+    final displayValue = value?.round();
+    final hasSelection = value != null;
 
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -221,28 +223,56 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
               children: [
                 Text(_t('At no time', 'Mai'), style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                 Text(
-                  '$value - ${_scaleLabel(value)}',
+                  hasSelection
+                      ? '${displayValue!} - ${_scaleLabel(displayValue)}'
+                      : _t('Not selected', 'Non selezionato'),
                   style: TextStyle(
                     fontSize: 13,
-                    color: SouthAfricanTheme.primaryBlue,
+                    color: hasSelection ? SouthAfricanTheme.primaryBlue : Colors.red[600],
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(_t('All the time', 'Sempre'), style: TextStyle(fontSize: 12, color: Colors.grey[600])),
               ],
             ),
-            Slider(
-              value: value.toDouble(),
-              min: question.minValue.toDouble(),
-              max: question.maxValue.toDouble(),
-              divisions: question.maxValue - question.minValue,
-              label: value.toString(),
-              onChanged: (newValue) {
-                setState(() {
-                  _answers[question.metric] = newValue.round();
-                });
-              },
-              activeColor: SouthAfricanTheme.primaryBlue,
+            SizedBox(height: 6),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: hasSelection ? Colors.grey[50] : Colors.red[50],
+                border: Border.all(
+                  color: hasSelection ? Colors.grey[300]! : Colors.red[300]!,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Slider(
+                    value: value ?? ((question.minValue + question.maxValue) / 2).toDouble(),
+                    min: question.minValue.toDouble(),
+                    max: question.maxValue.toDouble(),
+                    divisions: question.maxValue - question.minValue,
+                    label: hasSelection ? displayValue.toString() : null,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _answers[question.metric] = newValue;
+                      });
+                    },
+                    activeColor: hasSelection ? SouthAfricanTheme.primaryBlue : Colors.red[300],
+                  ),
+                  if (!hasSelection)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        _t(
+                          'Please move the slider to record a response',
+                          'Sposta il cursore per registrare una risposta',
+                        ),
+                        style: TextStyle(fontSize: 11, color: Colors.red[600]),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
@@ -257,11 +287,11 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
 
     try {
       final response = WellbeingSurveyService.createResponse(
-        cheerfulSpirits: _answers[WellbeingMetric.cheerfulSpirits]!,
-        calmRelaxed: _answers[WellbeingMetric.calmRelaxed]!,
-        activeVigorous: _answers[WellbeingMetric.activeVigorous]!,
-        wokeUpFresh: _answers[WellbeingMetric.wokeUpFresh]!,
-        dailyLifeInteresting: _answers[WellbeingMetric.dailyLifeInteresting]!,
+        cheerfulSpirits: _answers[WellbeingMetric.cheerfulSpirits]?.round(),
+        calmRelaxed: _answers[WellbeingMetric.calmRelaxed]?.round(),
+        activeVigorous: _answers[WellbeingMetric.activeVigorous]?.round(),
+        wokeUpFresh: _answers[WellbeingMetric.wokeUpFresh]?.round(),
+        dailyLifeInteresting: _answers[WellbeingMetric.dailyLifeInteresting]?.round(),
         latitude: _currentLocation?.coords.latitude,
         longitude: _currentLocation?.coords.longitude,
         accuracy: _currentLocation?.coords.accuracy,
@@ -271,7 +301,7 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
       await WellbeingSurveyService().insertWellbeingSurvey(response);
 
       final mode = await AppModeService.getCurrentMode();
-      final summary = response.compositeIndex.toStringAsFixed(0);
+      final summary = response.compositeIndex?.toStringAsFixed(0) ?? _t('N/A', 'N/D');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -336,8 +366,8 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
                 SizedBox(height: 8),
                 Text(
                   _t(
-                    'Rate each statement based on how you felt over the last two weeks.',
-                    'Valuta ogni affermazione in base a come ti sei sentito/a nelle ultime due settimane.',
+                    'Rate each statement based on how you felt over the last two weeks. Unmoved sliders are stored as no response.',
+                    'Valuta ogni affermazione in base a come ti sei sentito/a nelle ultime due settimane. I cursori non spostati vengono salvati come mancata risposta.',
                   ),
                   style: TextStyle(fontSize: 13, color: SouthAfricanTheme.darkGrey),
                 ),

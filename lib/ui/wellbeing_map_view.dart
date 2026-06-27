@@ -51,6 +51,12 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
     return metric == WellbeingMetric.composite ? '/100' : '/5';
   }
 
+  List<WellbeingSurveyResponse> get _responsesForSelectedMetric {
+    return _surveyResponses
+        .where((response) => response.metricValue(_selectedMetric) != null)
+        .toList();
+  }
+
   Future<void> _loadSurveyData() async {
     try {
       final responses = await WellbeingSurveyService().getAllWellbeingSurveys();
@@ -100,6 +106,8 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
           ? Center(child: CircularProgressIndicator())
           : _surveyResponses.isEmpty
               ? _buildNoDataView()
+            : _responsesForSelectedMetric.isEmpty
+              ? _buildNoMetricDataView()
               : Column(
                   children: [
                     _buildMetricSelector(),
@@ -183,6 +191,29 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
     );
   }
 
+  Widget _buildNoMetricDataView() {
+    return Column(
+      children: [
+        _buildMetricSelector(),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.filter_alt_off, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  _t('No responses for selected metric', 'Nessuna risposta per la metrica selezionata'),
+                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildLegend() {
     final maxValue = _metricMax(_selectedMetric);
     final step = _selectedMetric == WellbeingMetric.composite ? 20.0 : 1.0;
@@ -241,8 +272,8 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
 
   Widget _buildPointMarkers() {
     return MarkerLayer(
-      markers: _surveyResponses.map((response) {
-        final score = response.metricValue(_selectedMetric);
+      markers: _responsesForSelectedMetric.map((response) {
+        final score = response.metricValue(_selectedMetric)!;
         return Marker(
           point: LatLng(response.latitude!, response.longitude!),
           child: GestureDetector(
@@ -272,8 +303,8 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
     final max = _metricMax(_selectedMetric);
 
     return CircleLayer(
-      circles: _surveyResponses.map((response) {
-        final score = response.metricValue(_selectedMetric);
+      circles: _responsesForSelectedMetric.map((response) {
+        final score = response.metricValue(_selectedMetric)!;
         final normalized = (score / max).clamp(0.0, 1.0);
         return CircleMarker(
           point: LatLng(response.latitude!, response.longitude!),
@@ -288,10 +319,13 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
   }
 
   Widget _buildStatsPanel() {
-    final values = _surveyResponses.map((r) => r.metricValue(_selectedMetric)).toList();
+    final values = _responsesForSelectedMetric
+        .map((r) => r.metricValue(_selectedMetric)!)
+        .toList();
     final total = values.length;
     final avg = values.reduce((a, b) => a + b) / total;
     final max = values.reduce((a, b) => a > b ? a : b);
+    final noResponseCount = _surveyResponses.length - total;
 
     return Container(
       padding: EdgeInsets.all(14),
@@ -309,7 +343,8 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem(_t('Total', 'Totale'), total.toString()),
+          _buildStatItem(_t('Responses', 'Risposte'), total.toString()),
+          _buildStatItem(_t('No response', 'Nessuna risposta'), noResponseCount.toString()),
           _buildStatItem(_t('Average', 'Media'), '${avg.toStringAsFixed(1)}${_metricUnit(_selectedMetric)}'),
           _buildStatItem(_t('Best', 'Migliore'), '${max.toStringAsFixed(1)}${_metricUnit(_selectedMetric)}'),
         ],
@@ -334,6 +369,9 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
 
   void _showSurveyDetails(WellbeingSurveyResponse response) {
     final value = response.metricValue(_selectedMetric);
+    final valueText = value == null
+        ? _t('Not selected', 'Non selezionato')
+        : '${value.toStringAsFixed(1)}${_metricUnit(_selectedMetric)}';
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -344,7 +382,7 @@ class _WellbeingMapViewState extends State<WellbeingMapView> {
           children: [
             Text('${_t('Date', 'Data')}: ${response.timestamp.toString().split('.')[0]}'),
             SizedBox(height: 8),
-            Text('${_metricLabel(_selectedMetric)}: ${value.toStringAsFixed(1)}${_metricUnit(_selectedMetric)}'),
+            Text('${_metricLabel(_selectedMetric)}: $valueText'),
             Text('${_t('Category', 'Categoria')}: ${response.metricCategory(_selectedMetric)}'),
           ],
         ),

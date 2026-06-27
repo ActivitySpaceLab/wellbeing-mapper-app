@@ -12,11 +12,11 @@ enum WellbeingMetric {
 class WellbeingSurveyResponse {
   final String id;
   final DateTime timestamp;
-  final int cheerfulSpirits; // 0..5
-  final int calmRelaxed; // 0..5
-  final int activeVigorous; // 0..5
-  final int wokeUpFresh; // 0..5
-  final int dailyLifeInteresting; // 0..5
+  final int? cheerfulSpirits; // 0..5, null = no response
+  final int? calmRelaxed; // 0..5, null = no response
+  final int? activeVigorous; // 0..5, null = no response
+  final int? wokeUpFresh; // 0..5, null = no response
+  final int? dailyLifeInteresting; // 0..5, null = no response
   final double? latitude;
   final double? longitude;
   final double? accuracy;
@@ -59,11 +59,11 @@ class WellbeingSurveyResponse {
     return WellbeingSurveyResponse(
       id: json['id'] as String,
       timestamp: DateTime.parse(json['timestamp'] as String),
-      cheerfulSpirits: (json['cheerful_spirits'] as num).toInt(),
-      calmRelaxed: (json['calm_relaxed'] as num).toInt(),
-      activeVigorous: (json['active_vigorous'] as num).toInt(),
-      wokeUpFresh: (json['woke_up_fresh'] as num).toInt(),
-      dailyLifeInteresting: (json['daily_life_interesting'] as num).toInt(),
+      cheerfulSpirits: (json['cheerful_spirits'] as num?)?.toInt(),
+      calmRelaxed: (json['calm_relaxed'] as num?)?.toInt(),
+      activeVigorous: (json['active_vigorous'] as num?)?.toInt(),
+      wokeUpFresh: (json['woke_up_fresh'] as num?)?.toInt(),
+      dailyLifeInteresting: (json['daily_life_interesting'] as num?)?.toInt(),
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       accuracy: (json['accuracy'] as num?)?.toDouble(),
@@ -72,39 +72,51 @@ class WellbeingSurveyResponse {
     );
   }
 
-  double get averageScore0to5 {
-    return (cheerfulSpirits +
-            calmRelaxed +
-            activeVigorous +
-            wokeUpFresh +
-            dailyLifeInteresting) /
-        5.0;
+  List<int> get answeredValues {
+    return [
+      cheerfulSpirits,
+      calmRelaxed,
+      activeVigorous,
+      wokeUpFresh,
+      dailyLifeInteresting,
+    ].whereType<int>().toList();
+  }
+
+  double? get averageScore0to5 {
+    final values = answeredValues;
+    if (values.isEmpty) return null;
+    return values.reduce((a, b) => a + b) / values.length;
   }
 
   /// WHO-5 style index mapped to 0..100.
-  double get compositeIndex {
-    return averageScore0to5 * 20.0;
+  double? get compositeIndex {
+    if (answeredValues.length < 5) return null;
+    final average = averageScore0to5;
+    if (average == null) return null;
+    return average * 20.0;
   }
 
-  double metricValue(WellbeingMetric metric) {
+  double? metricValue(WellbeingMetric metric) {
     switch (metric) {
       case WellbeingMetric.composite:
         return compositeIndex;
       case WellbeingMetric.cheerfulSpirits:
-        return cheerfulSpirits.toDouble();
+        return cheerfulSpirits?.toDouble();
       case WellbeingMetric.calmRelaxed:
-        return calmRelaxed.toDouble();
+        return calmRelaxed?.toDouble();
       case WellbeingMetric.activeVigorous:
-        return activeVigorous.toDouble();
+        return activeVigorous?.toDouble();
       case WellbeingMetric.wokeUpFresh:
-        return wokeUpFresh.toDouble();
+        return wokeUpFresh?.toDouble();
       case WellbeingMetric.dailyLifeInteresting:
-        return dailyLifeInteresting.toDouble();
+        return dailyLifeInteresting?.toDouble();
     }
   }
 
   String metricCategory(WellbeingMetric metric) {
     final value = metricValue(metric);
+    if (value == null) return 'No response';
+
     if (metric == WellbeingMetric.composite) {
       if (value >= 80) return 'Very High';
       if (value >= 60) return 'High';
@@ -121,7 +133,9 @@ class WellbeingSurveyResponse {
     return 'At no time';
   }
 
-  static Color colorForMetric(WellbeingMetric metric, double value) {
+  static Color colorForMetric(WellbeingMetric metric, double? value) {
+    if (value == null) return const Color(0xFF9E9E9E);
+
     final normalized = metric == WellbeingMetric.composite
         ? (value / 100.0).clamp(0.0, 1.0)
         : (value / 5.0).clamp(0.0, 1.0);

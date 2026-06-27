@@ -10,6 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../db/survey_database.dart';
+import '../models/app_mode.dart';
+import '../services/app_mode_service.dart';
 import '../services/consent_tracking_service.dart';
 import '../services/geo_location_service.dart';
 import '../services/initial_survey_service.dart';
@@ -608,12 +610,15 @@ class HomeViewState extends State<HomeView>
       body: MapView(key: _mapViewKey),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
+          String route = '/wellbeing_survey';
           try {
-            await Navigator.of(context).pushNamed('/wellbeing_survey');
+            final mode = await AppModeService.getCurrentMode();
+            route = mode == AppMode.research ? '/recurring_survey' : '/wellbeing_survey';
+            await Navigator.of(context).pushNamed(route);
             _refreshMapAfterSurvey();
           } catch (e) {
             debugPrint('[HomeView] Survey navigation error: $e');
-            await Navigator.of(context).pushNamed('/wellbeing_survey');
+            await Navigator.of(context).pushNamed(route);
             _refreshMapAfterSurvey();
           }
         },

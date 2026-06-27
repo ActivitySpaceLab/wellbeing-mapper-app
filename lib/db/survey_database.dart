@@ -23,7 +23,7 @@ class SurveyDatabase {
     String path = join(await getDatabasesPath(), 'survey_database.db');
     return await openDatabase(
       path,
-      version: 11, // Rebuilt wellbeing schema around five-question WHO-5 style model
+      version: 12, // Rebuilt wellbeing schema around five-question WHO-5 style model with nullable answers
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -164,11 +164,11 @@ class SurveyDatabase {
       CREATE TABLE wellbeing_survey_responses (
         id TEXT PRIMARY KEY,
         timestamp TEXT NOT NULL,
-        cheerful_spirits INTEGER NOT NULL,
-        calm_relaxed INTEGER NOT NULL,
-        active_vigorous INTEGER NOT NULL,
-        woke_up_fresh INTEGER NOT NULL,
-        daily_life_interesting INTEGER NOT NULL,
+        cheerful_spirits INTEGER,
+        calm_relaxed INTEGER,
+        active_vigorous INTEGER,
+        woke_up_fresh INTEGER,
+        daily_life_interesting INTEGER,
         latitude REAL,
         longitude REAL,
         accuracy REAL,
@@ -503,11 +503,33 @@ class SurveyDatabase {
         CREATE TABLE wellbeing_survey_responses (
           id TEXT PRIMARY KEY,
           timestamp TEXT NOT NULL,
-          cheerful_spirits INTEGER NOT NULL,
-          calm_relaxed INTEGER NOT NULL,
-          active_vigorous INTEGER NOT NULL,
-          woke_up_fresh INTEGER NOT NULL,
-          daily_life_interesting INTEGER NOT NULL,
+          cheerful_spirits INTEGER,
+          calm_relaxed INTEGER,
+          active_vigorous INTEGER,
+          woke_up_fresh INTEGER,
+          daily_life_interesting INTEGER,
+          latitude REAL,
+          longitude REAL,
+          accuracy REAL,
+          location_timestamp TEXT,
+          is_synced INTEGER DEFAULT 0
+        )
+      ''');
+    }
+
+    if (oldVersion < 12) {
+      // Intentionally destructive for pre-release testing: allow nullable
+      // wellbeing answers to distinguish non-response from midpoint values.
+      await db.execute('DROP TABLE IF EXISTS wellbeing_survey_responses');
+      await db.execute('''
+        CREATE TABLE wellbeing_survey_responses (
+          id TEXT PRIMARY KEY,
+          timestamp TEXT NOT NULL,
+          cheerful_spirits INTEGER,
+          calm_relaxed INTEGER,
+          active_vigorous INTEGER,
+          woke_up_fresh INTEGER,
+          daily_life_interesting INTEGER,
           latitude REAL,
           longitude REAL,
           accuracy REAL,
