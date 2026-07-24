@@ -509,10 +509,14 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
   /// Reuses the existing `livesInBarcelona` response field to store the answer
   /// so no data-model/schema change is required; for Italy-site submissions this
   /// field carries the "lives in study area" answer.
+  // TODO(john): pending double-check — Italian now reads "Hai il domicilio
+  // prevalente in Italia?" (de facto residence, per Italian collaborator's
+  // feedback) while English/Spanish still ask "Do you currently live in
+  // Italy?" Confirm the phrasing/meaning across languages is intentional.
   Widget _buildLivesInItalyField() {
     return _buildSectionCard(
       title: _t('Current Residence', 'Residenza attuale'),
-      subtitle: _t('Do you currently live in Italy?', 'Vivi attualmente in Italia?'),
+      subtitle: _t('Do you currently live in Italy?', 'Hai il domicilio prevalente in Italia?'),
       child: FormBuilderRadioGroup<String>(
         name: 'livesInBarcelona',
         decoration: InputDecoration(
@@ -992,7 +996,7 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
         children: [
           _buildRatingQuestion('cooperateWithPeople', _t('I find it easy to cooperate with people', 'Trovo facile collaborare con le persone'), 1, 5),
           _buildRatingQuestion('improvingSkills', _t('I am always improving my skills', 'Miglioro costantemente le mie competenze'), 1, 5),
-          _buildRatingQuestion('socialSituations', _t('I feel comfortable in social situations', 'Mi sento a mio agio nelle situazioni sociali'), 1, 5),
+          _buildRatingQuestion('socialSituations', _t('I feel comfortable in social situations', 'Mi sento a mio agio nei rapporti sociali'), 1, 5),
           _buildRatingQuestion('familySupport', _t('There is always someone in my family who can give me support', 'C\'è sempre qualcuno nella mia famiglia che può sostenermi'), 1, 5),
           _buildRatingQuestion('familyKnowsMe', _t('There is always someone in my family who really knows me', 'C\'è sempre qualcuno nella mia famiglia che mi conosce davvero'), 1, 5),
           _buildRatingQuestion('accessToFood', _t('I have access to the food I need', 'Ho accesso al cibo di cui ho bisogno'), 1, 5),

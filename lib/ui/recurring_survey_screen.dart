@@ -357,7 +357,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         children: [
           _buildRatingQuestion('cooperateWithPeople', _t('I find it easy to cooperate with people', 'Trovo facile collaborare con le persone'), 1, 5),
           _buildRatingQuestion('improvingSkills', _t('I am always improving my skills', 'Miglioro costantemente le mie competenze'), 1, 5),
-          _buildRatingQuestion('socialSituations', _t('I feel comfortable in social situations', 'Mi sento a mio agio nelle situazioni sociali'), 1, 5),
+          _buildRatingQuestion('socialSituations', _t('I feel comfortable in social situations', 'Mi sento a mio agio nei rapporti sociali'), 1, 5),
           _buildRatingQuestion('familySupport', _t('There is always someone in my family who can give me support', 'C\'è sempre qualcuno nella mia famiglia che può sostenermi'), 1, 5),
           _buildRatingQuestion('familyKnowsMe', _t('There is always someone in my family who really knows me', 'C\'è sempre qualcuno nella mia famiglia che mi conosce davvero'), 1, 5),
           _buildRatingQuestion('accessToFood', _t('I have access to the food I need', 'Ho accesso al cibo di cui ho bisogno'), 1, 5),

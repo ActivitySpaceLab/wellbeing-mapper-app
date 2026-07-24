@@ -34,7 +34,7 @@ L'obiettivo di questo studio è capire meglio come il cambiamento climatico e al
 
 **Metodologia e partecipazione**
 
-Questo studio prevede un'applicazione per telefono cellulare chiamata Wellbeing Mapper, che tiene traccia di dove trascorri il tuo tempo e ti consente di condividere queste informazioni, se lo desideri, con i ricercatori che conducono questo studio. Prevede inoltre una serie di questionari. Puoi partecipare installando Wellbeing Mapper sul tuo telefono e consentendogli di tracciare le tue posizioni per un massimo di sei mesi. Avrai poi la possibilità di rispondere fino a 12 questionari, uno ogni due settimane, in cui ti verranno poste alcune domande su di te e sul tuo benessere mentale. Il primo questionario include informazioni aggiuntive su di te e richiede circa 5 minuti; i successivi 11 questionari richiedono 2-5 minuti. Quando rispondi al questionario, avrai la possibilità di condividere le posizioni tracciate da Wellbeing Mapper nelle due settimane precedenti. Puoi scegliere a quali domande rispondere e se condividere le tue posizioni. Il questionario includerà domande, tra le altre cose, su: origine etnica; salute; orientamento sessuale; posizione e mobilità.
+Questo studio prevede un'app per telefono cellulare chiamata Wellbeing Mapper, che tiene traccia di dove trascorri il tuo tempo e ti consente di condividere queste informazioni, se lo desideri, con i ricercatori che conducono questo studio. Prevede inoltre una serie di questionari. Puoi partecipare installando Wellbeing Mapper sul tuo telefono, consentendogli di tracciare le tue posizioni per un massimo di sei mesi. Avrai poi la possibilità di rispondere fino a 12 questionari, uno ogni due settimane, in cui ti verranno poste alcune domande su di te e sul tuo benessere mentale. Il primo questionario include informazioni aggiuntive su di te e richiede circa 5 minuti; i successivi 11 questionari richiedono 2-5 minuti. Quando rispondi al questionario, avrai la possibilità di condividere le posizioni tracciate da Wellbeing Mapper nelle due settimane precedenti. Puoi scegliere a quali domande rispondere e se condividere le tue posizioni. Il questionario includerà domande, tra le altre cose, su: origine etnica; salute; orientamento sessuale; posizione e mobilità.
 
 **Criteri di inclusione**
 
@@ -46,15 +46,17 @@ La tua partecipazione a questo studio è volontaria e puoi ritirarti dallo studi
 
 **Rischi e benefici**
 
-Non si prevede che nulla di ciò che ti verrà chiesto di fare durante la partecipazione a questo studio comporti un rischio per la tua salute. Tuttavia, è molto importante che tu non interagisca con il telefono cellulare mentre guidi o svolgi qualsiasi attività che richieda la tua attenzione. Usare il telefono mentre si guida può aumentare il rischio di lesioni o morte e, per partecipare alla componente con il telefono cellulare di questo progetto, devi accettare di non interagire con l'applicazione né con il telefono per questo progetto mentre guidi. La partecipazione comporta anche un certo rischio per la tua privacy, poiché ti verrà chiesto di condividere informazioni su dove trascorri il tuo tempo. Tuttavia, queste informazioni saranno mantenute riservate dal gruppo di ricerca tramite crittografia e tecniche standard di protezione dei dati. La partecipazione prevede di rispondere a domande sul tuo benessere mentale e sul cambiamento climatico. Nel caso queste ti rendano ansioso/a o a disagio in qualunque modo, ti consiglieremo una serie di risorse a cui rivolgerti al termine del questionario. Non possiamo garantire e non garantiamo che riceverai alcun beneficio da questo studio.
+Non si prevede che nulla di ciò che ti verrà chiesto di fare durante la partecipazione a questo studio comporti un rischio per la tua salute. Tuttavia, è molto importante che tu non interagisca con il telefono cellulare mentre guidi o mentre stai svolgendo una qualsiasi attività che richieda la tua attenzione. Usare il telefono mentre si guida può aumentare il rischio di lesioni o morte e, per partecipare a questo progetto, devi accettare di non interagire con l'applicazione né con il telefono per le attività di questo progetto mentre guidi. La partecipazione comporta anche un potenziale rischio per la tua privacy, poiché ti verrà chiesto di condividere informazioni su dove trascorri il tuo tempo. Tuttavia, queste informazioni saranno mantenute riservate dal gruppo di ricerca tramite crittografia e tecniche standard di protezione dei dati. La partecipazione prevede di rispondere a domande sul tuo benessere mentale e sul cambiamento climatico. Nel caso queste ti rendano ansioso/a o a disagio in qualunque modo, ti consiglieremo una serie di risorse a cui rivolgerti al termine del questionario. Non possiamo garantire e non garantiamo che riceverai alcun beneficio da questo studio.
 
 **Compenso**
 
-La tua partecipazione non sarà compensata dal gruppo di ricerca, ma potrebbe essere compensata dal fornitore del panel di indagine che ti ha indirizzato qui, in base all'accordo che hai con tale fornitore.
+> ⚠️ PENDING DOUBLE-CHECK: wording below follows the Italian collaborator's suggested replacement, which describes a company assigned to manage interviews/compensation rather than "the survey panel provider that sent you here" (English/Spanish). Confirm this matches the actual arrangement for the Italy site.
+
+Un compenso potrà essere erogato dalla ditta alla quale abbiamo assegnato la gestione delle interviste, nelle modalità comunicate dalla stessa.
 
 **Protezione dei dati**
 
-Per proteggere la tua privacy, non identificheremo i tuoi dati con il tuo nome, ma con un codice noto solo ai membri del gruppo di ricerca. Per rendere i tuoi dati di posizione accessibili solo ai membri del gruppo di ricerca, questi dati saranno protetti tramite crittografia end-to-end e conservati con sistemi di controllo degli accessi. In caso di pubblicazione dei dati, saranno pubblicati solo dati anonimi. I dati anonimizzati potranno essere ospitati o pubblicati in un repository pubblico e non potranno essere utilizzati per identificarti. Se desideri che i tuoi dati vengano cancellati, puoi richiederlo inviando un'email ai ricercatori principali e includendo il tuo UUID di partecipante, che puoi trovare nell'applicazione Wellbeing Mapper sul dispositivo che stai usando. Tieni presente che l'indagine è condotta con l'aiuto del fornitore del panel con cui collabori, che non è affiliato a UPF e ha proprie politiche di privacy e sicurezza consultabili sui suoi siti web.
+Per proteggere la tua privacy, non identificheremo i tuoi dati con il tuo nome, ma con un codice noto solo ai membri del gruppo di ricerca. Per rendere i tuoi dati di posizione accessibili solo ai membri del gruppo di ricerca, questi dati saranno protetti tramite crittografia end-to-end e conservati con sistemi di controllo degli accessi. In caso di pubblicazione dei dati, saranno pubblicati solo dati anonimi. I dati anonimizzati potranno essere ospitati o pubblicati in un repository pubblico e non potranno essere utilizzati per identificarti. Se desideri che i tuoi dati vengano cancellati, puoi richiederlo inviando un'email ai ricercatori principali e includendo il tuo UUID di partecipante, che puoi trovare nell'applicazione Wellbeing Mapper sul dispositivo che stai usando. Tieni presente che l'indagine è condotta con l'aiuto della ditta che gestisce il panel con cui collabori, che non è affiliato a UPF e ha proprie politiche di privacy e sicurezza consultabili sui suoi siti web.
 
 Pulsante: Continua al modulo di consenso
 
@@ -153,7 +155,9 @@ Quanti anni hai?
 - Altro paese
 - Preferisco non rispondere
 
-**Residenza attuale** – Vivi attualmente in Italia?
+**Residenza attuale** – Hai il domicilio prevalente in Italia?
+
+> ⚠️ PENDING DOUBLE-CHECK: Italian now asks about de facto residence ("domicilio prevalente"), while English/Spanish still ask "Do you currently live in...?" Confirm the phrasing/meaning is intentionally aligned across languages.
 
 - Sì
 - No
@@ -288,7 +292,7 @@ Etichette scala: 0 = Mai, 5 = Sempre
 
 - Trovo facile collaborare con le persone
 - Miglioro costantemente le mie competenze
-- Mi sento a mio agio nelle situazioni sociali
+- Mi sento a mio agio nei rapporti sociali
 - C'è sempre qualcuno nella mia famiglia che può sostenermi
 - C'è sempre qualcuno nella mia famiglia che mi conosce davvero
 - Ho accesso al cibo di cui ho bisogno
