@@ -50,6 +50,9 @@ android/key.properties
 # Miscellaneous
 *.class
 *.lock
+# This is an application, not a package: pubspec.lock is committed so every
+# machine and CI run resolves to the same dependency versions.
+!pubspec.lock
 *.log
 *.pyc
 *.swp
