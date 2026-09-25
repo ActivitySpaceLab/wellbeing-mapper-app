@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:open_background_locator/open_background_locator.dart' as obl;
 
 /// Coordinates included in a location fix.
@@ -211,18 +212,32 @@ class GeoLocationService {
     }
   }
 
+  /// Oldest tracking fix [getCurrentPosition] falls back to when no fresh fix
+  /// can be obtained; an older one would place a survey answer wherever the
+  /// participant happened to be when tracking last ran.
+  static const Duration staleFixFallbackMaxAge = Duration(minutes: 15);
+
   /// Fetch a single current position, or `null` on error / timeout.
   ///
-  /// OBL has no synchronous "get me a fix" call. This implementation
-  /// returns the most recent fix from [obl.OpenBackgroundLocator.getState] if
-  /// it is younger than [maximumAge] milliseconds; otherwise it briefly
-  /// starts the tracker (if it isn't already running) and waits up to
-  /// [timeout] seconds for the next update on
-  /// [obl.OpenBackgroundLocator.updates].
+  /// Returns the most recent tracking fix from
+  /// [obl.OpenBackgroundLocator.getState] if it is younger than [maximumAge]
+  /// milliseconds; otherwise requests a one-off fix with
+  /// [obl.OpenBackgroundLocator.getCurrentLocation], waiting up to [timeout]
+  /// seconds. If none arrives, falls back to the tracking fix only if it is
+  /// within [staleFixFallbackMaxAge] -- and never when location permission or
+  /// Location Services are off, since the participant has just said not to
+  /// record where they are.
+  ///
+  /// Never starts tracking: the one-off request is independent of the
+  /// tracking session. (Starting tracking just to take one fix is unsafe: the
+  /// plugin now keeps a tracking session alive across app termination, so a
+  /// kill before the matching stop would leave tracking running for a user
+  /// who has it switched off.) The fix is not stored in `location_tracks`.
+  /// Does not need [configure].
   ///
   /// Parameters [persist], [desiredAccuracy], and [samples] are accepted for
-  /// API compatibility with the previous (FBG-backed) implementation but are
-  /// not currently honoured by OBL.
+  /// API compatibility with the previous (FBG-backed) implementation; fixes
+  /// are always requested at high accuracy.
   Future<AppLocation?> getCurrentPosition({
     bool persist = false,
     int desiredAccuracy = 40,
@@ -230,61 +245,43 @@ class GeoLocationService {
     int timeout = 30,
     int samples = 3,
   }) async {
-    if (!_isConfigured) {
-      debugPrint('[GeoLocationService] getCurrentPosition before configure()');
-      return null;
-    }
-
-    AppLocation? lastKnownLocation;
-    // Capture the user's intended tracking state BEFORE any start() call:
-    // starting OBL fires the lifecycle stream, whose handler sets _isEnabled
-    // to true, so checking _isEnabled afterwards would conclude the user had
-    // tracking on and never stop it again.
-    final bool wasEnabled = _isEnabled;
+    obl.LocationUpdate? lastUpdate;
     try {
-      final state = await obl.OpenBackgroundLocator.getState();
-      final lastUpdate = state.lastUpdate;
+      lastUpdate = (await obl.OpenBackgroundLocator.getState()).lastUpdate;
       if (lastUpdate != null) {
-        lastKnownLocation = _convert(lastUpdate);
-        final ageMs = DateTime.now()
-            .difference(lastUpdate.timestamp.toUtc())
-            .inMilliseconds;
+        final ageMs = _ageOf(lastUpdate).inMilliseconds;
         if (ageMs >= 0 && ageMs <= maximumAge) {
-          return lastKnownLocation;
+          return _convert(lastUpdate);
         }
       }
 
-      // No recent fix cached; wait for the next stream emission.
-      final didStart = !_statusIsActive(state.status);
-      if (didStart) {
-        await obl.OpenBackgroundLocator.start();
-      }
-
-      try {
-        final update = await obl.OpenBackgroundLocator.updates.first
-            .timeout(Duration(seconds: timeout));
-        return _convert(update);
-      } on TimeoutException {
-        debugPrint(
-            '[GeoLocationService] getCurrentPosition timed out after ${timeout}s');
-        // Prefer a stale but usable location over returning null for
-        // map-linked survey entries.
-        return lastKnownLocation;
-      } finally {
-        if (didStart && !wasEnabled) {
-          // We started the tracker just to get one fix; restore the user's
-          // tracking-off state.
-          await obl.OpenBackgroundLocator
-              .stop(reason: 'getCurrentPosition completed');
-          _isEnabled = false;
-          _notifyEnabledChange(false);
-        }
+      final update = await obl.OpenBackgroundLocator.getCurrentLocation(
+        accuracy: obl.LocationAccuracyLevel.high,
+        timeout: Duration(seconds: timeout),
+      );
+      if (update != null) return _convert(update);
+      debugPrint(
+          '[GeoLocationService] getCurrentPosition: no fix within ${timeout}s');
+    } on PlatformException catch (e) {
+      debugPrint('[GeoLocationService] getCurrentPosition error: $e');
+      if (e.code == 'permission-denied' ||
+          e.code == 'location-services-disabled') {
+        return null;
       }
     } catch (e) {
       debugPrint('[GeoLocationService] getCurrentPosition error: $e');
-      return lastKnownLocation;
     }
+    // Prefer a recent tracking fix over no location for map-linked survey
+    // entries, but not an old one.
+    if (lastUpdate != null &&
+        _ageOf(lastUpdate).abs() <= staleFixFallbackMaxAge) {
+      return _convert(lastUpdate);
+    }
+    return null;
   }
+
+  static Duration _ageOf(obl.LocationUpdate update) =>
+      DateTime.now().toUtc().difference(update.timestamp.toUtc());
 
   /// Update the maximum number of days for which the plugin retains fixes.
   ///
