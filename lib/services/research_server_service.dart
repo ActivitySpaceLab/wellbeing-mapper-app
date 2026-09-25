@@ -7,11 +7,30 @@ import 'package:fast_rsa/fast_rsa.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../db/survey_database.dart';
 import '../main.dart';
+import '../services/app_mode_service.dart';
+import '../services/consent_tracking_service.dart';
 import '../util/env.dart';
+
+/// Outcome of a [ResearchServerService.syncPendingSurveys] call, so callers
+/// can distinguish "uploaded" from "nothing to do" from "skipped by a guard"
+/// instead of unconditionally reporting success.
+class SyncOutcome {
+  /// Non-null when sync did not run at all (guard tripped); human-readable.
+  final String? skippedReason;
+  final int attempted;
+  final int uploaded;
+
+  const SyncOutcome.skipped(this.skippedReason)
+      : attempted = 0,
+        uploaded = 0;
+  const SyncOutcome.ran({required this.attempted, required this.uploaded})
+      : skippedReason = null;
+
+  bool get didRun => skippedReason == null;
+}
 
 /// Sends encrypted survey data directly to the research server.
 ///
@@ -39,37 +58,58 @@ class ResearchServerService {
   // Public API
   // -------------------------------------------------------------------------
 
+  /// True while a sync is running, so overlapping calls (e.g. a manual
+  /// "Sync Now" during the automatic post-submission sync) cannot upload
+  /// the same rows twice. The server has no idempotency key, so this
+  /// client-side guard is the only duplicate protection.
+  static bool _syncInFlight = false;
+
   /// Sync all locally-stored, unsynced surveys to the research server.
   ///
   /// This is a no-op while the server URL is unconfigured. Surveys are
   /// retained in the local database and will be uploaded automatically once
   /// a valid URL is set.
-  static Future<void> syncPendingSurveys() async {
+  ///
+  /// Uploads happen only when [AppModeService.sendsDataToResearch] is true
+  /// (research mode, non-demo build) and the participant has completed the
+  /// consent flow ([ConsentTrackingService.hasCompletedCurrentConsent]).
+  /// The consent form itself is uploaded under the same gate: the local
+  /// consent record is only created when the consent flow completes, which
+  /// is also the moment the gate opens.
+  static Future<SyncOutcome> syncPendingSurveys() async {
     if (!_isServerConfigured) {
       debugPrint(
           '[ResearchServerService] Server not yet configured – surveys '
           'retained locally for future upload.');
-      return;
+      return const SyncOutcome.skipped('Research server not configured');
     }
+
+    // Only sync when the user has given research consent.
+    final participantUUID = GlobalData.userUUID;
+    if (participantUUID.isEmpty) {
+      debugPrint('[ResearchServerService] No participant UUID – skipping sync.');
+      return const SyncOutcome.skipped('No participant UUID');
+    }
+
+    // Only research mode uploads; demo builds never do, regardless of mode.
+    if (!await AppModeService.sendsDataToResearch()) {
+      debugPrint('[ResearchServerService] Mode does not upload – skipping sync.');
+      return const SyncOutcome.skipped('Not in research mode');
+    }
+
+    if (!await ConsentTrackingService.hasCompletedCurrentConsent()) {
+      debugPrint('[ResearchServerService] Consent not completed – skipping sync.');
+      return const SyncOutcome.skipped('Consent not completed');
+    }
+
+    if (_syncInFlight) {
+      debugPrint('[ResearchServerService] Sync already running – skipping.');
+      return const SyncOutcome.skipped('Sync already in progress');
+    }
+    _syncInFlight = true;
 
     try {
       debugPrint('[ResearchServerService] Starting survey sync…');
-
-      // Only sync when the user has given research consent.
-      final participantUUID = GlobalData.userUUID;
-      if (participantUUID.isEmpty) {
-        debugPrint('[ResearchServerService] No participant UUID – skipping sync.');
-        return;
-      }
-
-      // Only sync if the user is a research participant.
-      final prefs = await _getPrefs();
-      final appMode = prefs.getString('app_mode');
-      final consentCompleted = prefs.getBool('consent_completed') ?? false;
-      if (appMode != 'research' || !consentCompleted) {
-        debugPrint('[ResearchServerService] Not in research mode – skipping sync.');
-        return;
-      }
 
       int initialSynced = 0, biweeklySynced = 0, consentSynced = 0;
 
@@ -84,7 +124,6 @@ class ResearchServerService {
         if (await _syncBiweeklySurvey(survey)) biweeklySynced++;
       }
 
-      // Consent forms are always synced (they ARE the consent signal).
       final unsyncedConsent = await db.getUnsyncedConsentForms();
       for (final consent in unsyncedConsent) {
         if (await _syncConsentForm(consent)) consentSynced++;
@@ -105,14 +144,14 @@ class ResearchServerService {
         throw Exception(
             'Partial sync: only $synced of $total surveys uploaded.');
       }
+      return SyncOutcome.ran(attempted: total, uploaded: synced);
     } catch (e) {
       debugPrint('[ResearchServerService] Sync error: $e');
       rethrow;
+    } finally {
+      _syncInFlight = false;
     }
   }
-
-  static Future<SharedPreferences> _getPrefs() =>
-      SharedPreferences.getInstance();
 
   static Future<String> _appVersion() async {
     try {
@@ -213,12 +252,17 @@ class ResearchServerService {
   /// {
   ///   "encryptedData": "<base64(ciphertext+gcm_tag)>",
   ///   "iv":            "<base64(16-byte IV)>",
-  ///   "encryptedKey":  "<base64(RSA-OAEP-SHA256(aes_key))>",
+  ///   "encryptedKey":  "<base64(RSA-OAEP-SHA256(base64_text_of_aes_key))>",
   ///   "algorithm":     "AES-256-GCM+RSA-OAEP-SHA256",
   ///   "researchSite":  "<ENV.researchSite>",
   ///   "timestamp":     "<ISO-8601>"
   /// }
   /// ```
+  ///
+  /// Note for the server implementation: the RSA plaintext is the *base64
+  /// string* of the AES key (fast_rsa encrypts text), so after RSA-OAEP
+  /// decryption the result must be base64-decoded to recover the 32 raw
+  /// key bytes.
   static Future<String> _encrypt(Map<String, dynamic> payload) async {
     final jsonString = jsonEncode(payload);
     final dataBytes = Uint8List.fromList(utf8.encode(jsonString));

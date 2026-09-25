@@ -745,25 +745,6 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
       final db = SurveyDatabase();
       await db.insertConsent(consent);
 
-      // Sync consent form to Qualtrics (if not in testing mode)
-      if (!widget.isTestingMode) {
-        try {
-          debugPrint('[ConsentForm] Syncing consent with encrypted service...');
-          
-          // SECURITY: Using encrypted survey service for secure consent data transmission
-          ResearchServerService.syncPendingSurveys().catchError((e) {
-            debugPrint('[ConsentForm] ⚠️ Encrypted sync will retry later: $e');
-          });
-          
-          debugPrint('[ConsentForm] ✅ Consent form saved and encrypted sync initiated');
-        } catch (e) {
-          debugPrint('[ConsentForm] ❌ Error with encrypted sync: $e');
-          // Don't fail the whole process - consent is still saved locally
-        }
-      } else {
-        debugPrint('[ConsentForm] Skipping sync in testing mode');
-      }
-
       // Record consent with participant validation service (for research participants)
       if (!widget.isTestingMode && widget.participantCode.isNotEmpty) {
         final consentResult = await ParticipantValidationService.recordConsent(
@@ -805,6 +786,22 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
       // Mark consent as completed using new tracking service (also sets fresh_consent_completion flag)
       await ConsentTrackingService.markConsentCompleted();
       debugPrint('[ConsentForm] Marked consent as completed using ConsentTrackingService');
+
+      // Kick off the consent-form upload now that the app mode and consent
+      // flag are set — the sync service gates on both, so running it any
+      // earlier would always no-op. Fire-and-forget: failures retry on the
+      // next sync and must not block the consent flow.
+      if (!widget.isTestingMode) {
+        debugPrint('[ConsentForm] Starting encrypted consent sync...');
+        ResearchServerService.syncPendingSurveys().then((outcome) {
+          debugPrint('[ConsentForm] Consent sync outcome: '
+              '${outcome.didRun ? '${outcome.uploaded}/${outcome.attempted} uploaded' : outcome.skippedReason}');
+        }).catchError((e) {
+          debugPrint('[ConsentForm] ⚠️ Encrypted sync will retry later: $e');
+        });
+      } else {
+        debugPrint('[ConsentForm] Skipping sync in testing mode');
+      }
 
       // Show success and navigate
       _showSuccessDialog(uuid);

@@ -851,7 +851,10 @@ class _InitialSurveyScreenState extends State<InitialSurveyScreen> {
       
       // SECURITY: Using encrypted survey service - no API tokens exposed
       // Trigger background sync when connectivity is available
-      ResearchServerService.syncPendingSurveys().catchError((e) {
+      ResearchServerService.syncPendingSurveys().then((outcome) {
+        debugPrint('Background sync outcome: '
+            '${outcome.didRun ? '${outcome.uploaded}/${outcome.attempted} uploaded' : outcome.skippedReason}');
+      }).catchError((e) {
         debugPrint('Background sync will retry later: $e');
       });
       

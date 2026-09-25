@@ -389,13 +389,20 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
 
     try {
       debugPrint('[SurveyListScreen] Starting manual sync...');
-      
-      await ResearchServerService.syncPendingSurveys();
-      
+
+      final outcome = await ResearchServerService.syncPendingSurveys();
+
       debugPrint('[SurveyListScreen] Manual sync completed');
-      
-      // Show success notification
-      GlobalNotificationService.showSuccess('✅ Surveys synced successfully!');
+
+      if (!outcome.didRun) {
+        GlobalNotificationService.showInfo(
+            'Sync skipped: ${outcome.skippedReason}. Surveys remain stored on this device.');
+      } else if (outcome.attempted == 0) {
+        GlobalNotificationService.showInfo('Nothing to sync – all surveys already uploaded.');
+      } else {
+        GlobalNotificationService.showSuccess(
+            '✅ ${outcome.uploaded} of ${outcome.attempted} surveys synced successfully!');
+      }
       
       // Reload surveys to update sync status
       await _loadSurveys();

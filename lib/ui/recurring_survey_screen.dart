@@ -1576,23 +1576,38 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         return;
       }
 
-      // Try to upload in background - user already navigated away
+      // Try to upload in background - user already navigated away. The
+      // screen may be unmounted here, so fall back to English when the
+      // context is gone.
+      final bool isItalian =
+          mounted && Localizations.localeOf(context).languageCode == 'it';
+      String tr(String en, String it) => isItalian ? it : en;
+
       try {
         debugPrint('[RecurringSurveyScreen] 🚀 Starting background upload...');
-        
+
         // Use the same encrypted survey service as consent and initial surveys
-        await ResearchServerService.syncPendingSurveys();
-        
-        debugPrint('[RecurringSurveyScreen] ✅ Background upload completed successfully!');
-        
-        // Show success notification using global service
-        GlobalNotificationService.showSuccess('✅ Research data uploaded successfully!');
-        
+        final outcome = await ResearchServerService.syncPendingSurveys();
+
+        debugPrint('[RecurringSurveyScreen] ✅ Background upload finished');
+
+        if (outcome.didRun && outcome.uploaded > 0) {
+          GlobalNotificationService.showSuccess(tr(
+              '✅ Research data uploaded successfully!',
+              '✅ Dati di ricerca caricati con successo!'));
+        } else {
+          GlobalNotificationService.showInfo(tr(
+              'Survey saved on this device. Upload will run when the research server is available.',
+              'Questionario salvato su questo dispositivo. Il caricamento avverrà quando il server di ricerca sarà disponibile.'));
+        }
+
       } catch (uploadError) {
         debugPrint('[RecurringSurveyScreen] ❌ Background upload failed: $uploadError');
-        
+
         // Show error notification using global service
-        GlobalNotificationService.showWarning('Upload failed - data saved locally for retry');
+        GlobalNotificationService.showWarning(tr(
+            'Upload failed - data saved locally for retry',
+            'Caricamento non riuscito: dati salvati sul dispositivo per un nuovo tentativo'));
       }
     } catch (e) {
       // Show error if still mounted
