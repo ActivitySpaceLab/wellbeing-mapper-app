@@ -626,7 +626,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'GDPR Information',
+              _t3('GDPR Information', 'Informativa GDPR', 'Información RGPD'),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 12),
@@ -634,24 +634,36 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
               text: TextSpan(
                 style: TextStyle(fontSize: 14, color: Colors.black, height: 1.4),
                 children: [
-                  TextSpan(text: 'Data controller: '),
+                  TextSpan(
+                      text: _t3('Data controller: ', 'Titolare del trattamento: ',
+                          'Responsable del tratamiento: ')),
                   TextSpan(text: 'Universitat Pompeu Fabra. C. de la Mercè, 12. 08002 Barcelona. Tel. +34 93 542 20 00. ', style: TextStyle(fontWeight: FontWeight.w500)),
-                  TextSpan(text: 'Contact Data Protection Officer: '),
+                  TextSpan(
+                      text: _t3('Contact Data Protection Officer: ',
+                          'Contatto del Responsabile della protezione dei dati: ',
+                          'Contacto del Delegado de Protección de Datos: ')),
                   TextSpan(
                     text: 'dpd@upf.edu',
                     style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
                     recognizer: _dpoEmailRecognizer,
                   ),
                   TextSpan(text: '\n\n'),
-                  TextSpan(text: 'Your rights: '),
-                  TextSpan(text: 'You can request the deletion of your data and you may object to their processing. For deletion, you must provide the participant UUID found in the app. '),
-                  TextSpan(text: 'Visit '),
+                  TextSpan(
+                      text: _t3('Your rights: ', 'I tuoi diritti: ', 'Sus derechos: ')),
+                  TextSpan(
+                      text: _t3(
+                          'You can request the deletion of your data and you may object to their processing. For deletion, you must provide the participant UUID found in the app. ',
+                          'Puoi richiedere la cancellazione dei tuoi dati e opporti al loro trattamento. Per la cancellazione, devi fornire lo UUID di partecipante che trovi nell\'app. ',
+                          'Puede solicitar la eliminación de sus datos y oponerse a su tratamiento. Para la eliminación, debe proporcionar el UUID de participante que se encuentra en la aplicación. ')),
+                  TextSpan(text: _t3('Visit ', 'Visita ', 'Visite ')),
                   TextSpan(
                     text: 'www.upf.edu/web/proteccio-dades/drets',
                     style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
                     recognizer: _gdprLinkRecognizer,
                   ),
-                  TextSpan(text: ' for more information.'),
+                  TextSpan(
+                      text: _t3(' for more information.', ' per maggiori informazioni.',
+                          ' para más información.')),
                 ],
               ),
             ),

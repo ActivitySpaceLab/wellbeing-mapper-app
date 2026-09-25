@@ -94,6 +94,32 @@ class NotificationService {
     return payload == _surveyRoute || payload == _legacySurveyRoute;
   }
 
+  /// Resolve the user's language ('en'/'it'/'es') without a BuildContext, so
+  /// notifications posted from background isolates are localized too.
+  /// The in-app language override wins; otherwise the device locale decides.
+  static Future<String> _languageCode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final override = prefs.getString('app_locale_override');
+      if (override != null && override.isNotEmpty) return override;
+    } catch (_) {}
+    final device = Platform.localeName; // e.g. 'it_IT'
+    if (device.startsWith('it')) return 'it';
+    if (device.startsWith('es')) return 'es';
+    return 'en';
+  }
+
+  static String _pick(String lang, String en, String it, String es) {
+    switch (lang) {
+      case 'it':
+        return it;
+      case 'es':
+        return es;
+      default:
+        return en;
+    }
+  }
+
   /// Initialize local notifications
   static Future<void> _initializeLocalNotifications() async {
     if (_notificationsInitialized) return;
@@ -454,11 +480,18 @@ class NotificationService {
 
       final int notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       debugPrint('[NotificationService] Showing notification with ID: $notificationId');
-      
+
+      final lang = await _languageCode();
       await _localNotifications.show(
         notificationId,
-        'Wellbeing Survey Reminder',
-        'Help researchers by participating in your biweekly wellbeing survey! Tap to contribute to important research.',
+        _pick(lang,
+            'Wellbeing Survey Reminder',
+            'Promemoria questionario sul benessere',
+            'Recordatorio de la encuesta de bienestar'),
+        _pick(lang,
+            'Help researchers by participating in your biweekly wellbeing survey! Tap to contribute to important research.',
+            'Aiuta i ricercatori partecipando al questionario quindicinale sul benessere! Tocca per contribuire a una ricerca importante.',
+            '¡Ayude a los investigadores participando en la encuesta quincenal de bienestar! Toque para contribuir a una investigación importante.'),
         platformChannelSpecifics,
         payload: _surveyRoute,
       );
@@ -491,19 +524,26 @@ class NotificationService {
 
   /// Show survey prompt dialog
   static Future<void> showSurveyPromptDialog(BuildContext context) async {
+    final lang = Localizations.localeOf(context).languageCode;
     await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Survey Participation'),
-          content: const Text(
-            'Help improve research by participating in our survey! '
-            'Your contributions help scientists understand human mobility patterns.',
-          ),
+          title: Text(_pick(lang,
+              'Survey Participation',
+              'Partecipazione al questionario',
+              'Participación en la encuesta')),
+          content: Text(_pick(lang,
+              'Help improve research by participating in our survey! '
+                  'Your contributions help scientists understand human mobility patterns.',
+              'Aiuta a migliorare la ricerca partecipando al nostro questionario! '
+                  'Il tuo contributo aiuta i ricercatori a comprendere i modelli di mobilità delle persone.',
+              '¡Ayude a mejorar la investigación participando en nuestra encuesta! '
+                  'Sus contribuciones ayudan a los científicos a comprender los patrones de movilidad humana.')),
           actions: <Widget>[
             TextButton(
-              child: const Text('Maybe Later'),
+              child: Text(_pick(lang, 'Maybe Later', 'Più tardi', 'Quizás más tarde')),
               onPressed: () {
                 Navigator.of(context).pop();
                 clearPendingSurveyPrompt();
@@ -514,7 +554,7 @@ class NotificationService {
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Participate'),
+              child: Text(_pick(lang, 'Participate', 'Partecipa', 'Participar')),
               onPressed: () {
                 Navigator.of(context).pop();
                 clearPendingSurveyPrompt();

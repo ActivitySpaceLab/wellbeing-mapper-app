@@ -15,12 +15,14 @@ class LocaleService {
   static const List<Locale> supportedLocales = [
     Locale('en', ''),
     Locale('it', ''),
+    Locale('es', ''),
   ];
 
   /// Human-readable names for the picker (shown in each language's own name).
   static const Map<String, String> languageNames = {
     'en': 'English',
     'it': 'Italiano',
+    'es': 'Español',
   };
 
   /// Current override. `null` means "follow device language".

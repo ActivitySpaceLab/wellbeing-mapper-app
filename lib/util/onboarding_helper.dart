@@ -15,6 +15,18 @@ class OnboardingHelper {
     await prefs.setBool(_onboardingKey, true);
   }
   
+  /// Localization helper (English default, Italian, Spanish).
+  static String _t3(BuildContext context, String en, String it, String es) {
+    switch (Localizations.localeOf(context).languageCode) {
+      case 'it':
+        return it;
+      case 'es':
+        return es;
+      default:
+        return en;
+    }
+  }
+
   static void showQuickTour(BuildContext context) {
     showDialog(
       context: context,
@@ -24,7 +36,7 @@ class OnboardingHelper {
           children: [
             Icon(Icons.waving_hand, color: SouthAfricanTheme.accentYellow),
             SizedBox(width: 8),
-            Text('Welcome!'),
+            Text(_t3(context, 'Welcome!', 'Benvenuto/a!', '¡Bienvenido/a!')),
           ],
         ),
         content: SingleChildScrollView(
@@ -33,14 +45,32 @@ class OnboardingHelper {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Let\'s quickly show you around:',
+                _t3(context, 'Let\'s quickly show you around:',
+                    'Facciamo un rapido giro dell\'app:',
+                    'Hagamos un recorrido rápido:'),
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               SizedBox(height: 12),
-              _buildTourItem(Icons.toggle_on, 'Yellow switch = location tracking ON'),
-              _buildTourItem(Icons.gps_fixed, 'GPS button = get current location'),
-              _buildTourItem(Icons.add_circle, 'Blue "Survey" button = take wellbeing survey'),
-              _buildTourItem(Icons.menu, 'Menu = access all app features'),
+              _buildTourItem(
+                  Icons.toggle_on,
+                  _t3(context, 'Yellow switch = location tracking ON',
+                      'Interruttore giallo = tracciamento della posizione ATTIVO',
+                      'Interruptor amarillo = seguimiento de ubicación ACTIVADO')),
+              _buildTourItem(
+                  Icons.gps_fixed,
+                  _t3(context, 'GPS button = get current location',
+                      'Pulsante GPS = ottieni la posizione attuale',
+                      'Botón GPS = obtener la ubicación actual')),
+              _buildTourItem(
+                  Icons.add_circle,
+                  _t3(context, 'Blue "Survey" button = take wellbeing survey',
+                      'Pulsante blu "Questionario" = compila il questionario sul benessere',
+                      'Botón azul "Encuesta" = responder la encuesta de bienestar')),
+              _buildTourItem(
+                  Icons.menu,
+                  _t3(context, 'Menu = access all app features',
+                      'Menu = accedi a tutte le funzionalità dell\'app',
+                      'Menú = acceder a todas las funciones de la aplicación')),
               SizedBox(height: 12),
               Container(
                 padding: EdgeInsets.all(8),
@@ -49,7 +79,10 @@ class OnboardingHelper {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'Tip: Open the menu and tap "Help & Guide" for detailed instructions!',
+                  _t3(context,
+                      'Tip: Open the menu and tap "Help & Guide" for detailed instructions!',
+                      'Suggerimento: apri il menu e tocca "Aiuto e guida" per istruzioni dettagliate!',
+                      'Consejo: abra el menú y toque "Ayuda y guía" para instrucciones detalladas.'),
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ),
@@ -62,7 +95,7 @@ class OnboardingHelper {
               Navigator.of(context).pop();
               markOnboardingComplete();
             },
-            child: Text('Got it!'),
+            child: Text(_t3(context, 'Got it!', 'Ho capito!', '¡Entendido!')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -74,7 +107,8 @@ class OnboardingHelper {
               backgroundColor: SouthAfricanTheme.primaryBlue,
               foregroundColor: SouthAfricanTheme.pureWhite,
             ),
-            child: Text('Show Full Guide'),
+            child: Text(_t3(context, 'Show Full Guide', 'Mostra la guida completa',
+                'Mostrar la guía completa')),
           ),
         ],
       ),

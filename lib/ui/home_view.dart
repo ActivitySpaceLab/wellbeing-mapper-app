@@ -47,7 +47,15 @@ class HomeViewState extends State<HomeView>
   DateTime? _lastStationarySave;
 
   bool get _isItalian => Localizations.localeOf(context).languageCode == 'it';
-  String _t(String en, String it) => _isItalian ? it : en;
+  bool get _isSpanish => Localizations.localeOf(context).languageCode == 'es';
+
+  /// Bilingual helper with optional Spanish; Spanish falls back to English
+  /// where no [es] string has been provided yet.
+  String _t(String en, String it, [String? es]) {
+    if (_isItalian) return it;
+    if (_isSpanish && es != null) return es;
+    return en;
+  }
 
   // All timers stored so they can be cancelled in dispose().
   Timer? _surveyPromptTimer;
@@ -438,15 +446,17 @@ class HomeViewState extends State<HomeView>
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Complete Initial Survey'),
-        content: const Text(
-          'Would you like to complete the initial demographic survey now? '
-          'This helps us understand our participants better, but you can do it later.',
+        title: Text(_t('Complete Initial Survey', 'Completa il questionario iniziale')),
+        content: Text(
+          _t('Would you like to complete the initial demographic survey now? '
+                  'This helps us understand our participants better, but you can do it later.',
+              'Vuoi completare ora il questionario demografico iniziale? '
+                  'Ci aiuta a conoscere meglio i partecipanti, ma puoi farlo anche più tardi.'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text("No, I'll do it later"),
+            child: Text(_t("No, I'll do it later", 'No, lo farò più tardi')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -454,8 +464,8 @@ class HomeViewState extends State<HomeView>
               await SurveyNavigationService.navigateToInitialSurvey(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-            child: const Text('Yes, complete now',
-                style: TextStyle(color: Colors.white)),
+            child: Text(_t('Yes, complete now', 'Sì, completa ora'),
+                style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -467,19 +477,19 @@ class HomeViewState extends State<HomeView>
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Initial Survey'),
+        title: Text(_t('Initial Survey', 'Questionario iniziale')),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Later'),
+            child: Text(_t('Later', 'Più tardi')),
           ),
           ElevatedButton(
             onPressed: () async {
               Navigator.of(context).pop();
               await SurveyNavigationService.navigateToInitialSurvey(context);
             },
-            child: const Text('Complete Now'),
+            child: Text(_t('Complete Now', 'Completa ora')),
           ),
         ],
       ),
@@ -490,7 +500,7 @@ class HomeViewState extends State<HomeView>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Permission Required'),
+        title: Text(_t('Permission Required', 'Autorizzazione necessaria')),
         content: Text(message),
         actions: [
           TextButton(
@@ -506,23 +516,27 @@ class HomeViewState extends State<HomeView>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Background Location Required'),
-        content: const Text(
-          'To track your location continuously, this app needs "Always" location '
-          'permission. Go to Settings > Privacy & Security > Location Services > '
-          'Wellbeing Mapper and select "Always".',
+        title: Text(_t('Background Location Required',
+            'Posizione in background necessaria')),
+        content: Text(
+          _t('To track your location continuously, this app needs "Always" location '
+                  'permission. Go to Settings > Privacy & Security > Location Services > '
+                  'Wellbeing Mapper and select "Always".',
+              'Per tracciare la tua posizione in modo continuo, questa app ha bisogno '
+                  'dell\'autorizzazione alla posizione "Sempre". Vai su Impostazioni > '
+                  'Privacy e sicurezza > Localizzazione > Wellbeing Mapper e seleziona "Sempre".'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(_t('Cancel', 'Annulla')),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               openAppSettings();
             },
-            child: const Text('Open Settings'),
+            child: Text(_t('Open Settings', 'Apri Impostazioni')),
           ),
         ],
       ),

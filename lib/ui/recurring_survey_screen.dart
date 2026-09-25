@@ -411,10 +411,13 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
             SizedBox(height: 16),
             
             // First prompt as a wrapped paragraph
+            // NOTE: keep this prompt in sync with the actual form controls —
+            // it must not mention image upload while the multimedia feature
+            // is disabled (see MULTIMEDIA_REENABLE_GUIDE in docs).
             Text(
               _t(
-                  'What environmental challenges have you experienced recently? Please share as much detail as you can. Feel free to upload 1 image, along with an explanation of what it means.',
-                  'Quali sfide ambientali hai affrontato di recente? Condividi più dettagli possibile. Se vuoi, puoi caricare 1 immagine insieme a una spiegazione del suo significato.'),
+                  'What environmental challenges have you experienced recently? Please share as much detail as you can.',
+                  'Quali sfide ambientali hai affrontato di recente? Condividi più dettagli possibile.'),
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             SizedBox(height: 8),

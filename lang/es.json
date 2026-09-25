@@ -12,6 +12,7 @@
     "activity": "Actividad",
     "speed": "Velocidad",
     "altitude": "Altitud",
+    "show_all_datapoints": "Mostrar todos los puntos de datos",
     "submit": "Enviar",
     "reset": "Restablecer",
     "language": "Idioma",
