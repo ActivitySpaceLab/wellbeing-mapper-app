@@ -11,6 +11,11 @@ class SurveyDatabase {
   factory SurveyDatabase() => _instance;
   SurveyDatabase._internal();
 
+  /// File name in the platform's databases directory. The native backup code
+  /// relies on it too (ios/Runner/AppDelegate.swift via DeviceBackupService,
+  /// and android/.../HistoryBackupAgent.kt).
+  static const String fileName = 'survey_database.db';
+
   static Database? _database;
 
   Future<Database> get database async {
@@ -29,7 +34,7 @@ class SurveyDatabase {
   }
 
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'survey_database.db');
+    String path = join(await getDatabasesPath(), fileName);
     return await openDatabase(
       path,
       version: 14, // v14: unique location_tracks.timestamp (dedupes re-delivered buffered fixes)

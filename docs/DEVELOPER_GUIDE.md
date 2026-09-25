@@ -881,16 +881,38 @@ Wellbeing Mapper is designed with privacy as a core principle:
 3. **Anonymization**: Shared data uses random UUIDs, not personal identifiers
 4. **User Control**: Users can delete their data at any time
 5. **Transparency**: Clear information about what data is collected and how it's used
-6. **Backups**: The location plugin's buffer database
-   (`open_background_locator_buffer.db`) is excluded from Android Auto Backup
-   and device-to-device transfer (`android/app/src/main/res/xml/backup_rules.xml`
-   and `data_extraction_rules.xml`, which must stay in sync). On iOS the
-   plugin excludes it from iCloud backup itself. The app's own
-   `survey_database.db` (survey answers and `location_tracks`) is still
-   included in Android Auto Backup and, being in the iOS Documents
-   directory, in iCloud backups, so a participant's history moves with them
-   to a new phone. Whether it should stay there (or become a user setting)
-   is still open.
+6. **Backups**: A participant's history (`survey_database.db`: survey
+   answers and `location_tracks`) goes into the phone's own backups (iCloud,
+   or Google on Android, including transfer to a new phone) only if they turn
+   **Include my data in phone backups** on in Settings. It is off by default,
+   so the history stays on the phone, as the Private Mode texts promise.
+   Backups belong to the participant's own Apple or Google account and never
+   reach researchers.
+   - `DeviceBackupService` (`services/device_backup_service.dart`) stores the
+     choice (`include_history_in_device_backups`). On iOS it sets or clears
+     the "excluded from backup" flag on the database files, at startup and on
+     every change (native side in `ios/Runner/AppDelegate.swift`).
+   - Android: `android/app/src/main/res/xml/backup_rules.xml` (Android 11
+     and lower) and `data_extraction_rules.xml` (12+), which must stay in
+     sync, always exclude the database. `HistoryBackupAgent` adds it back
+     when a backup runs if the setting is on. On restore it writes the files
+     itself, because the default restore skips files the rules exclude.
+   - Never backed up: the location plugin's buffer
+     (`open_background_locator_buffer.db`, which iOS's plugin excludes itself)
+     and the legacy `unpushedLocationsStorage.db`.
+   - Preferences (participant id, consent, settings) are still backed up, so
+     a new phone continues as the same participant.
+   - `test/services/device_backup_service_test.dart` checks that the native
+     names (preference key, file names, rules, manifest) match the Dart side;
+     `android/app/src/test/.../HistoryBackupAgentTest.kt` covers the restore
+     side. To see what an Android backup contains, use a debug build (adb
+     backup needs a debuggable app on Android 12+) and confirm on the phone:
+     ```bash
+     adb backup -f wm.ab com.github.activityspacelab.wellbeingmapper
+     dd if=wm.ab bs=24 skip=1 | python3 -c "import sys,zlib; sys.stdout.buffer.write(zlib.decompress(sys.stdin.buffer.read()))" | tar -t | grep databases/
+     ```
+     With the setting off, `survey_database.db` must not be listed; with it
+     on, it must be. The plugin buffer is never listed.
 
 ## Troubleshooting
 

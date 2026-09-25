@@ -12,6 +12,11 @@ class UnPushedLocationsDatabase {
   static final UnPushedLocationsDatabase instance =
       UnPushedLocationsDatabase._init();
 
+  /// File name in the platform's databases directory. Legacy: nothing opens
+  /// this database any more, but older installs may still have the file, so
+  /// it is kept out of device backups (DeviceBackupService, backup rules).
+  static const String fileName = 'unpushedLocationsStorage.db';
+
   static Database? _database;
 
   UnPushedLocationsDatabase._init();
@@ -19,7 +24,7 @@ class UnPushedLocationsDatabase {
   Future<Database> get database async {
     if (_database != null) return _database!;
 
-    _database = await _initDB('unpushedLocationsStorage.db');
+    _database = await _initDB(fileName);
     return _database!;
   }
 

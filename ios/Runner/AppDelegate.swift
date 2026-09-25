@@ -32,21 +32,54 @@ import CoreLocation
       self?.handleLocationMethodCall(call: call, result: result)
     }
 
-    // Lets Dart startup wait until app data is readable; see
-    // lib/services/device_storage_guard.dart.
+    // Lets Dart startup wait until app data is readable
+    // (lib/services/device_storage_guard.dart) and keeps the history out of
+    // iCloud backups unless the participant opted in
+    // (lib/services/device_backup_service.dart).
     storageChannel = FlutterMethodChannel(
       name: "com.github.activityspacelab.wellbeingmapper/device_storage",
       binaryMessenger: controller.binaryMessenger
     )
     storageChannel?.setMethodCallHandler { [weak self] call, result in
-      guard call.method == "waitUntilReadable" else {
+      switch call.method {
+      case "waitUntilReadable":
+        self?.waitUntilStorageReadable(result: result)
+      case "setExcludedFromBackup":
+        self?.setExcludedFromBackup(arguments: call.arguments, result: result)
+      default:
         result(FlutterMethodNotImplemented)
-        return
       }
-      self?.waitUntilStorageReadable(result: result)
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // MARK: - Device backups
+
+  /// Sets or clears the "excluded from backup" flag (iCloud and computer
+  /// backups) on each existing file in `paths`, and answers how many files
+  /// were updated. Files that do not exist are skipped.
+  private func setExcludedFromBackup(arguments: Any?, result: FlutterResult) {
+    guard let args = arguments as? [String: Any],
+          let paths = args["paths"] as? [String],
+          let excluded = args["excluded"] as? Bool else {
+      result(FlutterError(code: "invalid-args", message: "Expected paths and excluded", details: nil))
+      return
+    }
+    var updated = 0
+    for path in paths where FileManager.default.fileExists(atPath: path) {
+      var url = URL(fileURLWithPath: path)
+      var values = URLResourceValues()
+      values.isExcludedFromBackup = excluded
+      do {
+        try url.setResourceValues(values)
+        updated += 1
+      } catch {
+        result(FlutterError(code: "backup-flag-failed", message: error.localizedDescription, details: path))
+        return
+      }
+    }
+    result(updated)
   }
 
   // MARK: - Storage readable after a restart

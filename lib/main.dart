@@ -11,6 +11,7 @@ import 'models/app_mode.dart';
 import 'models/route_generator.dart';
 import 'services/app_mode_service.dart';
 import 'services/consent_tracking_service.dart';
+import 'services/device_backup_service.dart';
 import 'services/device_storage_guard.dart';
 import 'services/geo_location_service.dart';
 import 'services/global_notification_service.dart';
@@ -79,6 +80,11 @@ void main() {
     // the location plugin's native buffer) now, whichever screen opens
     // first: a survey notification opens the survey without the home screen.
     LocationPersistenceService.instance.start();
+
+    // Keep the survey database out of the phone's own backups unless the
+    // participant chose otherwise in Settings (iOS flags the files; Android
+    // decides when each backup runs).
+    DeviceBackupService.applyAtStartup();
 
     // Load any in-app language override before building the UI.
     await LocaleService.load();

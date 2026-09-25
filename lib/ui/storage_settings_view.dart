@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/device_backup_service.dart';
 import '../services/storage_settings_service.dart';
 
 class StorageSettingsView extends StatefulWidget {
@@ -17,10 +18,22 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
   bool _locationRetentionLimited = true;
   // ignore: unused_field
   bool _mapDisplayLimited = true;
-  
+  bool _includeHistoryInBackups = false;
+
   // Loading states
   bool _isLoading = true;
   bool _isPerformingCleanup = false;
+
+  bool get _isItalian => Localizations.localeOf(context).languageCode == 'it';
+  bool get _isSpanish => Localizations.localeOf(context).languageCode == 'es';
+
+  /// English / Italian / Spanish text for the settings added in those
+  /// languages (the rest of this screen is still English only).
+  String _t(String en, String it, String es) {
+    if (_isItalian) return it;
+    if (_isSpanish) return es;
+    return en;
+  }
 
   @override
   void initState() {
@@ -37,8 +50,11 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
   final maxErrorThreshold = await StorageSettingsService.getMapErrorThresholdMeters();
       final locationLimited = await StorageSettingsService.getLocationRetentionLimited();
       final mapLimited = await StorageSettingsService.getMapDisplayLimited();
+      final includeHistory = await DeviceBackupService.isHistoryIncluded();
 
+      if (!mounted) return;
       setState(() {
+        _includeHistoryInBackups = includeHistory;
         _locationRetentionDays = locationRetention == StorageSettingsService.UNLIMITED_VALUE 
             ? StorageSettingsService.DEFAULT_LOCATION_RETENTION_DAYS : locationRetention;
         _mapDisplayDays = mapDisplay == StorageSettingsService.UNLIMITED_VALUE 
@@ -105,6 +121,13 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
     await StorageSettingsService.setMapErrorThresholdMeters(value);
   }
 
+  Future<void> _updateIncludeHistoryInBackups(bool value) async {
+    setState(() {
+      _includeHistoryInBackups = value;
+    });
+    await DeviceBackupService.setHistoryIncluded(value);
+  }
+
   Future<void> _updateAutoCleanup(bool value) async {
     setState(() {
       _autoCleanupEnabled = value;
@@ -140,11 +163,12 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
     }
   }
 
-  Widget _buildSwitchSetting(String title, String subtitle, bool value, Function(bool) onChanged) {
+  Widget _buildSwitchSetting(String title, String subtitle, bool value, Function(bool) onChanged, {Key? switchKey}) {
     return ListTile(
       title: Text(title),
       subtitle: Text(subtitle),
       trailing: Switch(
+        key: switchKey,
         value: value,
         onChanged: onChanged,
       ),
@@ -281,7 +305,7 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
             ),
             SizedBox(height: 8),
             Text(
-              'Adjust data retention, map marker limits, and accuracy preferences.',
+              'Adjust data retention, phone backups, map marker limits, and accuracy preferences.',
               style: TextStyle(color: Colors.grey[600]),
             ),
             SizedBox(height: 24),
@@ -297,6 +321,39 @@ class _StorageSettingsViewState extends State<StorageSettingsView> {
               sliderMax: 90.0,
               onSliderChanged: _updateLocationRetentionDays,
               unit: 'days',
+            ),
+
+            SizedBox(height: 16),
+
+            // Phone backups: off by default, so history stays on this phone.
+            Card(
+              child: _buildSwitchSetting(
+                _t('Include my data in phone backups',
+                    'Includi i miei dati nei backup del telefono',
+                    'Incluir mis datos en las copias de seguridad del teléfono'),
+                _t(
+                    'Adds your survey answers and location history to your '
+                        'phone\'s own backup (iCloud or Google), so they move '
+                        'with you to a new phone. When off, they stay only on '
+                        'this phone. Researchers never receive these backups. '
+                        'Changes apply from the next backup.',
+                    'Aggiunge le tue risposte ai questionari e la cronologia '
+                        'delle posizioni al backup del tuo telefono (iCloud o '
+                        'Google), così ti seguono su un nuovo telefono. Se '
+                        'disattivato, restano solo su questo telefono. I '
+                        'ricercatori non ricevono mai questi backup. Le '
+                        'modifiche valgono dal prossimo backup.',
+                    'Añade tus respuestas a los cuestionarios y tu historial '
+                        'de ubicaciones a la copia de seguridad de tu teléfono '
+                        '(iCloud o Google), para que te acompañen a un teléfono '
+                        'nuevo. Si está desactivado, se quedan solo en este '
+                        'teléfono. Los investigadores nunca reciben estas '
+                        'copias. Los cambios se aplican a partir de la próxima '
+                        'copia de seguridad.'),
+                _includeHistoryInBackups,
+                _updateIncludeHistoryInBackups,
+                switchKey: const Key('includeHistoryInBackupsSwitch'),
+              ),
             ),
 
             SizedBox(height: 16),

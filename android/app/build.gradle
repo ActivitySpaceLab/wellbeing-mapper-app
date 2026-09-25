@@ -53,6 +53,20 @@ android {
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
+        test.java.srcDirs += 'src/test/kotlin'
+    }
+
+    // JVM tests (Robolectric), e.g. HistoryBackupAgentTest:
+    //   cd android && ./gradlew :app:testProductionDebugUnitTest
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            all {
+                // Robolectric's ParcelFileDescriptor support reflects into
+                // java.io.FileDescriptor, which JDK 17+ closes by default.
+                jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
+            }
+        }
     }
 
     lintOptions {
@@ -156,7 +170,9 @@ afterEvaluate {
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.11.1'
+    testImplementation 'androidx.test:core:1.5.0'
     androidTestImplementation 'androidx.test:runner:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
 }

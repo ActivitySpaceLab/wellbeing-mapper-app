@@ -407,3 +407,11 @@ Questo questionario è riservato ai soli partecipanti autorizzati. Per partecipa
 - Caricamento non riuscito: dati salvati sul dispositivo per un nuovo tentativo
 
 **Modifica al diario digitale:** la frase sull'invio di un'immagine è stata rimossa dal prompt («Se vuoi, puoi caricare 1 immagine…») perché l'app attualmente non offre il caricamento di immagini.
+
+## NUOVE STRINGHE (2026-09-25) – DA REVISIONARE
+
+> ⚠️ Machine-translated Italian for a new privacy setting on the Settings screen (off by default). Please have the Italian collaborator review it.
+
+**Impostazioni → backup del telefono:**
+- Includi i miei dati nei backup del telefono
+- Aggiunge le tue risposte ai questionari e la cronologia delle posizioni al backup del tuo telefono (iCloud o Google), così ti seguono su un nuovo telefono. Se disattivato, restano solo su questo telefono. I ricercatori non ricevono mai questi backup. Le modifiche valgono dal prossimo backup.
