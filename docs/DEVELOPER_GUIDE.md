@@ -223,19 +223,12 @@ Location Tracks       Per Upload       Public Key       Transit   Private Key De
 
 ### Key Management
 
-Public keys are embedded in the app at build time:
-
-```dart
-// In lib/services/data_upload_service.dart
-static const Map<String, ServerConfig> _serverConfigs = {
-  'gauteng': ServerConfig(
-    baseUrl: 'https://gauteng-server.com', 
-    publicKey: '''-----BEGIN PUBLIC KEY-----
-    [RSA-4096 PUBLIC KEY FOR GAUTENG]
-    -----END PUBLIC KEY-----''',
-  ),
-};
-```
+The study's RSA public key is compiled into the app as `ENV.researchPublicKey`
+(`lib/util/env.dart`); every upload is encrypted with it, and
+`EncryptedSurveyService` reads the same constant. The private key never
+leaves the research team: it decrypts downloaded submissions with
+`tools/decrypt_received.py` in the server repository. Generating and
+replacing keys is described in [Encryption Setup](ENCRYPTION_SETUP.md).
 
 ## Flutter Background Geolocation - Critical Implementation Notes
 
@@ -624,90 +617,33 @@ Ensure location permissions are properly configured in platform files:
 - **Android**: `android/app/src/main/AndroidManifest.xml`
 - **iOS**: `ios/Runner/Info.plist`
 
-#### 3. Research Server Setup (For Research Teams)
+#### 3. Research Server (For Research Teams)
 
-**Generate RSA Key Pairs:**
-```bash
-# For Gauteng research site  
-openssl genrsa -out gauteng_private_key.pem 4096
-openssl rsa -in gauteng_private_key.pem -pubout -out gauteng_public_key.pem
-```
+The app uploads to the [Wellbeing Mapper server](https://github.com/ActivitySpaceLab/wellbeing-mapper-server); its README is the deployment guide. On the app side:
 
-**Update App Configuration:**
-Edit `lib/services/data_upload_service.dart` and replace the placeholder public keys:
+1. Generate the study's key pair (server README, "Keys") and paste the **public** key into `ENV.researchPublicKey` in `lib/util/env.dart`. The private key stays offline with the research team.
+2. Build the app with the server's URL:
+   ```bash
+   fvm flutter build apk --flavor production --dart-define=APP_FLAVOR=production \
+     --dart-define=SERVER_BASE_URL=https://your-host/api/v1
+   ```
+   Without `SERVER_BASE_URL`, no build uploads anything.
 
-```dart
-static const Map<String, ServerConfig> _serverConfigs = {
-  'gauteng': ServerConfig(
-    baseUrl: 'https://your-gauteng-server.com',
-    uploadEndpoint: '/api/v1/participant-data', 
-    publicKey: '''-----BEGIN PUBLIC KEY-----
-[PASTE YOUR GAUTENG PUBLIC KEY HERE]
------END PUBLIC KEY-----''',
-  ),
-};
-```
-
-**Rebuild App:**
-```bash
-fvm flutter clean
-fvm flutter pub get
-fvm flutter build apk --release
-```
-
-#### 4. Server Setup
-For detailed server setup instructions, see:
-- [Server Setup Guide](SERVER_SETUP.md)
-- [Encryption Configuration Guide](ENCRYPTION_SETUP.md)
+See [Server Setup](SERVER_SETUP.md) and [Encryption Setup](ENCRYPTION_SETUP.md).
 
 ## Server Setup
 
-### Research Data Collection Server
+The server is a separate repository, [wellbeing-mapper-server](https://github.com/ActivitySpaceLab/wellbeing-mapper-server): a small Node service that stores each encrypted submission as a file and checks participant-code hashes. It never decrypts anything; the research team decrypts the files offline with the private key (`tools/decrypt_received.py` there). Its README covers deployment on a VPS (Docker Compose, or systemd), keys, participant codes, backups and operation.
 
-Each research site requires a secure HTTPS server with:
+What the app sends is in `ResearchServerService` (`services/research_server_service.dart`):
 
-1. **REST API endpoint** for encrypted data uploads
-2. **Private key storage** for data decryption  
-3. **Database** for storing encrypted participant data
-4. **Processing pipeline** for decrypting and analyzing data
+| Endpoint | When |
+| --- | --- |
+| `POST /api/v1/surveys/encrypted` | initial and biweekly surveys; biweekly ones carry the location history the participant chose to share |
+| `POST /api/v1/consent/encrypted` | the consent form |
+| `POST /api/v1/participants/validate` | a participant enters a code (only its SHA-256 hash is sent) |
 
-### Minimum Server Requirements
-- **OS**: Ubuntu 20.04 LTS or equivalent
-- **RAM**: 8GB recommended
-- **Storage**: 100GB minimum (SSD recommended)
-- **SSL Certificate**: Valid HTTPS certificate
-- **Database**: PostgreSQL 13+ or MongoDB 4.4+
-
-### API Endpoint Implementation
-
-**Node.js Example:**
-```javascript
-app.post('/api/v1/participant-data', async (req, res) => {
-  const { uploadId, participantUuid, researchSite, encryptedData, encryptionMetadata } = req.body;
-  
-  try {
-    // Store encrypted data (cannot be read without private key)
-    await database.storeEncryptedUpload({
-      uploadId,
-      participantUuid,
-      researchSite,
-      encryptedPayload: encryptedData,
-      metadata: encryptionMetadata,
-      receivedAt: new Date()
-    });
-    
-    res.json({ 
-      success: true, 
-      uploadId: uploadId,
-      message: 'Data received and stored securely' 
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: 'Upload failed' });
-  }
-});
-```
-
-For complete server implementation, see [Server Setup Guide](SERVER_SETUP.md).
+Each upload carries a `submission_id`, a hash of the participant id, record type and local id, so a retry after a lost answer is not stored twice. Uploads happen only in research mode, after consent, in builds made with `SERVER_BASE_URL`. See [Server Setup](SERVER_SETUP.md).
 
 ## Development Workflow
 

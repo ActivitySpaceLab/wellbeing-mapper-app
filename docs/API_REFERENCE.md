@@ -328,132 +328,57 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 }
 ```
 
-## Encryption Technical Specifications
+## Encryption and Server API
 
-### Hybrid Encryption Process
+Every survey and consent record is encrypted on the device before upload
+(`ResearchServerService._encrypt`): AES-256-GCM with a fresh key and 16-byte
+IV, the key wrapped with the study's RSA public key (OAEP, SHA-256), all in a
+base64 JSON envelope sent as `encrypted_data`. The server stores the file as
+is; the research team decrypts it offline with `tools/decrypt_received.py`
+from the [server repository](https://github.com/ActivitySpaceLab/wellbeing-mapper-server).
+See [Encryption Setup](ENCRYPTION_SETUP.md).
 
-1. **AES-256-GCM Encryption**:
-   - Generate random 256-bit AES key
-   - Generate random 96-bit IV
-   - Encrypt JSON payload with AES-256-GCM
-   - Produces: `encrypted_data + auth_tag`
+### Endpoints
 
-2. **RSA-4096-OAEP Key Encryption**:
-   - Encrypt AES key with research site's RSA public key
-   - Use OAEP padding with SHA-256
-   - Produces: `encrypted_aes_key`
+All paths are relative to `SERVER_BASE_URL` (`…/api/v1`), from `lib/util/env.dart`.
 
-3. **Final Payload**:
-   - Format: `base64(encrypted_aes_key)|base64(encrypted_data+auth_tag)`
-   - Metadata: `{"algorithm": "RSA-OAEP-AES-256-GCM", "iv": "base64_iv", ...}`
+| Method | Path | Body | Answer |
+| --- | --- | --- | --- |
+| POST | `/surveys/encrypted` | `{encrypted_data, survey_type: "initial" \| "biweekly", timestamp, submission_id}` | `{success: true, storage_key, duplicate}` |
+| POST | `/consent/encrypted` | same, `survey_type: "consent"` | same |
+| POST | `/participants/validate` | `{hashed_code}` (SHA-256 of the uppercased code) | `{valid, code_type}` |
 
-### Server-Side Decryption
+`submission_id` is a SHA-256 of the participant id, record type and local
+record id; the server ignores a repeat of it, so a retry after a lost answer
+is stored once. The server answers 4xx for requests it will never accept
+(the app stops retrying) and 5xx, including 507 when its disk is nearly
+full, for conditions worth retrying.
 
-```javascript
-// Node.js decryption example
-function decryptUpload(encryptedPayload, encryptionMetadata, privateKey) {
-  const [encryptedAESKeyB64, encryptedDataB64] = encryptedPayload.split('|');
-  
-  // Decrypt AES key with RSA private key
-  const aesKey = crypto.privateDecrypt({
-    key: privateKey,
-    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-    oaepHash: 'sha256'
-  }, Buffer.from(encryptedAESKeyB64, 'base64'));
-  
-  // Decrypt data with AES-256-GCM
-  const iv = Buffer.from(encryptionMetadata.iv, 'base64');
-  const encryptedData = Buffer.from(encryptedDataB64, 'base64');
-  const authTag = encryptedData.slice(-16);
-  const ciphertext = encryptedData.slice(0, -16);
-  
-  const decipher = crypto.createDecipherGCM('aes-256-gcm', aesKey);
-  decipher.setIV(iv);
-  decipher.setAuthTag(authTag);
-  
-  let decrypted = decipher.update(ciphertext, null, 'utf8');
-  decrypted += decipher.final('utf8');
-  
-  return JSON.parse(decrypted);
-}
-```
+### Decrypted Data Structure
 
-## REST API Specifications
+`decrypt_received.py` writes one file per submission with the server's
+metadata and the `plaintext` the app encrypted:
 
-### Upload Endpoint
-
-**POST** `/api/v1/participant-data`
-
-**Request Headers**:
-```
-Content-Type: application/json
-User-Agent: WellbeingMapper/1.0
-```
-
-**Request Body**:
 ```json
 {
-  "uploadId": "uuid-v4",
-  "participantUuid": "uuid-v4",
-  "researchSite": "gauteng",
-  "encryptedData": "base64-encoded-payload",
-  "encryptionMetadata": {
-    "algorithm": "RSA-OAEP-AES-256-GCM",
-    "keySize": 4096,
-    "iv": "base64-iv",
-    "timestamp": "ISO-8601-timestamp"
-  },
-  "dataPeriod": {
-    "start": "ISO-8601-timestamp",
-    "end": "ISO-8601-timestamp"
+  "received_at": "2026-09-25T20:30:39.766Z",
+  "survey_type": "biweekly",
+  "submission_id": "9feaf8bb…",
+  "plaintext": {
+    "type": "biweekly_survey",
+    "participant_uuid": "…",
+    "survey_id": 12,
+    "timestamp": "2026-09-25T22:30:39.500",
+    "data": { "…": "the local database row: answers, submitted_at, research_site" },
+    "location_data": { "locations": [ { "latitude": 41.38, "longitude": 2.16, "timestamp": "…" } ] },
+    "metadata": { "app_version": "1.0.0+6", "submission_method": "research_server_direct" }
   }
 }
 ```
 
-**Response**:
-```json
-{
-  "success": true,
-  "uploadId": "uuid-v4",
-  "receivedAt": "ISO-8601-timestamp",
-  "message": "Data uploaded successfully"
-}
-```
-
-### Decrypted Data Structure
-
-After server-side decryption, the payload contains:
-
-```json
-{
-  "participantUuid": "uuid-v4",
-  "researchSite": "gauteng",
-  "uploadTimestamp": "ISO-8601-timestamp",
-  "surveys": [
-    {
-      "type": "initial" | "recurring",
-      "submittedAt": "ISO-8601-timestamp",
-      "responses": {
-        "wellbeingScore": 1-10,
-        "stressLevel": 1-10,
-        "mood": "string",
-        "suburb": "string",           // Gauteng only
-        "generalHealth": "string",    // Gauteng only
-        "ethnicity": "string",        // Site-specific options
-        "buildingType": "string"      // Site-specific options
-      }
-    }
-  ],
-  "locationTracks": [
-    {
-      "timestamp": "ISO-8601-timestamp",
-      "latitude": -90.0 to 90.0,
-      "longitude": -180.0 to 180.0,
-      "accuracy": 0.0-1000.0
-    }
-  ]
-}
-```
+`type` is `initial_survey`, `biweekly_survey` or `consent_form` (the latter
+with `consent_id` instead of `survey_id`); `location_data` is present only
+on biweekly surveys, with the locations the participant chose to share.
 
 ## Core Classes API
 

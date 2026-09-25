@@ -143,143 +143,40 @@ Users can now choose between two modes when starting the app:
 ## Technical Architecture
 
 ### Encryption Pipeline
+
 ```
-Survey Data + Location Tracks
+Survey answers, consent, shared location history
            ↓
-    JSON Serialization
+    AES-256-GCM, fresh key per upload
            ↓
-    AES-256-GCM Encryption (random key)
+    key wrapped with the study's RSA public key (OAEP-SHA-256)
            ↓
-    RSA-4096-OAEP Key Encryption
+    base64 JSON envelope → HTTPS POST to the Wellbeing Mapper server
            ↓
-    Base64 Encoding: encrypted_key|encrypted_data
-           ↓
-    HTTPS POST to Research Server
-           ↓
-    Secure Storage (encrypted)
+    stored as a file; decrypted offline by the research team
 ```
 
-### Multi-Site Configuration
-```dart
-static const Map<String, ServerConfig> _serverConfigs = {
-  'gauteng': ServerConfig(
-    baseUrl: 'https://gauteng-research.domain.com',
-    uploadEndpoint: '/api/v1/participant-data',
-    publicKey: '''-----BEGIN PUBLIC KEY-----
-    [RSA-4096 PUBLIC KEY FOR GAUTENG TEAM]
-    -----END PUBLIC KEY-----''',
-  ),
-};
-```
+### Server
+
+The [Wellbeing Mapper server](https://github.com/ActivitySpaceLab/wellbeing-mapper-server)
+stores each encrypted submission as a file and checks participant-code
+hashes. It never decrypts anything. Its README covers deployment on a VPS,
+keys, participant codes, backups and decryption.
 
 ## Research Team Setup Instructions
 
-### 1. Generate RSA Key Pairs
-
-For each research site, generate a 4096-bit RSA key pair:
-
-```bash
-# Gauteng keys  
-openssl genrsa -out gauteng_private_key.pem 4096
-openssl rsa -in gauteng_private_key.pem -pubout -out gauteng_public_key.pem
-```
-
-### 2. Configure Mobile App
-
-**Update Public Keys:**
-Edit `lib/services/data_upload_service.dart` and replace the public key placeholders with your generated public keys.
-
-**Update Server URLs:**
-Replace `baseUrl` values with your actual research server domains.
-
-**Rebuild App:**
-```bash
-fvm flutter clean
-fvm flutter pub get
-fvm flutter build apk --release
-```
-
-### 3. Set Up Research Servers
-
-**Required Components:**
-- HTTPS server with valid SSL certificate
-- REST API endpoint for encrypted data uploads
-- Database for storing encrypted participant data
-- Data processing pipeline with private key decryption
-
-**API Endpoint:**
-```
-POST /api/v1/participant-data
-Content-Type: application/json
-
-{
-  "uploadId": "uuid-v4",
-  "participantUuid": "uuid-v4", 
-  "researchSite": "gauteng",
-  "encryptedData": "base64-encoded-payload",
-  "encryptionMetadata": { ... },
-  "dataPeriod": { "start": "...", "end": "..." }
-}
-```
-
-### 4. Data Decryption
-
-Server-side decryption example (Node.js):
-
-```javascript
-function decryptUpload(encryptedPayload, encryptionMetadata, privateKey) {
-  const [encryptedAESKey, encryptedData] = encryptedPayload.split('|');
-  
-  // Decrypt AES key with RSA private key
-  const aesKey = crypto.privateDecrypt({
-    key: privateKey,
-    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-    oaepHash: 'sha256'
-  }, Buffer.from(encryptedAESKey, 'base64'));
-  
-  // Decrypt data with AES-256-GCM
-  const iv = Buffer.from(encryptionMetadata.iv, 'base64');
-  const decipher = crypto.createDecipherGCM('aes-256-gcm', aesKey);
-  // ... complete decryption process
-  
-  return JSON.parse(decryptedData);
-}
-```
-
-## Decrypted Data Structure
-
-After successful decryption, research teams receive:
-
-```json
-{
-  "participantUuid": "anonymous-uuid",
-  "researchSite": "gauteng",
-  "uploadTimestamp": "2025-07-23T10:30:00Z",
-  "surveys": [
-    {
-      "type": "initial" | "recurring",
-      "submittedAt": "2025-07-23T10:30:00Z",
-      "responses": {
-        "wellbeingScore": 1-10,
-        "stressLevel": 1-10,
-        "mood": "happy|neutral|sad|anxious|...",
-        "suburb": "string",           // Gauteng only
-        "generalHealth": "excellent|good|fair|poor",  // Gauteng only
-        "ethnicity": "string",        // Site-specific options
-        "buildingType": "string"      // Site-specific options
-      }
-    }
-  ],
-  "locationTracks": [
-    {
-      "timestamp": "2025-07-23T10:15:00Z",
-      "latitude": -26.1076,
-      "longitude": 28.0567,
-      "accuracy": 10.5
-    }
-  ]
-}
-```
+1. **Keys**: generate the study's RSA pair (server README, "Keys"); paste the
+   public key into `ENV.researchPublicKey` in `lib/util/env.dart`; keep the
+   private key offline.
+2. **Server**: deploy it following the server README.
+3. **Participant codes**: `python3 generate_participant_codes.py --count 500`
+   in the server repository; put the hash file on the server and hand the
+   codes to participants.
+4. **App**: build with `--dart-define=SERVER_BASE_URL=https://your-host/api/v1`
+   (see [Server Setup](SERVER_SETUP.md)).
+5. **Decryption**: `python3 tools/decrypt_received.py --key private.pem --out decrypted/ received/`
+   on a research team computer. The output format is described in
+   [API Reference](API_REFERENCE.md), "Decrypted Data Structure".
 
 ## Privacy & Security Features
 
