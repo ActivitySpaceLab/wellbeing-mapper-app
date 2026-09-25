@@ -881,6 +881,16 @@ Wellbeing Mapper is designed with privacy as a core principle:
 3. **Anonymization**: Shared data uses random UUIDs, not personal identifiers
 4. **User Control**: Users can delete their data at any time
 5. **Transparency**: Clear information about what data is collected and how it's used
+6. **Backups**: The location plugin's buffer database
+   (`open_background_locator_buffer.db`) is excluded from Android Auto Backup
+   and device-to-device transfer (`android/app/src/main/res/xml/backup_rules.xml`
+   and `data_extraction_rules.xml`, which must stay in sync). On iOS the
+   plugin excludes it from iCloud backup itself. The app's own
+   `survey_database.db` (survey answers and `location_tracks`) is still
+   included in Android Auto Backup and, being in the iOS Documents
+   directory, in iCloud backups, so a participant's history moves with them
+   to a new phone. Whether it should stay there (or become a user setting)
+   is still open.
 
 ## Troubleshooting
 

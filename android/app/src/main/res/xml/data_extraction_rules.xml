@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup and device-transfer rules for Android 12+ (android:dataExtractionRules).
+  Keep in sync with backup_rules.xml, which applies on Android 11 and lower.
+  See that file for why the location plugin's buffer is excluded.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="open_background_locator_buffer.db" />
+        <exclude domain="database" path="open_background_locator_buffer.db-journal" />
+        <exclude domain="database" path="open_background_locator_buffer.db-wal" />
+        <exclude domain="database" path="open_background_locator_buffer.db-shm" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="open_background_locator_buffer.db" />
+        <exclude domain="database" path="open_background_locator_buffer.db-journal" />
+        <exclude domain="database" path="open_background_locator_buffer.db-wal" />
+        <exclude domain="database" path="open_background_locator_buffer.db-shm" />
+    </device-transfer>
+</data-extraction-rules>

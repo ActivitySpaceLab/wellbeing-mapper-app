@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup rules for Android 11 and lower (android:fullBackupContent).
+  Keep in sync with data_extraction_rules.xml, which applies on Android 12+.
+
+  The location plugin's buffer (fixes waiting to be moved into the app
+  database) is excluded: it is a short-lived queue of raw location history,
+  and restoring it on another device would inject the old device's fixes.
+-->
+<full-backup-content>
+    <exclude domain="database" path="open_background_locator_buffer.db" />
+    <exclude domain="database" path="open_background_locator_buffer.db-journal" />
+    <exclude domain="database" path="open_background_locator_buffer.db-wal" />
+    <exclude domain="database" path="open_background_locator_buffer.db-shm" />
+</full-backup-content>

@@ -42,6 +42,8 @@
         android:name="${applicationName}"
         android:label="Wellbeing Mapper"
         android:icon="@mipmap/launcher_icon"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         >
 
         <activity
