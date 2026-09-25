@@ -103,9 +103,12 @@ Widget reportIssueBody(BuildContext context) {
 _launchUrl(String url) async {
   //The url must be valid
   final Uri _url = Uri.parse(url);
-  if (await canLaunchUrl(_url)) {
-    await launchUrl(_url, mode: LaunchMode.externalApplication);
-  } else {
+  // Launch directly instead of gating on canLaunchUrl: on Android 11+
+  // canLaunchUrl returns false for https unless the manifest declares a
+  // <queries> intent, which silently killed this button. launchUrl itself
+  // reports failure via its return value / exception.
+  final launched = await launchUrl(_url, mode: LaunchMode.externalApplication);
+  if (!launched) {
     throw 'Could not launch $url';
   }
 }

@@ -63,6 +63,8 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
         samples: 3,
       );
 
+      // The fix can take up to ~75s; the user may have left the screen.
+      if (!mounted) return;
       setState(() {
         _currentLocation = location;
         _isCapturingLocation = false;
@@ -74,11 +76,12 @@ class _WellbeingSurveyScreenState extends State<WellbeingSurveyScreen> {
         }
       });
     } catch (error) {
+      debugPrint('[WellbeingSurveyScreen] Location capture error: $error');
+      if (!mounted) return;
       setState(() {
         _locationError = error.toString();
         _isCapturingLocation = false;
       });
-      debugPrint('[WellbeingSurveyScreen] Location capture error: $error');
     }
   }
 

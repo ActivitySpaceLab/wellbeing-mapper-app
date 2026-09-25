@@ -149,7 +149,9 @@ class WellbeingSurveyResponse {
     if (normalized >= 0.3) return const Color(0xFFFF9800);
     if (normalized >= 0.2) return const Color(0xFFFF5722);
     if (normalized >= 0.1) return const Color(0xFFD32F2F);
-    return const Color(0xFF9E9E9E);
+    // Worst possible answer (0) is still a real answer: deep red, NOT the
+    // grey used above for "no response".
+    return const Color(0xFFB71C1C);
   }
 
   WellbeingSurveyResponse copyWithSyncStatus(bool synced) {

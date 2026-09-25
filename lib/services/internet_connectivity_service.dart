@@ -90,9 +90,10 @@ class InternetConnectivityService {
   
   /// Check connection with loading indicator
   static Future<bool> checkConnectionWithLoading(BuildContext context) async {
-    bool hasConnection = false;
-    
-    await showDialog(
+    // Show the spinner WITHOUT awaiting it: showDialog's future only
+    // completes when the dialog is dismissed, and nothing dismisses it until
+    // the check below has run — awaiting it here would deadlock forever.
+    showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -106,10 +107,13 @@ class InternetConnectivityService {
         ),
       ),
     );
-    
-    hasConnection = await hasInternetConnection();
-    Navigator.of(context).pop(); // Close loading dialog
-    
-    return hasConnection;
+
+    try {
+      return await hasInternetConnection();
+    } finally {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+      }
+    }
   }
 }

@@ -55,7 +55,8 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
       // Get user UUID from shared preferences
       final prefs = await SharedPreferences.getInstance();
       final uuid = prefs.getString("user_uuid") ?? _t('Not available', 'Non disponibile');
-      
+
+      if (!mounted) return;
       setState(() {
         appVersion = packageInfo.version;
         buildNumber = packageInfo.buildNumber;
@@ -63,6 +64,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
       });
     } catch (e) {
       debugPrint('Error loading app info: $e');
+      if (!mounted) return;
       setState(() {
         appVersion = _t('Unknown', 'Sconosciuto');
         buildNumber = _t('Unknown', 'Sconosciuto');
@@ -84,12 +86,14 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
   Future<void> _loadCurrentMode() async {
     try {
       final mode = await AppModeService.getCurrentMode();
+      if (!mounted) return;
       setState(() {
         currentMode = mode;
         isLoading = false;
       });
     } catch (e) {
       debugPrint('Error loading current mode: $e');
+      if (!mounted) return;
       setState(() {
         currentMode = AppMode.private; // Default to private on error
         isLoading = false;
@@ -100,6 +104,7 @@ class _WellbeingMapperSideDrawerState extends State<WellbeingMapperSideDrawer> {
   Future<void> _checkInitialSurveyStatus() async {
     try {
       final completed = await InitialSurveyService.hasCompletedInitialSurvey();
+      if (!mounted) return;
       setState(() {
         hasCompletedInitialSurvey = completed;
       });

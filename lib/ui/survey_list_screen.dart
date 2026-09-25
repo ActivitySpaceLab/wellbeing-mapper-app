@@ -64,11 +64,10 @@ class _SurveyListScreenState extends State<SurveyListScreen> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
       _showErrorDialog('Failed to load surveys: $e');
     }
   }

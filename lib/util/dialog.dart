@@ -95,13 +95,16 @@ class Dialog {
     );
   }
 
-  static Future<dynamic> prompt(BuildContext context,
+  /// Prompt for a text value. Completes with the submitted string, or with
+  /// `null` when the user cancels or dismisses the dialog — callers awaiting
+  /// this future must handle `null`.
+  static Future<String?> prompt(BuildContext context,
       {String? title, String? labelText, String? hintText, String? value}) {
     TextEditingController controller = TextEditingController(text: value);
 
-    Completer completer = Completer<String>();
+    Completer<String?> completer = Completer<String?>();
 
-    String submittedValue = value!;
+    String submittedValue = value ?? '';
 
     showDialog<String>(
       context: context,
@@ -146,7 +149,13 @@ class Dialog {
           ],
         );
       },
-    );
+    ).then((_) {
+      // Cancel or barrier dismissal: complete with null so callers awaiting
+      // the prompt are not left hanging forever.
+      if (!completer.isCompleted) {
+        completer.complete(null);
+      }
+    });
     return completer.future;
   }
 

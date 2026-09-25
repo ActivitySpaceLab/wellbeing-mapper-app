@@ -20,12 +20,14 @@ class _NotificationSettingsViewState extends State<NotificationSettingsView> {
   Future<void> _loadNotificationStats() async {
     try {
       final stats = await NotificationService.getNotificationStats();
+      if (!mounted) return;
       setState(() {
         _notificationStats = stats;
         _isLoading = false;
       });
     } catch (error) {
       debugPrint('Error loading notification stats: $error');
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });

@@ -1099,6 +1099,7 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         }
       }
       
+      if (!mounted) return;
       setState(() {
         _recentLocationTracks = locationTracks;
         _totalLocationCount = locationTracks.length;

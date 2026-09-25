@@ -63,7 +63,8 @@ class _DataSharingPreferencesScreenState extends State<DataSharingPreferencesScr
         
         final currentConsent = await db.getLatestDataSharingConsent(_participantUuid!);
         final history = await db.getAllDataSharingConsents(_participantUuid!);
-        
+
+        if (!mounted) return;
         setState(() {
           _currentConsent = currentConsent;
           _consentHistory = history;
@@ -72,9 +73,11 @@ class _DataSharingPreferencesScreenState extends State<DataSharingPreferencesScr
     } catch (e) {
       debugPrint('Error loading consent data: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -94,6 +97,7 @@ class _DataSharingPreferencesScreenState extends State<DataSharingPreferencesScr
 
       await _loadConsentData(); // Refresh data
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Data sharing preference updated successfully'),
@@ -101,6 +105,7 @@ class _DataSharingPreferencesScreenState extends State<DataSharingPreferencesScr
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error updating preference: $e'),
