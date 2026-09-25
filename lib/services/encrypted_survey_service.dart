@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
+import 'package:encrypt/encrypt.dart' as enc;
 import 'package:flutter/foundation.dart';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:http/http.dart' as http;
@@ -441,37 +441,42 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
         debugPrint('✅ Payload size: ${jsonSizeInMB.toStringAsFixed(2)}MB');
       }
       
-      // Generate random 32-byte AES key (256-bit)
-      final random = Random.secure();
-      final aesKey = Uint8List.fromList(List.generate(32, (_) => random.nextInt(256)));
-      
-      // Encrypt data using XOR (matching archive implementation)
-      final dataBytes = utf8.encode(jsonString);
-      final encryptedData = Uint8List(dataBytes.length);
-      for (int i = 0; i < dataBytes.length; i++) {
-        encryptedData[i] = dataBytes[i] ^ aesKey[i % aesKey.length];
-      }
-      
-      // Encrypt AES key with RSA (use base64 for safe string transmission)
-      final aesKeyBase64 = base64.encode(aesKey);
-      
+      // Real AES-256-GCM with a random key and IV, matching the wire format
+      // used by ResearchServerService. (An earlier revision XOR'd the payload
+      // with a repeating key while labeling it AES-256-GCM — trivially
+      // breakable and never to be reintroduced.)
+      final aesKey = enc.Key.fromSecureRandom(32);
+      final iv = enc.IV.fromSecureRandom(16);
+      final encrypter = enc.Encrypter(enc.AES(aesKey, mode: enc.AESMode.gcm));
+      final encrypted = encrypter.encryptBytes(
+        Uint8List.fromList(utf8.encode(jsonString)),
+        iv: iv,
+      );
+
+      // Wrap the AES key with RSA-OAEP-SHA-256. The RSA plaintext is the
+      // base64 text of the key (fast_rsa encrypts strings), so the server
+      // must base64-decode after RSA decryption.
+      final aesKeyBase64 = base64.encode(aesKey.bytes);
+
       String encryptedKey;
       try {
-        encryptedKey = await RSA.encryptPKCS1v15(aesKeyBase64, _publicKey);
+        encryptedKey =
+            await RSA.encryptOAEP(aesKeyBase64, '', Hash.SHA256, _publicKey);
       } catch (rsaError) {
         debugPrint('❌ RSA encryption failed: $rsaError');
         rethrow;
       }
-      
+
       if (encryptedKey.isEmpty) {
         throw Exception('RSA encryption failed: encryptedKey is empty');
       }
-      
+
       // Create encrypted package
       final encryptedPackage = {
-        'encryptedData': base64.encode(encryptedData),
+        'encryptedData': base64.encode(encrypted.bytes),
+        'iv': iv.base64,
         'encryptedKey': encryptedKey,
-        'algorithm': 'AES-256-GCM + RSA-PKCS1',
+        'algorithm': 'AES-256-GCM+RSA-OAEP-SHA256',
         'researchSite': ENV.researchSite,
         'timestamp': DateTime.now().toIso8601String(),
       };
@@ -481,7 +486,7 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
       final packageBase64 = base64.encode(utf8.encode(packageJson));
       
       debugPrint('🔐 Hybrid encrypted package created');
-      debugPrint('   Data: ${encryptedData.length} bytes');  
+      debugPrint('   Data: ${encrypted.bytes.length} bytes');
       debugPrint('   Package: ${packageJson.length} chars');
       debugPrint('   Base64: ${packageBase64.length} chars');
       
@@ -621,8 +626,24 @@ ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
   static Future<void> syncPendingSurveysEnhanced() async {
     try {
       debugPrint('🔐 Starting enhanced encrypted survey sync...');
-      
+
+      // Same gates as syncPendingSurveys: never upload outside research mode
+      // (demo builds always refuse) or without a consent record on file.
+      if (!await AppModeService.sendsDataToResearch()) {
+        debugPrint('[EncryptedSurveyService] ❌ Enhanced sync blocked: mode does not upload');
+        return;
+      }
+      if (GlobalData.userUUID.isEmpty) {
+        debugPrint('[EncryptedSurveyService] ❌ Enhanced sync blocked: no participant UUID');
+        return;
+      }
+
       final db = SurveyDatabase();
+
+      if (await db.getConsent() == null) {
+        debugPrint('[EncryptedSurveyService] ❌ Enhanced sync blocked: no consent record');
+        return;
+      }
       
       // Get unsynced data
       final unsyncedInitial = await db.getUnsyncedInitialSurveys();
