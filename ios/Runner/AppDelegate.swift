@@ -6,7 +6,10 @@ import CoreLocation
 @objc class AppDelegate: FlutterAppDelegate, CLLocationManagerDelegate {
   private var locationManager: CLLocationManager?
   private var locationChannel: FlutterMethodChannel?
-  
+  private var storageChannel: FlutterMethodChannel?
+  private var storageWaiters: [FlutterResult] = []
+  private var storageObservers: [NSObjectProtocol] = []
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -28,10 +31,89 @@ import CoreLocation
     locationChannel?.setMethodCallHandler { [weak self] call, result in
       self?.handleLocationMethodCall(call: call, result: result)
     }
-    
+
+    // Lets Dart startup wait until app data is readable; see
+    // lib/services/device_storage_guard.dart.
+    storageChannel = FlutterMethodChannel(
+      name: "com.github.activityspacelab.wellbeingmapper/device_storage",
+      binaryMessenger: controller.binaryMessenger
+    )
+    storageChannel?.setMethodCallHandler { [weak self] call, result in
+      guard call.method == "waitUntilReadable" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      self?.waitUntilStorageReadable(result: result)
+    }
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
-  
+
+  // MARK: - Storage readable after a restart
+
+  /// Answers once data with the default protection class (UserDefaults, the
+  /// app's SQLite databases) is readable. That is immediate unless iOS
+  /// launched the app in the background (e.g. for a significant location
+  /// change) after a restart and before the first unlock.
+  private func waitUntilStorageReadable(result: @escaping FlutterResult) {
+    if isStorageReadable() {
+      result(true)
+      return
+    }
+    storageWaiters.append(result)
+    guard storageObservers.isEmpty else { return }
+    // First unlock, or the user opening the app (the protected-data
+    // notification may not reach an app that was suspended at the time).
+    for name in [UIApplication.protectedDataDidBecomeAvailableNotification,
+                 UIApplication.didBecomeActiveNotification] {
+      storageObservers.append(NotificationCenter.default.addObserver(
+        forName: name, object: nil, queue: .main
+      ) { [weak self] _ in
+        self?.answerStorageWaitersIfReadable()
+      })
+    }
+  }
+
+  private func answerStorageWaitersIfReadable() {
+    guard isStorageReadable() else { return }
+    storageObservers.forEach { NotificationCenter.default.removeObserver($0) }
+    storageObservers.removeAll()
+    let waiters = storageWaiters
+    storageWaiters.removeAll()
+    waiters.forEach { $0(true) }
+  }
+
+  /// `isProtectedDataAvailable` alone is not enough: it is also false while
+  /// the phone is merely locked, when default-class data *is* readable. So,
+  /// when locked, probe a marker file written with that same protection
+  /// class: it can be read if and only if the phone has been unlocked since
+  /// it started.
+  private func isStorageReadable() -> Bool {
+    guard let marker = storageMarkerURL() else { return true }
+    let fileManager = FileManager.default
+    if UIApplication.shared.isProtectedDataAvailable {
+      if !fileManager.fileExists(atPath: marker.path) {
+        try? fileManager.createDirectory(
+          at: marker.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? Data("readable".utf8).write(
+          to: marker, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+      }
+      return true
+    }
+    // No marker: the app has not run unlocked since this check was added.
+    // After a fresh install there is nothing to protect yet (the first
+    // launch is the user opening the app). The one gap is an update whose
+    // very first launch is a background one before the first unlock.
+    guard fileManager.fileExists(atPath: marker.path) else { return true }
+    return (try? Data(contentsOf: marker)) != nil
+  }
+
+  private func storageMarkerURL() -> URL? {
+    return FileManager.default
+      .urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+      .appendingPathComponent("wellbeing_mapper/storage_readable")
+  }
+
   
 
 

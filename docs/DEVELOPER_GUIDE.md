@@ -351,6 +351,11 @@ Multiple SQLite databases handle different data types:
     stored in `location_tracks`. If no fix arrives, it falls back only to a
     tracking fix from the last 15 minutes (`staleFixFallbackMaxAge`), and not
     at all when location permission or Location Services are off.
+  - `DeviceStorageGuard` (`services/device_storage_guard.dart`, native side
+    in `ios/Runner/AppDelegate.swift`): `main()` waits on it before reading
+    preferences. iOS can relaunch the app for a location event after a
+    restart and before the first unlock, when stored data is still encrypted
+    and reads come back empty. Startup would then mint a new participant id.
   - `LocationTrack`: Represents location data in surveys and database
   - `SurveyDatabase`: Manages location storage and retrieval
 - **Key Functions**:

@@ -11,6 +11,7 @@ import 'models/app_mode.dart';
 import 'models/route_generator.dart';
 import 'services/app_mode_service.dart';
 import 'services/consent_tracking_service.dart';
+import 'services/device_storage_guard.dart';
 import 'services/geo_location_service.dart';
 import 'services/global_notification_service.dart';
 import 'services/locale_service.dart';
@@ -54,7 +55,12 @@ void backgroundFetchHeadlessTask(HeadlessEvent task) async {
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  SharedPreferences.getInstance().then((prefs) async {
+  // Read nothing from storage until it is readable: in an iOS background
+  // launch before the first unlock after a restart, preferences read as
+  // empty and a new participant id would be minted below.
+  DeviceStorageGuard.waitUntilReadable()
+      .then((_) => SharedPreferences.getInstance())
+      .then((prefs) async {
     // Create a random user UUID on first launch and persist it.
     String? userUUID = prefs.getString('user_uuid');
     String? sampleId = prefs.getString('sample_id');
