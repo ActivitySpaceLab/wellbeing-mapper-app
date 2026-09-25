@@ -9,9 +9,10 @@ class InitialSurveyService {
   static const String _INITIAL_SURVEY_REMINDER_COUNT_KEY = 'initial_survey_reminder_count';
   static const String _LAST_REMINDER_DATE_KEY = 'last_initial_survey_reminder_date';
   
-  // Reminder intervals (in days)
-  static const int INITIAL_REMINDER_DELAY = 1; // First reminder after 1 day
-  static const int SUBSEQUENT_REMINDER_INTERVAL = 3; // Then every 3 days
+  // Reminder intervals (in days).
+  // NOTE: there is no initial delay — the first reminder can fire as soon as
+  // the reminder check runs; only subsequent reminders are spaced out.
+  static const int SUBSEQUENT_REMINDER_INTERVAL = 3; // Every 3 days
   static const int MAX_REMINDERS = 5; // Maximum number of reminders
 
   /// Check if the user has completed the initial survey

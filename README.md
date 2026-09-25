@@ -170,7 +170,7 @@ If this project is useful for you, please consider starring this repository and 
 * **📍 Location Tracking**: Background GPS tracking with full user control
 * **📝 Wellbeing Surveys**: Quick 2-3 minute mental wellbeing assessments
 * **🔔 Smart Notifications**: Bi-weekly survey reminders with customizable intervals
-* ** End-to-End Encryption**: Military-grade RSA+AES encryption for research data
+* **🔐 End-to-End Encryption**: RSA+AES hybrid encryption for research data
 * **📊 Research Data Upload**: Secure bi-weekly uploads to research servers
 * **🌍 Multi-Site Support**: Barcelona, Spain and Gauteng, South Africa studies
 * **📋 Consent Management**: Full research consent and information sheets
@@ -205,14 +205,11 @@ Experience research features safely:
 
 Visit the app stores to download Wellbeing Mapper:
 
-- [Google Play (Android)](http://play.google.com/store/apps/details?id=edu.princeton.jrpalmer.asm)
-- [Apple App Store (iOS)](https://apps.apple.com/app/wellbeing-mapper/id123456789) 
+- [Google Play (Android)](https://play.google.com/store/apps/details?id=com.github.activityspacelab.wellbeingmapper)
+- Apple App Store (iOS): coming soon
 - [Github Releases (Android)](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/releases)
-For more information about the Planet4Health project, please visit the [Planet4Health website](https://planet4health.eu) and learn about the [Mental wellbeing in environmental & climate context case study](https://planet4health.eu/mental-wellbeing-in-environmental-climate-context/).
 
-- [Google Play (Android)](http://play.google.com/store/apps/details?id=edu.princeton.jrpalmer.asm).
-- Apple Store (iOS) (Coming soon)
-- [Github Releases (Android)](https://github.com/ActivitySpaceLab/gauteng-wellbeing-mapper-app/releases).
+For more information about the Planet4Health project, please visit the [Planet4Health website](https://planet4health.eu) and learn about the [Mental wellbeing in environmental & climate context case study](https://planet4health.eu/mental-wellbeing-in-environmental-climate-context/).
 
 ## About Planet4Health
 

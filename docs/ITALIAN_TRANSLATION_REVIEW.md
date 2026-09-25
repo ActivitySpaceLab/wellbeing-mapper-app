@@ -108,6 +108,8 @@ Pulsante: Continua all'app
 
 ## QUESTIONARIO INIZIALE (prima compilazione)
 
+> ⚠️ PENDING DOUBLE-CHECK (doc/app drift): a code review found that some Italian text in this document differs from what the app actually shows. Notably: (1) the initial-survey intro below differs from the app's shipped intro ("Questo questionario iniziale ci aiuterà a conoscere il tuo profilo. Tutte le risposte sono riservate e saranno utilizzate esclusivamente per scopi di ricerca."); (2) the Digital Diary section in this doc includes an anonymity instruction ("Non includere alcuna informazione che possa essere utilizzata per identificare te o un'altra persona.") that the app does not display, and phrases the three prompts differently; (3) several answer options differ in wording (e.g. "Corso di sviluppo delle competenze (es. tirocinio)" here vs "Corso di formazione professionale (es. apprendistato)" in the app). Decide for each whether the doc (reviewed text) or the app string is authoritative, then align the other side.
+
 Questionario iniziale
 
 Benvenuto/a nello studio Wellbeing Mapping!
@@ -348,9 +350,60 @@ Rispondi alle seguenti tre domande. Non includere alcuna informazione che possa 
 - Consenso informato
 - Foglio informativo
 - Modulo di consenso
-- Hoja de información
-- Formulario de consentimiento
 
 **Testo consenso condivisione dati (mostrato prima di inviare un questionario):**
 
 Questo questionario è riservato ai soli partecipanti autorizzati. Per partecipare, devi aver già fornito il consenso informato direttamente al gruppo di ricerca. Ogni volta che invii un modulo del questionario, l'app trasmetterà automaticamente anche la cronologia delle tue posizioni, a partire dalla data in cui hai iniziato a partecipare. Selezionando questa casella, confermi di aver compreso queste informazioni, di essere autorizzato a partecipare e di aver già fornito il consenso informato all'utilizzo in questo modo dei dati che condividi.
+
+---
+
+## NUOVE STRINGHE (2026-08-22) – DA REVISIONARE
+
+> ⚠️ These Italian strings were added by machine translation during a code-review pass (previously these UI elements were English-only). Please have the Italian collaborator review them.
+
+**Notifica di promemoria (dispositivo):**
+- Promemoria questionario sul benessere
+- Aiuta i ricercatori partecipando al questionario quindicinale sul benessere! Tocca per contribuire a una ricerca importante.
+
+**Dialogo di invito al questionario:**
+- Partecipazione al questionario
+- Aiuta a migliorare la ricerca partecipando al nostro questionario! Il tuo contributo aiuta i ricercatori a comprendere i modelli di mobilità delle persone.
+- Più tardi / Partecipa
+
+**Dialoghi della schermata principale:**
+- Completa il questionario iniziale
+- Vuoi completare ora il questionario demografico iniziale? Ci aiuta a conoscere meglio i partecipanti, ma puoi farlo anche più tardi.
+- No, lo farò più tardi / Sì, completa ora
+- Questionario iniziale / Più tardi / Completa ora
+- Autorizzazione necessaria
+- Posizione in background necessaria
+- Per tracciare la tua posizione in modo continuo, questa app ha bisogno dell'autorizzazione alla posizione "Sempre". Vai su Impostazioni > Privacy e sicurezza > Localizzazione > Wellbeing Mapper e seleziona "Sempre".
+- Annulla / Apri Impostazioni
+
+**Sezione GDPR (foglio informativo):**
+- Informativa GDPR
+- Titolare del trattamento: / Contatto del Responsabile della protezione dei dati:
+- I tuoi diritti: Puoi richiedere la cancellazione dei tuoi dati e opporti al loro trattamento. Per la cancellazione, devi fornire lo UUID di partecipante che trovi nell'app.
+- Visita … per maggiori informazioni.
+
+**Mappa di selezione delle posizioni:**
+- Seleziona i dati di posizione da condividere
+- Reimposta / Annulla / Conferma selezione
+- (Guida aggiornata: «Al termine, tocca "Conferma selezione" per tornare al modulo del questionario.»)
+
+**Tour di benvenuto (prima apertura):**
+- Benvenuto/a!
+- Facciamo un rapido giro dell'app:
+- Interruttore giallo = tracciamento della posizione ATTIVO
+- Pulsante GPS = ottieni la posizione attuale
+- Pulsante blu "Questionario" = compila il questionario sul benessere
+- Menu = accedi a tutte le funzionalità dell'app
+- Suggerimento: apri il menu e tocca "Aiuto e guida" per istruzioni dettagliate!
+- Ho capito! / Mostra la guida completa
+
+**Notifiche post-invio del questionario:**
+- ✅ Dati di ricerca caricati con successo!
+- Questionario salvato su questo dispositivo. Il caricamento avverrà quando il server di ricerca sarà disponibile.
+- Caricamento non riuscito: dati salvati sul dispositivo per un nuovo tentativo
+
+**Modifica al diario digitale:** la frase sull'invio di un'immagine è stata rimossa dal prompt («Se vuoi, puoi caricare 1 immagine…») perché l'app attualmente non offre il caricamento di immagini.
