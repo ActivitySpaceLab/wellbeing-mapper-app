@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'dart:async';
@@ -271,10 +271,14 @@ class MapViewState extends State<MapView>
   }
 
   void _onLocation(AppLocation location) async {
-    debugPrint('[MapView] Real-time location: ${location.coords.latitude}, ${location.coords.longitude}');
-    
+    if (kDebugMode) {
+      // Coordinates are sensitive: only ever log them in debug builds.
+      debugPrint('[MapView] Real-time location: ${location.coords.latitude}, ${location.coords.longitude}');
+    }
+
     try {
       final maxAccuracy = await _getAccuracyThreshold();
+      if (!mounted) return;
 
       LatLng currentPoint = LatLng(location.coords.latitude, location.coords.longitude);
       double accuracy = location.coords.accuracy;

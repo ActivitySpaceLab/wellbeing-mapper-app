@@ -446,11 +446,12 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
             // Wait a bit longer for iOS to propagate permission changes
             await Future.delayed(Duration(milliseconds: 1000));
             
-            // Check native iOS permissions as fallback
+            // Check native iOS permissions as fallback. Being registered in
+            // the Settings list is NOT proof of permission (it includes
+            // "Never"), so only the native authorization check counts.
             final nativePermission = await IosLocationFixService.checkNativeLocationPermission();
-            final isRegistered = await IosLocationFixService.isAppRegisteredInSettings();
-            
-            if (nativePermission || isRegistered) {
+
+            if (nativePermission) {
               debugPrint('[ParticipationSelection] iOS native permissions available, proceeding...');
               hasLocationPermission = true;
             } else {

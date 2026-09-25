@@ -230,12 +230,13 @@ class HomeViewState extends State<HomeView>
       try {
         // iOS: try native permission check first.
         if (mounted && Theme.of(context).platform == TargetPlatform.iOS) {
+          // Only the native authorization check proves permission; being
+          // registered in the iOS Settings list also happens when the user
+          // chose "Never".
           final hasNative =
               await IosLocationFixService.checkNativeLocationPermission();
-          final isRegistered =
-              await IosLocationFixService.isAppRegisteredInSettings();
 
-          if (hasNative || isRegistered) {
+          if (hasNative) {
             final started = await GeoLocationService.instance.start();
             if (mounted) setState(() => _enabled = started);
             if (!started) {

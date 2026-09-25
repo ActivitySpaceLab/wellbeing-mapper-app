@@ -30,11 +30,13 @@ class LocationService {
           if (platform == TargetPlatform.iOS) {
             print('[LocationService] Checking iOS native permission status first...');
             
-            // First, quickly check if native iOS permissions are already working
+            // First, quickly check if native iOS permissions are already working.
+            // NOTE: isAppRegisteredInSettings() must NOT be treated as granted —
+            // an app appears in the iOS Settings location list even when the
+            // user selected "Never". Only the native authorization check counts.
             final nativePermission = await IosLocationFixService.checkNativeLocationPermission();
-            final isRegistered = await IosLocationFixService.isAppRegisteredInSettings();
-            
-            if (nativePermission || isRegistered) {
+
+            if (nativePermission) {
               print('[LocationService] iOS native permissions already working, skipping comprehensive fix');
               return true;
             }
@@ -52,14 +54,7 @@ class LocationService {
                 print('[LocationService] Native iOS permissions confirmed - bypassing permission_handler');
                 return true;
               }
-              
-              // Check if app is registered even if permission_handler reports denied
-              final newIsRegistered = await IosLocationFixService.isAppRegisteredInSettings();
-              if (newIsRegistered) {
-                print('[LocationService] App registered in iOS settings - assuming permissions are working');
-                return true;
-              }
-              
+
               // Double-check permissions after iOS fix
               final newWhenInUseStatus = await Permission.locationWhenInUse.status;
               final newAlwaysStatus = await Permission.locationAlways.status;
@@ -108,9 +103,8 @@ class LocationService {
           if (platform == TargetPlatform.iOS) {
             print('[LocationService] Standard permissions show denied, checking iOS native status...');
             final nativePermission = await IosLocationFixService.checkNativeLocationPermission();
-            final isRegistered = await IosLocationFixService.isAppRegisteredInSettings();
-            
-            if (nativePermission || isRegistered) {
+
+            if (nativePermission) {
               print('[LocationService] iOS native permissions available despite permission_handler reporting denied');
               permissionGranted = true;
             }
@@ -127,19 +121,23 @@ class LocationService {
     }
   }
 
-  /// Request precise location permissions (Android only)
+  /// Request (precise) foreground location permission.
+  ///
+  /// This must NOT request `locationAlways`: background permission has its
+  /// own staged flow with a rationale dialog
+  /// ([requestBackgroundLocationPermissions]); requesting Always here would
+  /// bypass that flow and, on Android 11+, could burn the one-shot request.
   static Future<bool> requestPreciseLocationPermission() async {
     try {
       print('[LocationService] Requesting precise location permission...');
-      
-      // Check if device supports precise location (Android only)
-      if (await Permission.locationAlways.status == PermissionStatus.granted) {
+
+      if (await Permission.location.status == PermissionStatus.granted) {
         return true;
       }
-      
-      final result = await Permission.locationAlways.request();
+
+      final result = await Permission.location.request();
       print('[LocationService] Precise location permission result: $result');
-      
+
       return result == PermissionStatus.granted;
     } catch (error) {
       print('[LocationService] Error requesting precise location permission: $error');
@@ -284,9 +282,8 @@ class LocationService {
           final platform = Theme.of(context).platform;
           if (platform == TargetPlatform.iOS) {
             final nativePermission = await IosLocationFixService.checkNativeLocationPermission();
-            final isRegistered = await IosLocationFixService.isAppRegisteredInSettings();
-            
-            if (nativePermission || isRegistered) {
+
+            if (nativePermission) {
               print('[LocationService] iOS native permissions already working, skipping permission requests');
               return true;
             }

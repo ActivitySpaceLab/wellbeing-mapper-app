@@ -86,7 +86,13 @@ class GeoLocationService {
 
   // ---------- public API ---------------------------------------------------
 
-  /// Configure the underlying plugin. Idempotent — safe to call more than once.
+  /// Guards against concurrent configure() calls: without it, two callers
+  /// interleaving across the awaits would both subscribe to the OBL streams,
+  /// and every location fix would be delivered (and persisted) twice.
+  Future<bool>? _configureFuture;
+
+  /// Configure the underlying plugin. Idempotent — safe to call more than once,
+  /// including concurrently.
   ///
   /// Returns the initial tracking-enabled state (derived from OBL's
   /// [obl.LocatorState] at the moment of configuration).
@@ -95,7 +101,21 @@ class GeoLocationService {
     required String sampleId,
   }) async {
     if (_isConfigured) return _isEnabled;
+    final pending = _configureFuture;
+    if (pending != null) return pending;
+    final future = _doConfigure(userId: userId, sampleId: sampleId);
+    _configureFuture = future;
+    try {
+      return await future;
+    } finally {
+      _configureFuture = null;
+    }
+  }
 
+  Future<bool> _doConfigure({
+    required String userId,
+    required String sampleId,
+  }) async {
     // Subscribe to OBL's three streams. All UI code uses addXxxListener so
     // there are no duplicate subscriptions.
     _updatesSub = obl.OpenBackgroundLocator.updates.listen(
@@ -216,6 +236,11 @@ class GeoLocationService {
     }
 
     AppLocation? lastKnownLocation;
+    // Capture the user's intended tracking state BEFORE any start() call:
+    // starting OBL fires the lifecycle stream, whose handler sets _isEnabled
+    // to true, so checking _isEnabled afterwards would conclude the user had
+    // tracking on and never stop it again.
+    final bool wasEnabled = _isEnabled;
     try {
       final state = await obl.OpenBackgroundLocator.getState();
       final lastUpdate = state.lastUpdate;
@@ -246,13 +271,13 @@ class GeoLocationService {
         // map-linked survey entries.
         return lastKnownLocation;
       } finally {
-        if (didStart) {
-          // We started the tracker just to get one fix; restore previous
-          // state. If the user had it on, _isEnabled is already true.
-          if (!_isEnabled) {
-            await obl.OpenBackgroundLocator
-                .stop(reason: 'getCurrentPosition completed');
-          }
+        if (didStart && !wasEnabled) {
+          // We started the tracker just to get one fix; restore the user's
+          // tracking-off state.
+          await obl.OpenBackgroundLocator
+              .stop(reason: 'getCurrentPosition completed');
+          _isEnabled = false;
+          _notifyEnabledChange(false);
         }
       }
     } catch (e) {
@@ -350,13 +375,18 @@ class GeoLocationService {
     }
   }
 
+  /// Sentinel for a fix that reports no accuracy: treat it as very poor so
+  /// accuracy-based filters reject it. Using 0.0 would make an invalid fix
+  /// look like a perfect one and bypass every filter.
+  static const double _unknownAccuracyMeters = 9999.0;
+
   AppLocation _convert(obl.LocationUpdate update) {
     final speed = update.speedMetersPerSecond ?? 0.0;
     return AppLocation(
       coords: AppLocationCoords(
         latitude: update.lat,
         longitude: update.lon,
-        accuracy: update.accuracyMeters ?? 0.0,
+        accuracy: update.accuracyMeters ?? _unknownAccuracyMeters,
         altitude: update.altitudeMeters ?? 0.0,
         speed: speed,
       ),
