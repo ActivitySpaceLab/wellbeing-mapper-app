@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/data_sharing_consent.dart';
 import '../models/survey_models.dart';
 import '../db/survey_database.dart';
+import '../services/location_persistence_service.dart';
 import '../theme/south_african_theme.dart';
 import 'interactive_location_privacy_map.dart';
 
@@ -50,6 +51,9 @@ class _DataSharingConsentDialogState extends State<DataSharingConsentDialog> {
       
       if (!kIsWeb) {
         try {
+          // Store fixes still waiting in the location plugin's buffer, so the
+          // summary and upload cover everything recorded.
+          await LocationPersistenceService.instance.drainNow();
           final allLocationTracks = await db.getAllLocationTracks();
           debugPrint('[DataSharingConsentDialog] 🗃️ Found ${allLocationTracks.length} total location tracks in app database');
           

@@ -324,19 +324,43 @@ For more details, see the [official plugin documentation](https://pub.dev/packag
 Multiple SQLite databases handle different data types:
 
 #### Unpushed Locations Database (`db/database_unpushed_locations.dart`)
-- Stores locations that failed to sync to server
-- Retry mechanism for failed uploads
-- Data structure: `LocationToPush` model
+- Legacy and currently unused: no code in `lib/` reads or writes it. Location
+  data reaches the research server only as participant-selected tracks attached
+  to biweekly surveys.
 
 ### 5. Location Management (Database-based)
-- **Purpose**: Manages persistent location data through SQLite database
+- **Purpose**: Moves location fixes from the location plugin's native
+  on-device buffer into SQLite (`location_tracks`) and manages retention
 - **Key Classes**:
+  - `LocationPersistenceService` (`services/location_persistence_service.dart`):
+    the only code that persists fixes. It is started in `main()`, so it also
+    runs when a survey notification opens the survey without the home
+    screen. It drains the plugin buffer at startup, on resume, ~5 s after
+    live fixes, and before the biweekly survey and the data-sharing dialog
+    read `location_tracks` (`drainNow()`). It applies the accuracy threshold
+    (500 m), thins stationary fixes to one per 2 minutes by fix time, skips
+    fixes past the retention setting, and acknowledges each batch only after
+    it is stored (at-least-once).
+  - `GeoLocationService`: configures `open_background_locator` with
+    `LocationBufferConfig(enabled: true)` and exposes
+    `drainBufferedLocations` / `clearBufferedLocations`.
+    `getCurrentPosition()` (survey location) uses the plugin's one-off
+    `getCurrentLocation()`. It never starts tracking: tracking sessions
+    survive app termination, so "start, take one fix, stop" could leave
+    tracking running if the app were killed in between. One-off fixes are not
+    stored in `location_tracks`. If no fix arrives, it falls back only to a
+    tracking fix from the last 15 minutes (`staleFixFallbackMaxAge`), and not
+    at all when location permission or Location Services are off.
   - `LocationTrack`: Represents location data in surveys and database
   - `SurveyDatabase`: Manages location storage and retrieval
 - **Key Functions**:
-  - `insertLocationTrack()`: Saves location data to database
+  - `insertLocationTracks()`: Batch insert that ignores fixes already stored
+    (unique `location_tracks.timestamp`, schema v14), so a re-delivered
+    buffered fix is stored once
   - `getAllLocationTracks()`: Retrieves all stored locations
   - `cleanupOldLocationData()`: Removes old location data based on retention settings
+- **Local development**: to build against a local `open-background-locator`
+  checkout, see `docs/CONTRIBUTOR_SETUP.md` §6 (`pubspec_overrides.yaml`)
 
 ### 6. Data Sharing Consent System (`models/data_sharing_consent.dart`, `ui/data_sharing_consent_dialog.dart`)
 - **Purpose**: Advanced user consent management for research data sharing
@@ -379,20 +403,27 @@ Multiple SQLite databases handle different data types:
 ### Location Tracking Flow
 ```mermaid
 graph TD
-    A[User Enables Tracking] --> B[Background Geolocation Service]
-    B --> C[Location Event Triggered]
-    C --> D[Create CustomLocation Object]
-    D --> E[Geocode Address Data]
-    E --> F[Store in Local Database]
-    F --> G[Update Map View]
-    G --> H[Display on Map]
-    
-    C --> I[Send to Research API]
-    I --> J{API Success?}
-    J -->|Yes| K[Mark as Synced]
-    J -->|No| L[Store in UnpushedLocations DB]
-    L --> M[Retry Later]
+    A[User Enables Tracking] --> B[GeoLocationService.start]
+    B --> C[open_background_locator native tracker<br/>Android foreground service / iOS CLLocationManager]
+    C --> D[Fix recorded]
+    D --> E[Written to the plugin's on-device buffer<br/>always, even with no Dart code running]
+    D --> F[Emitted on the live stream<br/>only if a Dart listener is attached]
+    F --> G[MapView: live marker]
+    E --> H[LocationPersistenceService drains the buffer<br/>at startup, on resume, ~5 s after live fixes,<br/>and before surveys read location_tracks]
+    H --> I[Filters: accuracy, stationary thinning, retention]
+    I --> J[(location_tracks<br/>unique timestamp)]
+    J --> K[Acknowledge batch: removed from buffer]
+    J --> L[Map refresh after start/resume drains]
+    J --> M[Participant-selected locations attached<br/>to biweekly surveys for research upload]
 ```
+
+Fixes are persisted **only** from the native buffer. The live stream used to
+be the persistence path, which lost every fix recorded while no Dart code was
+listening: after the UI was closed while the Android foreground service kept
+tracking, after Android restarted the service following process death, and
+while iOS relaunched the app in the background. On iOS,
+`usesSignificantLocationChanges` is enabled so iOS relaunches a terminated app
+at all. The plugin then resumes tracking during registration.
 
 ### App Mode Usage Flow
 ```mermaid

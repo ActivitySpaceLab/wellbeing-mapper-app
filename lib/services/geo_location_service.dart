@@ -138,20 +138,40 @@ class GeoLocationService {
       },
     );
 
-    // Initialise OBL with production-appropriate defaults. The app manages
-    // its own retention/persistence in SQLite, so we keep OBL focused on
-    // low-overhead background sampling.
+    // Initialise OBL with production-appropriate defaults. The app keeps the
+    // long-term location history in its own SQLite database; OBL's native
+    // buffer only holds fixes until LocationPersistenceService moves them
+    // there, so fixes recorded while no Dart code is running (UI closed,
+    // service restarted after process death, iOS background relaunch) are
+    // not lost.
     try {
       await obl.OpenBackgroundLocator.initialize(
         const obl.LocatorConfig(
           accuracy: obl.LocationAccuracyLevel.high,
           distanceFilterMeters: 10,
           intervalSeconds: 60,
+          buffer: obl.LocationBufferConfig(
+            enabled: true,
+            // One fix per minute (the configured ceiling) for all of
+            // maxAgeDays, so the age limit is what bounds the buffer even if
+            // the app is not opened for weeks. Drained on every app start and
+            // resume and before surveys read location_tracks, so normally
+            // near-empty.
+            maxRecords: 60 * 24 * 60,
+            // Matches StorageSettingsService.DEFAULT_LOCATION_RETENTION_DAYS;
+            // the drain also drops fixes past the user's own retention setting.
+            maxAgeDays: 60,
+          ),
           ios: obl.IosConfig(
             activityType: obl.IosActivityType.fitness,
             allowBackgroundLocationUpdates: true,
             showBackgroundIndicator: true,
             pausesLocationUpdatesAutomatically: false,
+            // Standard location updates stop when iOS terminates the app and
+            // never relaunch it; significant-location-change monitoring makes
+            // iOS relaunch the app in the background, where the plugin
+            // resumes tracking and buffers the fixes.
+            usesSignificantLocationChanges: true,
           ),
           android: obl.AndroidConfig(
             foregroundNotificationConfig: obl.ForegroundNotificationConfig(
@@ -291,6 +311,33 @@ class GeoLocationService {
   Future<void> updateRetentionDays(int days) async {
     debugPrint(
         '[GeoLocationService] updateRetentionDays($days): no-op (handled by app storage layer).');
+  }
+
+  // ---------- native fix buffer --------------------------------------------
+
+  /// Hands every fix held in the plugin's native on-device buffer to
+  /// [handle], oldest first, in batches, and returns how many were handed
+  /// over. A batch is removed from the buffer only after [handle] completes;
+  /// if it throws, the batch stays buffered and is delivered again next time
+  /// (so [handle] must tolerate fixes it has already stored).
+  ///
+  /// Works whether or not [configure] has run: the buffer is a native
+  /// database, independent of the tracking session.
+  Future<int> drainBufferedLocations(
+    Future<void> Function(List<AppLocation> batch) handle,
+  ) {
+    return obl.OpenBackgroundLocator.drainBufferedLocations(
+      (List<obl.BufferedLocationUpdate> batch) => handle(
+        batch
+            .map((obl.BufferedLocationUpdate entry) => _convert(entry.update))
+            .toList(growable: false),
+      ),
+    );
+  }
+
+  /// Deletes every fix still waiting in the native buffer without storing it.
+  Future<void> clearBufferedLocations() {
+    return obl.OpenBackgroundLocator.clearBufferedLocations();
   }
 
   // ---------- listener registration ----------------------------------------

@@ -14,6 +14,7 @@ import 'services/consent_tracking_service.dart';
 import 'services/geo_location_service.dart';
 import 'services/global_notification_service.dart';
 import 'services/locale_service.dart';
+import 'services/location_persistence_service.dart';
 import 'services/notification_service.dart';
 import 'theme/south_african_theme.dart';
 import 'util/env.dart';
@@ -67,6 +68,11 @@ void main() {
     }
 
     GlobalData.userUUID = userUUID;
+
+    // Store location fixes recorded while the app was not running (held in
+    // the location plugin's native buffer) now, whichever screen opens
+    // first: a survey notification opens the survey without the home screen.
+    LocationPersistenceService.instance.start();
 
     // Load any in-app language override before building the UI.
     await LocaleService.load();

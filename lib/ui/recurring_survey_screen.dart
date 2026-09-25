@@ -11,6 +11,7 @@ import '../services/research_server_service.dart';
 import '../services/global_notification_service.dart';
 import '../db/survey_database.dart';
 import '../services/app_mode_service.dart';
+import '../services/location_persistence_service.dart';
 import 'interactive_location_privacy_map.dart';
 import '../theme/south_african_theme.dart';
 import '../main.dart'; // For GlobalData
@@ -1082,6 +1083,12 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
       
       if (!kIsWeb) {
         try {
+          // Store fixes still waiting in the location plugin's buffer first.
+          // A survey notification can open this screen straight from a cold
+          // start, before anything else has drained it, and the buffer may
+          // hold most of the two-week window.
+          await LocationPersistenceService.instance.drainNow();
+
           // Get location data from app database (same source as map)
           final db = SurveyDatabase();
           final allLocationTracks = await db.getAllLocationTracks();

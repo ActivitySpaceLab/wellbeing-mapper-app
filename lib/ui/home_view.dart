@@ -9,7 +9,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
-import '../db/survey_database.dart';
 import '../models/app_mode.dart';
 import '../services/app_mode_service.dart';
 import '../services/consent_tracking_service.dart';
@@ -17,6 +16,7 @@ import '../services/geo_location_service.dart';
 import '../services/initial_survey_service.dart';
 import '../services/ios_location_fix_service.dart';
 import '../services/location_service.dart';
+import '../services/location_persistence_service.dart';
 import '../services/notification_service.dart';
 import '../services/storage_settings_service.dart';
 import '../services/survey_navigation_service.dart';
@@ -44,7 +44,6 @@ class HomeViewState extends State<HomeView>
 
   final GlobalKey<MapViewState> _mapViewKey = GlobalKey<MapViewState>();
   bool _enabled = true;
-  DateTime? _lastStationarySave;
 
   bool get _isItalian => Localizations.localeOf(context).languageCode == 'it';
   bool get _isSpanish => Localizations.localeOf(context).languageCode == 'es';
@@ -98,7 +97,17 @@ class HomeViewState extends State<HomeView>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _refreshMapAfterSurvey();
+      // Fixes recorded while the app was in the background (or terminated)
+      // were never shown live; store them and redraw once they are stored.
+      _storeBufferedFixesAndRefreshMap();
     }
+  }
+
+  /// Moves fixes from the plugin's native buffer into the database (see
+  /// LocationPersistenceService) and redraws the map if any were new.
+  Future<void> _storeBufferedFixesAndRefreshMap() async {
+    final stored = await LocationPersistenceService.instance.drainNow();
+    if (stored > 0 && mounted) _refreshMapAfterSurvey();
   }
 
   // -------------------------------------------------------------------------
@@ -149,6 +158,11 @@ class HomeViewState extends State<HomeView>
           }
         }
       }
+
+      // Persist fixes from the plugin's native buffer from now on, including
+      // any recorded while the app was not running.
+      LocationPersistenceService.instance.start();
+      _storeBufferedFixesAndRefreshMap();
 
       // Configure background services if participation settings are present.
       final participationSettings = prefs.getString('participation_settings');
@@ -376,65 +390,16 @@ class HomeViewState extends State<HomeView>
   // Location event handlers
   // -------------------------------------------------------------------------
 
+  // Live fixes only update the UI here. Persisting them is the job of
+  // LocationPersistenceService, which stores every fix from the plugin's
+  // native buffer -- including fixes recorded while this screen, or the whole
+  // app, was not running.
   void _onLocation(AppLocation location) {
-    _processLocationWithMotionFilter(location);
     if (mounted) setState(() {});
   }
 
   void _onEnabledChange(bool enabled) {
     if (mounted) setState(() => _enabled = enabled);
-  }
-
-  Future<void> _saveLocationToDatabase(AppLocation location,
-      {bool isFiltered = false, String reason = ''}) async {
-    try {
-      final timestamp = DateTime.parse(location.timestamp);
-      final data = {
-        'timestamp': timestamp.toIso8601String(),
-        'latitude': location.coords.latitude,
-        'longitude': location.coords.longitude,
-        'accuracy': location.coords.accuracy,
-        'altitude': location.coords.altitude,
-        'speed': location.coords.speed,
-        'activity': location.activity.type,
-      };
-      await SurveyDatabase().insertLocationTrack(data);
-    } catch (e) {
-      debugPrint('[HomeView] Error saving location to database: $e');
-    }
-  }
-
-  Future<void> _processLocationWithMotionFilter(AppLocation location) async {
-    try {
-      if (location.coords.accuracy >
-          StorageSettingsService.MAX_MAP_ERROR_THRESHOLD_METERS) {
-        return;
-      }
-
-      if (!location.isMoving) {
-        if (await _shouldSaveStationaryLocation(intervalMinutes: 2)) {
-          await _saveLocationToDatabase(location,
-              isFiltered: true, reason: 'stationary-periodic');
-        }
-      } else {
-        await _saveLocationToDatabase(location,
-            isFiltered: true, reason: 'moving-continuity-priority');
-      }
-    } catch (e) {
-      debugPrint('[HomeView] Location filter error: $e');
-      await _saveLocationToDatabase(location,
-          isFiltered: false, reason: 'filter-error-fallback');
-    }
-  }
-
-  Future<bool> _shouldSaveStationaryLocation({int intervalMinutes = 5}) async {
-    final now = DateTime.now();
-    if (_lastStationarySave == null ||
-        now.difference(_lastStationarySave!).inMinutes >= intervalMinutes) {
-      _lastStationarySave = now;
-      return true;
-    }
-    return false;
   }
 
   // -------------------------------------------------------------------------

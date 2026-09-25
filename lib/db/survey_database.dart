@@ -32,11 +32,34 @@ class SurveyDatabase {
     String path = join(await getDatabasesPath(), 'survey_database.db');
     return await openDatabase(
       path,
-      version: 13, // v13: recurring surveys gain general_health + research_site; dead sync_queue dropped
+      version: 14, // v14: unique location_tracks.timestamp (dedupes re-delivered buffered fixes)
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
+
+  // location_tracks DDL, shared by _onCreate and the v14 migration.
+  static const String _createLocationTracksSql = '''
+    CREATE TABLE IF NOT EXISTS location_tracks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp TEXT NOT NULL,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      accuracy REAL,
+      altitude REAL,
+      speed REAL,
+      activity TEXT,
+      synced INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  ''';
+
+  // One row per fix: fixes from the location plugin's native buffer are
+  // delivered at-least-once (see LocationPersistenceService), so the same fix
+  // can arrive twice; inserts ignore repeats.
+  static const String _createLocationTracksTimestampIndexSql =
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_location_tracks_timestamp '
+      'ON location_tracks(timestamp)';
 
   Future<void> _onCreate(Database db, int version) async {
     // Create consent responses table. Must include the consent_* columns:
@@ -169,20 +192,8 @@ class SurveyDatabase {
     ''');
 
     // Create location tracks table
-    await db.execute('''
-      CREATE TABLE location_tracks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp TEXT NOT NULL,
-        latitude REAL NOT NULL,
-        longitude REAL NOT NULL,
-        accuracy REAL,
-        altitude REAL,
-        speed REAL,
-        activity TEXT,
-        synced INTEGER DEFAULT 0,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-      )
-    ''');
+    await db.execute(_createLocationTracksSql);
+    await db.execute(_createLocationTracksTimestampIndexSql);
 
     // Create wellbeing survey responses table
     await db.execute('''
@@ -564,6 +575,19 @@ class SurveyDatabase {
       // full survey JSON (including plaintext location snapshots) forever.
       // The real upload pipeline reads the survey tables directly.
       await db.execute('DROP TABLE IF EXISTS sync_queue');
+    }
+
+    if (oldVersion < 14) {
+      // Fixes now arrive from the plugin's native buffer with at-least-once
+      // delivery, so the same fix can be delivered twice. Collapse any
+      // existing duplicates (keeping the first row) so the unique index can
+      // be created, then let inserts ignore repeats.
+      await db.execute(_createLocationTracksSql);
+      await db.execute('''
+        DELETE FROM location_tracks
+        WHERE id NOT IN (SELECT MIN(id) FROM location_tracks GROUP BY timestamp)
+      ''');
+      await db.execute(_createLocationTracksTimestampIndexSql);
     }
   }
   
@@ -989,7 +1013,45 @@ class SurveyDatabase {
   // Location Tracking Methods
   Future<int> insertLocationTrack(Map<String, dynamic> locationData) async {
     final db = await database;
-    final id = await db.insert('location_tracks', {
+    final id = await db.insert(
+      'location_tracks',
+      _locationTrackRow(locationData),
+      // A fix already stored (same timestamp) is ignored, not duplicated.
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+
+    return id;
+  }
+
+  /// Inserts [tracks] in one transaction, ignoring fixes already stored (same
+  /// timestamp), and returns how many new rows were written.
+  Future<int> insertLocationTracks(List<Map<String, dynamic>> tracks) async {
+    if (tracks.isEmpty) return 0;
+    final db = await database;
+    return db.transaction((txn) async {
+      // total_changes() counts rows written on this connection; ignored
+      // duplicates do not count. Cheaper than COUNT(*) on a table that can
+      // hold weeks of fixes.
+      Future<int> totalChanges() async =>
+          Sqflite.firstIntValue(
+              await txn.rawQuery('SELECT total_changes()')) ??
+          0;
+      final before = await totalChanges();
+      final batch = txn.batch();
+      for (final track in tracks) {
+        batch.insert(
+          'location_tracks',
+          _locationTrackRow(track),
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+      }
+      await batch.commit(noResult: true);
+      return await totalChanges() - before;
+    });
+  }
+
+  Map<String, Object?> _locationTrackRow(Map<String, dynamic> locationData) {
+    return {
       'timestamp': locationData['timestamp'] ?? DateTime.now().toIso8601String(),
       'latitude': locationData['latitude'],
       'longitude': locationData['longitude'],
@@ -997,9 +1059,7 @@ class SurveyDatabase {
       'altitude': locationData['altitude'],
       'speed': locationData['speed'],
       'activity': locationData['activity'],
-    });
-
-    return id;
+    };
   }
 
   Future<List<LocationTrack>> getLocationTracksSince(DateTime since) async {

@@ -243,4 +243,85 @@ void main() {
       expect(tables, isEmpty);
     });
   });
+
+  group('location track de-duplication', () {
+    Map<String, dynamic> track(String timestamp, double lat) => {
+          'timestamp': timestamp,
+          'latitude': lat,
+          'longitude': 12.0,
+          'accuracy': 8.0,
+        };
+
+    test('insertLocationTracks stores new fixes and ignores repeats',
+        () async {
+      final db = SurveyDatabase();
+
+      final first = await db.insertLocationTracks([
+        track('2026-08-01T10:00:00.000Z', 45.0),
+        track('2026-08-01T10:01:00.000Z', 45.1),
+      ]);
+      // A re-delivered fix (same timestamp) plus one new fix.
+      final second = await db.insertLocationTracks([
+        track('2026-08-01T10:01:00.000Z', 45.1),
+        track('2026-08-01T10:02:00.000Z', 45.2),
+      ]);
+
+      expect(first, 2);
+      expect(second, 1, reason: 'only the genuinely new fix counts');
+      final all = await db.getLocationTracksSince(DateTime.utc(2026, 1, 1));
+      expect(all, hasLength(3));
+    });
+
+    test('insertLocationTracks with nothing to insert is a no-op', () async {
+      expect(await SurveyDatabase().insertLocationTracks([]), 0);
+    });
+
+    test('v13 -> v14 collapses duplicate fixes and enforces uniqueness',
+        () async {
+      final dbPath = join(tempDir.path, 'survey_database.db');
+      final legacy = await databaseFactory.openDatabase(
+        dbPath,
+        options: OpenDatabaseOptions(
+          version: 13,
+          onCreate: (db, version) async {
+            await db.execute('''
+              CREATE TABLE location_tracks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                latitude REAL NOT NULL,
+                longitude REAL NOT NULL,
+                accuracy REAL,
+                altitude REAL,
+                speed REAL,
+                activity TEXT,
+                synced INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+              )
+            ''');
+          },
+        ),
+      );
+      // The same fix stored twice (e.g. by the old double-subscription bug).
+      for (final lat in [45.0, 45.0, 46.0]) {
+        await legacy.insert('location_tracks', {
+          'timestamp': lat == 46.0
+              ? '2026-07-01T09:00:00.000Z'
+              : '2026-07-01T08:00:00.000Z',
+          'latitude': lat,
+          'longitude': 12.0,
+        });
+      }
+      await legacy.close();
+
+      final db = SurveyDatabase();
+      final tracks = await db.getLocationTracksSince(DateTime.utc(2026, 1, 1));
+      expect(tracks, hasLength(2), reason: 'duplicate collapsed to one row');
+
+      // The unique index now makes repeats no-ops.
+      expect(
+        await db.insertLocationTracks([track('2026-07-01T08:00:00.000Z', 45.0)]),
+        0,
+      );
+    });
+  });
 }
