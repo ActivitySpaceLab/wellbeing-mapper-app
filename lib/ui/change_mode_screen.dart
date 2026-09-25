@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/consent_service.dart';
 import '../services/app_mode_service.dart';
+import '../services/notification_service.dart';
 import '../models/app_mode.dart';
 
 class ChangeModeScreen extends StatefulWidget {
@@ -83,7 +84,10 @@ class _ChangeModeScreenState extends State<ChangeModeScreen> {
         );
 
         if (result == true) {
-          // Consent completed in testing mode
+          // Consent completed (or already on record) in testing mode. Persist
+          // the mode explicitly: on the already-consented bypass path the
+          // consent form pops immediately without setting it.
+          await AppModeService.setCurrentMode(AppMode.appTesting);
           setState(() {
             currentMode = newMode;
           });
@@ -105,7 +109,11 @@ class _ChangeModeScreenState extends State<ChangeModeScreen> {
       } else {
         // Clear any existing research participation for other modes
         await ConsentService.clearConsentData();
-        
+
+        // Stop the biweekly survey reminder pipeline: an ex-participant in
+        // private mode must not keep receiving research survey prompts.
+        await NotificationService.cancelAllNotifications();
+
         // Set the new mode (this was missing!)
         await AppModeService.setCurrentMode(newMode);
       }

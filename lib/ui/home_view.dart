@@ -613,7 +613,9 @@ class HomeViewState extends State<HomeView>
           String route = '/wellbeing_survey';
           try {
             final mode = await AppModeService.getCurrentMode();
-            route = mode == AppMode.research ? '/recurring_survey' : '/wellbeing_survey';
+            // appTesting mode mirrors the research experience (data stays
+            // local), so it gets the research survey too.
+            route = mode.hasResearchFeatures ? '/recurring_survey' : '/wellbeing_survey';
             await Navigator.of(context).pushNamed(route);
             _refreshMapAfterSurvey();
           } catch (e) {

@@ -500,10 +500,10 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
         await _savePrivateUserSettings();
         _navigateToMainApp();
       } else if (selectedAppMode == AppMode.appTesting) {
-        // App testing flow - go through consent process like research participants
-        await AppModeService.setCurrentMode(AppMode.appTesting);
-        
-        // Navigate to consent form with testing parameters
+        // App testing flow - go through consent process like research
+        // participants. Do NOT persist the mode yet: the consent form sets it
+        // on successful submission, and setting it here would leave a user
+        // who cancels the consent form stranded in appTesting mode.
         final result = await Navigator.of(context).pushNamed(
           '/consent_form',
           arguments: {
@@ -538,6 +538,16 @@ class _ParticipationSelectionScreenState extends State<ParticipationSelectionScr
             // Both validation and consent completed - set mode and go to main app
             debugPrint('[ParticipationSelection] User already validated and consented - setting research mode');
             await AppModeService.setCurrentMode(AppMode.research);
+            // Restore participation_settings too: HomeView needs it to
+            // configure background services, and this re-enrollment path can
+            // run after settings were cleared (e.g. a mode reset).
+            final participantCode =
+                await ParticipantValidationService.getValidatedParticipantCode();
+            final settings = ParticipationSettings.researchParticipant(
+                participantCode ?? '', 'wellbeing_mapper');
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(
+                'participation_settings', jsonEncode(settings.toJson()));
             debugPrint('[ParticipationSelection] Research mode set successfully, navigating to main app');
             _navigateToMainApp();
           } else {

@@ -29,54 +29,74 @@ class ConsentFormScreen extends StatefulWidget {
 
 class _ConsentFormScreenState extends State<ConsentFormScreen> {
   final _scrollController = ScrollController();
-  bool _hasReadInformation = false;
-  bool _understands = false;
-  bool _fulfillsCriteria = false;
+
+  // Legacy ('barcelona' fallback) site checkboxes.
   bool _voluntaryParticipation = false;
   bool _generalConsent = false;
-  bool _limeSurveyConsent = false;
+  bool _limeSurveyConsent = false; // optional
   bool _raceEthnicityConsent = false;
   bool _healthConsent = false;
   bool _sexualOrientationConsent = false;
   bool _locationConsent = false;
   bool _dataTransferConsent = false;
+
+  // Italy ('wellbeing_mapper') site checkboxes — the live site's five
+  // required consent items. Kept separate from the legacy variables so each
+  // checkbox unambiguously maps to the consent field it records.
+  bool _itConsentParticipate = false;
+  bool _itConsentRaceEthnicity = false;
+  bool _itConsentHealth = false;
+  bool _itConsentSexualOrientation = false;
+  bool _itConsentLocationMobility = false;
+
   bool _isSubmitting = false;
   bool _showInformationSheet = true;
-  
-  // Additional site-specific consent variables
-  bool _healthConsent2 = false;
-  bool _sexualOrientationConsent2 = false;
-  bool _locationConsent2 = false;
-  bool _publicReportingConsent = false;
-  bool _dataShareConsent = false;
-  bool _futureResearchConsent = false;
-  bool _repositoryConsent = false;
-  bool _followUpConsent = false;
+
+  // Recognizers used by the GDPR RichText links; created once and disposed
+  // with the state (inline recognizers leak).
+  final TapGestureRecognizer _dpoEmailRecognizer = TapGestureRecognizer();
+  final TapGestureRecognizer _gdprLinkRecognizer = TapGestureRecognizer();
 
   @override
   void initState() {
     super.initState();
+    _dpoEmailRecognizer.onTap = () => _launchEmail('dpd@upf.edu');
+    _gdprLinkRecognizer.onTap =
+        () => _launchUrl('https://www.upf.edu/web/proteccio-dades/drets');
     _checkExistingConsent();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _dpoEmailRecognizer.dispose();
+    _gdprLinkRecognizer.dispose();
+    super.dispose();
   }
 
   /// Check if user has already consented and bypass the form if they have
   Future<void> _checkExistingConsent() async {
     debugPrint('[ConsentForm] Checking for existing consent...');
     
-    // Check if consent has already been completed
-    final hasConsent = await ConsentTrackingService.hasCompletedCurrentConsent();
+    // Check if consent has already been completed. Testing mode has its own
+    // practice-consent flag so a practice run never bypasses real consent
+    // (and vice versa).
+    final hasConsent = await ConsentTrackingService.hasCompletedCurrentConsent(
+        testingMode: widget.isTestingMode);
     
     if (hasConsent) {
       debugPrint('[ConsentForm] User has already completed consent - bypassing form');
-      
-      // User has already consented, navigate them past the consent form
+
+      // User has already consented: complete this route with `true` so the
+      // caller's flow proceeds (callers await the route result and treat
+      // anything else as "cancelled"). Replacing the route instead would
+      // resolve the caller's future with null and read as a cancel.
       if (mounted) {
-        // Navigate to the initial survey or main app depending on context
-        if (widget.isTestingMode) {
-          // For testing mode, go to home
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop(true);
+        } else if (widget.isTestingMode) {
           Navigator.of(context).pushReplacementNamed('/');
         } else {
-          // For research mode, go to initial survey
           Navigator.of(context).pushReplacementNamed('/initial_survey');
         }
       }
@@ -455,23 +475,23 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             _buildConsentSection(
               _t3('I GIVE MY CONSENT:', 'DO IL MIO CONSENSO:', 'DOY MI CONSENTIMIENTO:'),
               [
-              _buildCheckbox(_healthConsent, (value) => setState(() => _healthConsent = value!),
+              _buildCheckbox(_itConsentParticipate, (value) => setState(() => _itConsentParticipate = value!),
                 _t3('to participate in this study',
                     'a partecipare a questo studio',
                     'a participar en este estudio')),
-              _buildCheckbox(_locationConsent, (value) => setState(() => _locationConsent = value!),
+              _buildCheckbox(_itConsentRaceEthnicity, (value) => setState(() => _itConsentRaceEthnicity = value!),
                 _t3('to being asked about my race/ethnicity',
                     'a che mi vengano poste domande sulla mia origine etnica',
                     'a que se me pregunte sobre mi raza/etnia')),
-              _buildCheckbox(_healthConsent2, (value) => setState(() => _healthConsent2 = value!),
+              _buildCheckbox(_itConsentHealth, (value) => setState(() => _itConsentHealth = value!),
                 _t3('to being asked about my health condition',
                     'a che mi vengano poste domande sul mio stato di salute',
                     'a que se me pregunte sobre mi estado de salud')),
-              _buildCheckbox(_sexualOrientationConsent2, (value) => setState(() => _sexualOrientationConsent2 = value!),
+              _buildCheckbox(_itConsentSexualOrientation, (value) => setState(() => _itConsentSexualOrientation = value!),
                 _t3('to being asked about my sexual orientation',
                     'a che mi vengano poste domande sul mio orientamento sessuale',
                     'a que se me pregunte sobre mi orientación sexual')),
-              _buildCheckbox(_locationConsent2, (value) => setState(() => _locationConsent2 = value!),
+              _buildCheckbox(_itConsentLocationMobility, (value) => setState(() => _itConsentLocationMobility = value!),
                 _t3('to being asked about my location and mobility',
                     'a che mi vengano poste domande sulla mia posizione e mobilità',
                     'a que se me pregunte sobre mi ubicación y movilidad')),
@@ -620,7 +640,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                   TextSpan(
                     text: 'dpd@upf.edu',
                     style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
-                    recognizer: TapGestureRecognizer()..onTap = () => _launchEmail('dpd@upf.edu'),
+                    recognizer: _dpoEmailRecognizer,
                   ),
                   TextSpan(text: '\n\n'),
                   TextSpan(text: 'Your rights: '),
@@ -629,7 +649,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                   TextSpan(
                     text: 'www.upf.edu/web/proteccio-dades/drets',
                     style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
-                    recognizer: TapGestureRecognizer()..onTap = () => _launchUrl('https://www.upf.edu/web/proteccio-dades/drets'),
+                    recognizer: _gdprLinkRecognizer,
                   ),
                   TextSpan(text: ' for more information.'),
                 ],
@@ -643,10 +663,10 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
   Widget _buildSubmitButton() {
     final bool allRequired = widget.researchSite == 'wellbeing_mapper'
-        ? _healthConsent && _locationConsent &&
-          _healthConsent2 && _sexualOrientationConsent2 && _locationConsent2
-        : _voluntaryParticipation && _generalConsent && _raceEthnicityConsent && 
-          _healthConsent && _sexualOrientationConsent && _locationConsent && 
+        ? _itConsentParticipate && _itConsentRaceEthnicity &&
+          _itConsentHealth && _itConsentSexualOrientation && _itConsentLocationMobility
+        : _voluntaryParticipation && _generalConsent && _raceEthnicityConsent &&
+          _healthConsent && _sexualOrientationConsent && _locationConsent &&
           _dataTransferConsent;
 
     return Column(
@@ -707,38 +727,44 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
       // Use the existing app UUID for consistency across all surveys
       final uuid = GlobalData.userUUID;
       
-      // Create consent response
+      final bool isItalySite = widget.researchSite == 'wellbeing_mapper';
+
+      // Create consent response.
+      //
+      // Fields the form does not ask on a given site are recorded as
+      // not-applicable: false for the consent_* answer fields, true for the
+      // aggregate process fields that submission itself implies (the submit
+      // button is disabled until every required checkbox is checked).
       final consent = ConsentResponse(
         participantUuid: uuid,
-        // For Southern Europe, since all checkboxes must be checked to submit, these should be true
-        informedConsent: widget.researchSite == 'wellbeing_mapper' ? 
-          true : // All Southern Europe checkboxes must be checked to reach this point
-          (_hasReadInformation && _understands && _fulfillsCriteria),
-        dataProcessing: widget.researchSite == 'wellbeing_mapper' ? 
-          true : // All Southern Europe checkboxes must be checked to reach this point
-          _generalConsent,
-        locationData: widget.researchSite == 'wellbeing_mapper' ? _locationConsent2 : _locationConsent,
-        surveyData: widget.researchSite == 'wellbeing_mapper' ? true : _generalConsent,
-        dataRetention: widget.researchSite == 'wellbeing_mapper' ? true : _generalConsent,
-        dataSharing: widget.researchSite == 'wellbeing_mapper' ? _dataShareConsent : _dataTransferConsent,
-        voluntaryParticipation: widget.researchSite == 'wellbeing_mapper' ? true : _voluntaryParticipation,
+        // Submission requires confirming the info-sheet bullet points (shown
+        // as static text) and checking every required box on both sites.
+        informedConsent: true,
+        dataProcessing: isItalySite ? true : _generalConsent,
+        locationData: isItalySite ? _itConsentLocationMobility : _locationConsent,
+        surveyData: isItalySite ? true : _generalConsent,
+        dataRetention: isItalySite ? true : _generalConsent,
+        dataSharing: isItalySite ? false : _dataTransferConsent,
+        voluntaryParticipation: isItalySite ? true : _voluntaryParticipation,
         consentedAt: DateTime.now(),
         participantSignature: widget.participantCode, // Using participant code as signature
-        // Map site-specific consent questions correctly - FIX CRITICAL BUG
-        consentParticipate: widget.researchSite == 'wellbeing_mapper' ? _healthConsent : _generalConsent,
-        // Italy site no longer asks about third-party (LimeSurvey) processing or
-        // transfer outside the EEA, so these are recorded as not-applicable (false).
-        consentQualtricsData: widget.researchSite == 'wellbeing_mapper' ? false : _generalConsent,
-        consentRaceEthnicity: widget.researchSite == 'wellbeing_mapper' ? _locationConsent : _raceEthnicityConsent,
-        consentHealth: widget.researchSite == 'wellbeing_mapper' ? _healthConsent2 : _healthConsent,
-        consentSexualOrientation: widget.researchSite == 'wellbeing_mapper' ? _sexualOrientationConsent2 : _sexualOrientationConsent,
-        consentLocationMobility: widget.researchSite == 'wellbeing_mapper' ? _locationConsent2 : _locationConsent,
-        consentDataTransfer: widget.researchSite == 'wellbeing_mapper' ? false : _dataTransferConsent,
-        consentPublicReporting: widget.researchSite == 'wellbeing_mapper' ? _publicReportingConsent : false,
-        consentResearcherSharing: widget.researchSite == 'wellbeing_mapper' ? _dataShareConsent : false,
-        consentFurtherResearch: widget.researchSite == 'wellbeing_mapper' ? _futureResearchConsent : false,
-        consentPublicRepository: widget.researchSite == 'wellbeing_mapper' ? _repositoryConsent : false,
-        consentFollowupContact: widget.researchSite == 'wellbeing_mapper' ? _followUpConsent : false,
+        consentParticipate: isItalySite ? _itConsentParticipate : _generalConsent,
+        // Italy site does not ask about third-party (LimeSurvey) processing or
+        // transfer outside the EEA, so these are recorded as not-applicable
+        // (false). The legacy site's LimeSurvey question is optional and its
+        // actual answer is recorded.
+        consentQualtricsData: isItalySite ? false : _limeSurveyConsent,
+        consentRaceEthnicity: isItalySite ? _itConsentRaceEthnicity : _raceEthnicityConsent,
+        consentHealth: isItalySite ? _itConsentHealth : _healthConsent,
+        consentSexualOrientation: isItalySite ? _itConsentSexualOrientation : _sexualOrientationConsent,
+        consentLocationMobility: isItalySite ? _itConsentLocationMobility : _locationConsent,
+        consentDataTransfer: isItalySite ? false : _dataTransferConsent,
+        // Neither site asks these five questions; recorded as not-applicable.
+        consentPublicReporting: false,
+        consentResearcherSharing: false,
+        consentFurtherResearch: false,
+        consentPublicRepository: false,
+        consentFollowupContact: false,
       );
 
       // Save consent to database
@@ -783,8 +809,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         debugPrint('[ConsentForm] Set app mode to research after consent completion');
       }
       
-      // Mark consent as completed using new tracking service (also sets fresh_consent_completion flag)
-      await ConsentTrackingService.markConsentCompleted();
+      // Mark consent as completed using new tracking service (also sets
+      // fresh_consent_completion flag). Testing-mode practice consent is
+      // recorded under its own flag so it never opens the research gate.
+      await ConsentTrackingService.markConsentCompleted(
+          testingMode: widget.isTestingMode);
       debugPrint('[ConsentForm] Marked consent as completed using ConsentTrackingService');
 
       // Kick off the consent-form upload now that the app mode and consent
@@ -805,13 +834,15 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
       // Show success and navigate
       _showSuccessDialog(uuid);
-      
+
     } catch (e) {
-      _showErrorDialog('Failed to save consent: $e');
+      if (mounted) _showErrorDialog('Failed to save consent: $e');
     } finally {
-      setState(() {
-        _isSubmitting = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
