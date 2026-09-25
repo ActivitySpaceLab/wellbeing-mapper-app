@@ -19,18 +19,29 @@ class SurveyDatabase {
     return _database!;
   }
 
+  /// Close and forget the cached database so the next access re-opens it.
+  /// Only for tests (e.g. after swapping databaseFactory or deleting the
+  /// underlying file).
+  @visibleForTesting
+  static Future<void> resetForTesting() async {
+    await _database?.close();
+    _database = null;
+  }
+
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'survey_database.db');
     return await openDatabase(
       path,
-      version: 12, // Rebuilt wellbeing schema around five-question WHO-5 style model with nullable answers
+      version: 13, // v13: recurring surveys gain general_health + research_site; dead sync_queue dropped
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Create consent responses table
+    // Create consent responses table. Must include the consent_* columns:
+    // without them a fresh install's first insertConsent throws and only
+    // recovers through the schema-error rebuild path.
     await db.execute('''
       CREATE TABLE consent_responses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,7 +56,19 @@ class SurveyDatabase {
         consented_at TEXT NOT NULL,
         participant_signature TEXT NOT NULL,
         synced INTEGER DEFAULT 0,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        consent_participate INTEGER DEFAULT 1,
+        consent_qualtrics_data INTEGER DEFAULT 1,
+        consent_race_ethnicity INTEGER DEFAULT 1,
+        consent_health INTEGER DEFAULT 1,
+        consent_sexual_orientation INTEGER DEFAULT 1,
+        consent_location_mobility INTEGER DEFAULT 1,
+        consent_data_transfer INTEGER DEFAULT 1,
+        consent_public_reporting INTEGER DEFAULT 1,
+        consent_researcher_sharing INTEGER DEFAULT 1,
+        consent_further_research INTEGER DEFAULT 1,
+        consent_public_repository INTEGER DEFAULT 1,
+        consent_followup_contact INTEGER DEFAULT 0
       )
     ''');
 
@@ -136,6 +159,8 @@ class SurveyDatabase {
         coping_help TEXT,
         voice_note_urls TEXT,
         image_urls TEXT,
+        general_health TEXT,
+        research_site TEXT,
         submitted_at TEXT,
         synced INTEGER DEFAULT 0,
         encrypted_location_data TEXT,
@@ -174,18 +199,6 @@ class SurveyDatabase {
         accuracy REAL,
         location_timestamp TEXT,
         is_synced INTEGER DEFAULT 0
-      )
-    ''');
-
-    // Create sync queue table for offline functionality
-    await db.execute('''
-      CREATE TABLE sync_queue (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        table_name TEXT,
-        record_id INTEGER,
-        action TEXT,
-        data TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     ''');
 
@@ -538,6 +551,20 @@ class SurveyDatabase {
         )
       ''');
     }
+
+    if (oldVersion < 13) {
+      // Add the biweekly-survey columns that insertRecurringSurvey previously
+      // dropped silently (answers were collected but never stored).
+      await db.execute(
+          'ALTER TABLE recurring_survey_responses ADD COLUMN general_health TEXT');
+      await db.execute(
+          'ALTER TABLE recurring_survey_responses ADD COLUMN research_site TEXT');
+
+      // The sync_queue table was write-only dead storage that accumulated
+      // full survey JSON (including plaintext location snapshots) forever.
+      // The real upload pipeline reads the survey tables directly.
+      await db.execute('DROP TABLE IF EXISTS sync_queue');
+    }
   }
   
   Future<void> _recreateConsentResponsesTable(Database db) async {
@@ -643,9 +670,6 @@ class SurveyDatabase {
       'research_site': survey.researchSite,
       'submitted_at': survey.submittedAt.toIso8601String(),
     });
-
-    // Add to sync queue
-    await _addToSyncQueue('initial_survey_responses', id, 'INSERT', survey.toJson());
     return id;
   }
 
@@ -739,12 +763,11 @@ class SurveyDatabase {
       // TODO: MULTIMEDIA ENCRYPTION - Images are stored as local file paths, encryption to be implemented
       // 'voice_note_urls': survey.voiceNoteUrls != null ? jsonEncode(survey.voiceNoteUrls) : null,
       'image_urls': survey.imageUrls != null ? jsonEncode(survey.imageUrls) : null,
+      'general_health': survey.generalHealth,
+      'research_site': survey.researchSite,
       'submitted_at': survey.submittedAt.toIso8601String(),
       'encrypted_location_data': survey.encryptedLocationData,
     });
-
-    // Add to sync queue
-    await _addToSyncQueue('recurring_survey_responses', id, 'INSERT', survey.toJson());
     return id;
   }
 
@@ -796,27 +819,6 @@ class SurveyDatabase {
         synced: (maps[i]['synced'] as int? ?? 0) == 1,
       );
     });
-  }
-
-  // Sync functionality
-  Future<void> _addToSyncQueue(String tableName, int recordId, String action, Map<String, dynamic> data) async {
-    final db = await database;
-    await db.insert('sync_queue', {
-      'table_name': tableName,
-      'record_id': recordId,
-      'action': action,
-      'data': jsonEncode(data),
-    });
-  }
-
-  Future<List<Map<String, dynamic>>> getPendingSyncItems() async {
-    final db = await database;
-    return await db.query('sync_queue', orderBy: 'created_at ASC');
-  }
-
-  Future<void> markSynced(int syncId) async {
-    final db = await database;
-    await db.delete('sync_queue', where: 'id = ?', whereArgs: [syncId]);
   }
 
   Future<void> markSurveyAsSynced(String tableName, int recordId) async {
@@ -947,6 +949,15 @@ class SurveyDatabase {
     
     if (maps.isNotEmpty) {
       final map = maps.first;
+      // Read the consent_* columns back too so the reconstructed record
+      // reflects what the participant actually answered, not the model's
+      // defaults.
+      bool col(String name, {required bool orElse}) {
+        final value = map[name];
+        if (value == null) return orElse;
+        return value == 1;
+      }
+
       return ConsentResponse(
         participantUuid: map['participant_uuid'],
         informedConsent: map['informed_consent'] == 1,
@@ -958,6 +969,18 @@ class SurveyDatabase {
         voluntaryParticipation: map['voluntary_participation'] == 1,
         consentedAt: DateTime.parse(map['consented_at']),
         participantSignature: map['participant_signature'] ?? '',
+        consentParticipate: col('consent_participate', orElse: true),
+        consentQualtricsData: col('consent_qualtrics_data', orElse: true),
+        consentRaceEthnicity: col('consent_race_ethnicity', orElse: true),
+        consentHealth: col('consent_health', orElse: true),
+        consentSexualOrientation: col('consent_sexual_orientation', orElse: true),
+        consentLocationMobility: col('consent_location_mobility', orElse: true),
+        consentDataTransfer: col('consent_data_transfer', orElse: true),
+        consentPublicReporting: col('consent_public_reporting', orElse: true),
+        consentResearcherSharing: col('consent_researcher_sharing', orElse: true),
+        consentFurtherResearch: col('consent_further_research', orElse: true),
+        consentPublicRepository: col('consent_public_repository', orElse: true),
+        consentFollowupContact: col('consent_followup_contact', orElse: false),
       );
     }
     return null;
@@ -1144,24 +1167,32 @@ class SurveyDatabase {
   }
 
   // Location data management methods
-  Future<void> cleanupOldLocationData(DateTime cutoffDate) async {
+
+  /// Delete location_tracks rows older than [cutoffDate].
+  ///
+  /// Returns the number of rows deleted. location_tracks.timestamp holds
+  /// ISO-8601 strings (see insertLocationTrack), so the cutoff must be
+  /// compared as an ISO string too — an epoch-millis string ('17...') sorts
+  /// before every ISO timestamp ('2...') and would match nothing, silently
+  /// breaking the retention setting.
+  Future<int> cleanupOldLocationData(DateTime cutoffDate) async {
     final db = await database;
-    final cutoffTimestamp = cutoffDate.millisecondsSinceEpoch.toString();
-    
+    final cutoffTimestamp = cutoffDate.toUtc().toIso8601String();
+
     debugPrint('[SurveyDatabase] Cleaning up location data older than $cutoffDate');
-    
+
     try {
-      // Clean up location tracks table
       int tracksDeleted = await db.delete(
         'location_tracks',
         where: 'timestamp < ?',
         whereArgs: [cutoffTimestamp]
       );
-      
+
       debugPrint('[SurveyDatabase] Deleted $tracksDeleted old location tracks');
-      
+      return tracksDeleted;
     } catch (e) {
       debugPrint('[SurveyDatabase] Error during location data cleanup: $e');
+      return 0;
     }
   }
 
@@ -1186,37 +1217,19 @@ class SurveyDatabase {
       final newestTimestamp = newestResult.first['newest'];
       
       if (oldestTimestamp != null) {
-        // Handle different timestamp formats safely
-        int? timestampInt;
-        if (oldestTimestamp is int) {
-          timestampInt = oldestTimestamp;
-        } else if (oldestTimestamp is String) {
-          timestampInt = int.tryParse(oldestTimestamp);
-        } else if (oldestTimestamp is double) {
-          timestampInt = oldestTimestamp.toInt();
-        }
-        
-        if (timestampInt != null) {
-          stats['oldestLocationDate'] = DateTime.fromMillisecondsSinceEpoch(timestampInt);
+        final parsed = _parseTrackTimestamp(oldestTimestamp);
+        if (parsed != null) {
+          stats['oldestLocationDate'] = parsed;
         }
       }
       
       if (newestTimestamp != null) {
-        // Handle different timestamp formats safely
-        int? timestampInt;
-        if (newestTimestamp is int) {
-          timestampInt = newestTimestamp;
-        } else if (newestTimestamp is String) {
-          timestampInt = int.tryParse(newestTimestamp);
-        } else if (newestTimestamp is double) {
-          timestampInt = newestTimestamp.toInt();
-        }
-        
-        if (timestampInt != null) {
-          stats['newestLocationDate'] = DateTime.fromMillisecondsSinceEpoch(timestampInt);
+        final parsed = _parseTrackTimestamp(newestTimestamp);
+        if (parsed != null) {
+          stats['newestLocationDate'] = parsed;
         }
       }
-      
+
       // Calculate data span in days
       if (stats['oldestLocationDate'] != null && stats['newestLocationDate'] != null) {
         stats['locationDataSpanDays'] = (stats['newestLocationDate'] as DateTime)
@@ -1228,7 +1241,22 @@ class SurveyDatabase {
       debugPrint('[SurveyDatabase] Error getting location data stats: $e');
       stats['error'] = e.toString();
     }
-    
+
     return stats;
+  }
+
+  /// Parse a location_tracks.timestamp value. Rows are written as ISO-8601
+  /// strings; epoch-millis ints are tolerated for any legacy rows.
+  DateTime? _parseTrackTimestamp(Object value) {
+    if (value is String) {
+      final iso = DateTime.tryParse(value);
+      if (iso != null) return iso;
+      final millis = int.tryParse(value);
+      if (millis != null) return DateTime.fromMillisecondsSinceEpoch(millis);
+      return null;
+    }
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    if (value is double) return DateTime.fromMillisecondsSinceEpoch(value.toInt());
+    return null;
   }
 }

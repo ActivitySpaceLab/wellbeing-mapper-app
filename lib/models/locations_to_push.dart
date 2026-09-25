@@ -54,20 +54,22 @@ class LocationToPush {
       this.activity,
       this.altitude});
 
+  // All optional fields are written as NULL by toJson, so every read here
+  // must use a nullable cast — a non-nullable `as` on a NULL column throws.
   static LocationToPush fromJson(Map<String, Object?> json) => LocationToPush(
         id: json[LocationToPushFields.id] as int?,
         userUUID: json[LocationToPushFields.userUUID] as String,
-        userCode: json[LocationToPushFields.userCode].toString(),
-        appVersion: json[LocationToPushFields.appVersion] as String,
-        operativeSystem: json[LocationToPushFields.operativeSystem] as String,
-        typeOfData: json[LocationToPushFields.typeOfData] as String,
-        message: json[LocationToPushFields.message] as String,
-        longitude: json[LocationToPushFields.longitude] as double,
-        latitude: json[LocationToPushFields.latitude] as double,
-        unixTime: json[LocationToPushFields.unixTime].toString(),
-        speed: json[LocationToPushFields.speed] as num,
-        activity: json[LocationToPushFields.activity] as String,
-        altitude: json[LocationToPushFields.altitude].toString(),
+        userCode: json[LocationToPushFields.userCode] as String?,
+        appVersion: json[LocationToPushFields.appVersion] as String?,
+        operativeSystem: json[LocationToPushFields.operativeSystem] as String?,
+        typeOfData: json[LocationToPushFields.typeOfData] as String?,
+        message: json[LocationToPushFields.message] as String?,
+        longitude: (json[LocationToPushFields.longitude] as num?)?.toDouble(),
+        latitude: (json[LocationToPushFields.latitude] as num?)?.toDouble(),
+        unixTime: json[LocationToPushFields.unixTime]?.toString(),
+        speed: json[LocationToPushFields.speed] as num?,
+        activity: json[LocationToPushFields.activity] as String?,
+        altitude: json[LocationToPushFields.altitude]?.toString(),
       );
 
   Map<String, Object?> toJson() => {

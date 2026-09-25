@@ -184,12 +184,13 @@ class StorageSettingsService {
     debugPrint('[StorageSettingsService] Performing cleanup - removing data older than $retentionDays days (cutoff: ${cutoffDate.toIso8601String()})');
     
     try {
-      // Clean up app database location data (FBG handles its own minimal 1-day retention)
+      // Clean up the app database's location data. The app database is the
+      // long-term location store (the location plugin does not retain fixes).
       final database = SurveyDatabase();
-      await database.cleanupOldLocationData(cutoffDate);
-      
-      debugPrint('[StorageSettingsService] ✅ App database cleanup completed');
-      
+      final deleted = await database.cleanupOldLocationData(cutoffDate);
+
+      debugPrint('[StorageSettingsService] ✅ App database cleanup completed ($deleted rows removed)');
+
     } catch (e) {
       debugPrint('[StorageSettingsService] ❌ Error during cleanup: $e');
     }

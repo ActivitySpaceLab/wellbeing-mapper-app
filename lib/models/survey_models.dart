@@ -247,7 +247,10 @@ class RecurringSurveyResponse {
   
   final String researchSite; // Currently only 'wellbeing_mapper'
   final DateTime submittedAt;
-  final String? encryptedLocationData; // Encrypted location data captured at submission time
+  // Location snapshot captured at submission time. Despite the legacy name,
+  // this column holds PLAINTEXT location JSON; encryption happens at upload
+  // time when the whole payload is encrypted (see ResearchServerService).
+  final String? encryptedLocationData;
   final bool synced; // Whether this survey has been uploaded to the server
 
   RecurringSurveyResponse({

@@ -97,6 +97,7 @@ dev_dependencies:
   mockito: ^5.4.4
   # Test data generation (dev only)
   faker: ^2.0.0
+  sqflite_common_ffi: ^2.3.4+4
 
 flutter:
   uses-material-design: true

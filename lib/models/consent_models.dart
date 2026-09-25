@@ -128,6 +128,15 @@ class ConsentResponse {
   }
 
   factory ConsentResponse.fromJson(Map<String, dynamic> json) {
+    // Read the site-specific fields back too: dropping them here would
+    // silently reset a participant's recorded answers to the constructor
+    // defaults (almost all true) on every round-trip.
+    bool flag(String key, {required bool orElse}) {
+      final value = json[key];
+      if (value == null) return orElse;
+      return value == 1 || value == true;
+    }
+
     return ConsentResponse(
       participantUuid: json['participantUuid'],
       informedConsent: json['informedConsent'] == 1,
@@ -139,6 +148,18 @@ class ConsentResponse {
       voluntaryParticipation: json['voluntaryParticipation'] == 1,
       consentedAt: DateTime.parse(json['consentedAt']),
       participantSignature: json['participantSignature'] ?? '',
+      consentParticipate: flag('consentParticipate', orElse: true),
+      consentQualtricsData: flag('consentQualtricsData', orElse: true),
+      consentRaceEthnicity: flag('consentRaceEthnicity', orElse: true),
+      consentHealth: flag('consentHealth', orElse: true),
+      consentSexualOrientation: flag('consentSexualOrientation', orElse: true),
+      consentLocationMobility: flag('consentLocationMobility', orElse: true),
+      consentDataTransfer: flag('consentDataTransfer', orElse: true),
+      consentPublicReporting: flag('consentPublicReporting', orElse: true),
+      consentResearcherSharing: flag('consentResearcherSharing', orElse: true),
+      consentFurtherResearch: flag('consentFurtherResearch', orElse: true),
+      consentPublicRepository: flag('consentPublicRepository', orElse: true),
+      consentFollowupContact: flag('consentFollowupContact', orElse: false),
     );
   }
 }
