@@ -39,6 +39,26 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
     super.initState();
     _loadResearchSite();
     _loadLocationData(); // Load location data for status display
+    _loadStoredSharingPreference();
+  }
+
+  /// Seed the location-sharing choice from the participant's stored
+  /// preference (set in Data Sharing Preferences), which promises to apply
+  /// to future uploads. The user can still change it per survey.
+  Future<void> _loadStoredSharingPreference() async {
+    try {
+      final db = SurveyDatabase();
+      final consent = await db.getConsent();
+      final uuid = consent?.participantUuid;
+      if (uuid == null || uuid.isEmpty) return;
+      final stored = await db.getLatestDataSharingConsent(uuid);
+      if (stored == null || !mounted) return;
+      setState(() {
+        _locationSharingOption = stored.locationSharingOption;
+      });
+    } catch (e) {
+      debugPrint('[RecurringSurvey] Could not load stored sharing preference: $e');
+    }
   }
 
   Future<void> _loadResearchSite() async {
@@ -1025,6 +1045,9 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
           locationTracks: _recentLocationTracks,
           participantUuid: participantUuid,
           isSelectionMode: true, // Enable selection mode
+          // Start from the previous selection so reopening the map does not
+          // silently discard earlier erasures.
+          initialErasedIndices: _erasedLocationIndices,
           onSelectionChanged: (Set<int> erasedIndices) {
             // Selection callback will be handled by the result
           },
@@ -1170,8 +1193,8 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
                 SizedBox(height: 16),
                 
                 Text(
-                  _t('When done, tap Submit to return to the survey form.',
-                      'Al termine, tocca Invia per tornare al modulo del questionario.'),
+                  _t('When done, tap "Confirm Selection" to return to the survey form.',
+                      'Al termine, tocca "Conferma selezione" per tornare al modulo del questionario.'),
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ],
@@ -1300,21 +1323,18 @@ class _RecurringSurveyScreenState extends State<RecurringSurveyScreen> {
         throw Exception('No participant UUID found');
       }
 
-      // Create location cluster IDs based on sharing option
+      // Identify the shared tracks by their timestamps so the stored consent
+      // record encodes which points were actually selected (synthetic
+      // sequence numbers would carry no information).
       List<String> customLocationIds = [];
-      
+
       if (_locationSharingOption == LocationSharingOption.partialData) {
-        // Get the selected location tracks (those not erased)
-        final selectedTracks = _recentLocationTracks
+        customLocationIds = _recentLocationTracks
             .asMap()
             .entries
             .where((entry) => !_erasedLocationIndices.contains(entry.key))
-            .map((entry) => entry.value)
+            .map((entry) => entry.value.timestamp.toIso8601String())
             .toList();
-        
-        for (int i = 0; i < selectedTracks.length; i++) {
-          customLocationIds.add('track_${i}');
-        }
       }
 
       // Save location sharing consent

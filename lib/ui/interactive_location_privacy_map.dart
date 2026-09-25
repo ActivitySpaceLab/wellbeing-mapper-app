@@ -18,6 +18,11 @@ class InteractiveLocationPrivacyMap extends StatefulWidget {
   final bool isSelectionMode; // If true, just returns selection instead of uploading
   final Function(Set<int>)? onSelectionChanged; // Callback for selection mode
 
+  /// Indices (into [locationTracks]) already erased in a previous session,
+  /// so reopening the map does not silently discard the user's earlier
+  /// privacy choices.
+  final Set<int>? initialErasedIndices;
+
   const InteractiveLocationPrivacyMap({
     Key? key,
     required this.locationTracks,
@@ -27,6 +32,7 @@ class InteractiveLocationPrivacyMap extends StatefulWidget {
     required this.onUploadProceed,
     this.isSelectionMode = false,
     this.onSelectionChanged,
+    this.initialErasedIndices,
   }) : super(key: key);
 
   @override
@@ -50,9 +56,22 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
   LatLng? _currentEraserLatLng; // Actual lat/lng position of eraser circle
   DateTime _lastUpdateTime = DateTime.now(); // For throttling updates
 
+  // Localization helper (English default, Italian, Spanish).
+  String _t3(String en, String it, String es) {
+    switch (Localizations.localeOf(context).languageCode) {
+      case 'it':
+        return it;
+      case 'es':
+        return es;
+      default:
+        return en;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _erasedPointIndices = Set<int>.of(widget.initialErasedIndices ?? const {});
     _centerMapOnData();
   }
 
@@ -104,8 +123,12 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
   }
 
   void _handlePanEnd(DragEndDetails details) {
-    _isDragging = false;
-    _currentEraserLatLng = null;
+    // setState so the eraser circle disappears immediately instead of
+    // lingering until some other repaint happens.
+    setState(() {
+      _isDragging = false;
+      _currentEraserLatLng = null;
+    });
   }
 
   void _processEraserAction(Offset globalPosition) {
@@ -115,30 +138,17 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
 
     // Convert global position to local position relative to the map widget specifically
     final localPosition = mapRenderBox.globalToLocal(globalPosition);
-    final mapSize = mapRenderBox.size;
-    
-    // Get current map bounds from the camera
-    final camera = _mapController.camera;
-    final bounds = camera.visibleBounds;
-    
-    // Convert screen coordinates to lat/lng with proper bounds calculation
-    final relativeX = localPosition.dx / mapSize.width;
-    final relativeY = localPosition.dy / mapSize.height;
-    
-    // Ensure coordinates are within valid range [0,1]
-    final clampedX = relativeX.clamp(0.0, 1.0);
-    final clampedY = relativeY.clamp(0.0, 1.0);
-    
-    final tapLat = bounds.north - (clampedY * (bounds.north - bounds.south));
-    final tapLng = bounds.west + (clampedX * (bounds.east - bounds.west));
-    
-    // Always store the current eraser position for visual feedback (show circle everywhere)
-    _currentEraserLatLng = LatLng(tapLat, tapLng);
-    
-    debugPrint('[InteractiveMap] Touch at map-local: ${localPosition.dx.toStringAsFixed(1)}, ${localPosition.dy.toStringAsFixed(1)} -> lat/lng: ${tapLat.toStringAsFixed(6)}, ${tapLng.toStringAsFixed(6)}');
-    debugPrint('[InteractiveMap] Map size: ${mapSize.width.toStringAsFixed(1)} x ${mapSize.height.toStringAsFixed(1)}');
-    
-    _findAndToggleNearbyPoints(LatLng(tapLat, tapLng));
+
+    // Let the camera do the projection: it handles zoom and any camera
+    // transform correctly, unlike linearly interpolating visibleBounds.
+    final tapPoint = _mapController.camera.offsetToCrs(localPosition);
+
+    // setState so the eraser circle is drawn (also over empty areas).
+    setState(() {
+      _currentEraserLatLng = tapPoint;
+    });
+
+    _findAndToggleNearbyPoints(tapPoint);
   }
 
   void _findAndToggleNearbyPoints(LatLng centerPoint) {
@@ -187,18 +197,14 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
         return;
       }
 
-      // Original consent dialog mode: save consent and trigger upload
-      // Create dummy location cluster IDs based on selected points
-      // For partial data sharing, we'll use the indices of the selected location tracks
-      List<String> customLocationIds = [];
-      
-      // Get the selected location tracks (those not erased)
+      // Original consent dialog mode: save consent and trigger upload.
+      // Identify the shared (non-erased) tracks by their timestamps so the
+      // stored consent record actually encodes which points were selected —
+      // synthetic sequence numbers ('track_0'...) would carry no information.
       final selectedTracks = getSelectedLocationTracks();
-      
-      // Create cluster IDs based on the selected tracks
-      for (int i = 0; i < selectedTracks.length; i++) {
-        customLocationIds.add('track_${i}');
-      }
+      final List<String> customLocationIds = selectedTracks
+          .map((track) => track.timestamp.toIso8601String())
+          .toList();
 
       // Save user's consent decision with partial data selection
       final consent = DataSharingConsent(
@@ -239,7 +245,9 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select Location Data to Share'),
+        title: Text(_t3('Select Location Data to Share',
+            'Seleziona i dati di posizione da condividere',
+            'Seleccione los datos de ubicación para compartir')),
         backgroundColor: SouthAfricanTheme.primaryBlue,
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -283,10 +291,12 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
                       initialZoom: 14.0,
                       minZoom: 10.0,
                       maxZoom: 18.0,
-                      // Enable full map interactions only in navigation mode
+                      // Enable map interactions only in navigation mode.
+                      // Rotation stays disabled: erasing on a rotated map is
+                      // disorienting even with correct projection math.
                       interactionOptions: InteractionOptions(
-                        flags: _isNavigationMode 
-                          ? InteractiveFlag.all // All interactions in navigation mode
+                        flags: _isNavigationMode
+                          ? InteractiveFlag.all & ~InteractiveFlag.rotate
                           : InteractiveFlag.none, // No built-in interactions in eraser/restore mode
                       ),
                     ),
@@ -473,7 +483,7 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
                       child: ElevatedButton.icon(
                         onPressed: _resetAllPoints,
                         icon: Icon(Icons.refresh, size: 20),
-                        label: Text('Reset'),
+                        label: Text(_t3('Reset', 'Reimposta', 'Restablecer')),
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.orange[700],
                           backgroundColor: Colors.orange[50],
@@ -486,7 +496,7 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
                       child: ElevatedButton.icon(
                         onPressed: widget.onCancel,
                         icon: Icon(Icons.close, size: 20),
-                        label: Text('Cancel'),
+                        label: Text(_t3('Cancel', 'Annulla', 'Cancelar')),
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.grey[700],
                           backgroundColor: Colors.grey[100],
@@ -499,7 +509,10 @@ class _InteractiveLocationPrivacyMapState extends State<InteractiveLocationPriva
                       child: ElevatedButton.icon(
                         onPressed: _submitLocationSelection,
                         icon: Icon(Icons.check, size: 20, color: Colors.white),
-                        label: Text('Confirm Selection', style: TextStyle(color: Colors.white)),
+                        label: Text(
+                            _t3('Confirm Selection', 'Conferma selezione',
+                                'Confirmar selección'),
+                            style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: SouthAfricanTheme.primaryBlue,
                           padding: EdgeInsets.symmetric(vertical: 12),
