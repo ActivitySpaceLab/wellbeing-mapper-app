@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:crypto/crypto.dart' show sha256;
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:flutter/foundation.dart';
@@ -38,9 +39,10 @@ class SyncOutcome {
 ///   – AES-256-GCM  (symmetric, random key per submission)
 ///   – RSA-OAEP-SHA-256 (asymmetric key encapsulation)
 ///
-/// The server endpoint is a placeholder until the research server is built.
-/// While the endpoint is unconfigured, surveys are kept in the local database
-/// and will be automatically uploaded once the URL is set.
+/// The server is `wellbeing-mapper-server` (its README documents the
+/// contract). Its URL comes from `--dart-define=SERVER_BASE_URL`; while that
+/// is unset, surveys are kept in the local database and uploaded once a
+/// build with the URL runs.
 class ResearchServerService {
   // Endpoint URLs are sourced from ENV so swapping research backends only
   // requires editing a single file.
@@ -59,9 +61,9 @@ class ResearchServerService {
   // -------------------------------------------------------------------------
 
   /// True while a sync is running, so overlapping calls (e.g. a manual
-  /// "Sync Now" during the automatic post-submission sync) cannot upload
-  /// the same rows twice. The server has no idempotency key, so this
-  /// client-side guard is the only duplicate protection.
+  /// "Sync Now" during the automatic post-submission sync) do not upload
+  /// the same rows twice. (The server also ignores a repeat of a
+  /// [submissionIdFor] id, which covers a retry after a lost answer.)
   static bool _syncInFlight = false;
 
   /// Sync all locally-stored, unsynced surveys to the research server.
@@ -176,7 +178,10 @@ class ResearchServerService {
         },
       };
       final blob = await _encrypt(payload);
-      final ok = await _post('initial', blob);
+      final ok = await _post('initial', blob, submissionIdFor(
+          participantUuid: GlobalData.userUUID,
+          recordType: 'initial_survey',
+          recordId: data['id']));
       if (ok) await SurveyDatabase().markInitialSurveySynced(data['id']);
       return ok;
     } catch (e) {
@@ -209,7 +214,10 @@ class ResearchServerService {
         },
       };
       final blob = await _encrypt(payload);
-      final ok = await _post('biweekly', blob);
+      final ok = await _post('biweekly', blob, submissionIdFor(
+          participantUuid: GlobalData.userUUID,
+          recordType: 'biweekly_survey',
+          recordId: data['id']));
       if (ok) await SurveyDatabase().markRecurringSurveySynced(data['id']);
       return ok;
     } catch (e) {
@@ -232,13 +240,33 @@ class ResearchServerService {
         },
       };
       final blob = await _encrypt(payload);
-      final ok = await _post('consent', blob);
+      final ok = await _post('consent', blob, submissionIdFor(
+          participantUuid: GlobalData.userUUID,
+          recordType: 'consent_form',
+          recordId: data['id']));
       if (ok) await SurveyDatabase().markConsentFormSynced(data['id']);
       return ok;
     } catch (e) {
       debugPrint('[ResearchServerService] Error syncing consent form: $e');
       return false;
     }
+  }
+
+  /// The id the server uses to recognise a repeat of the same record, sent
+  /// outside the encrypted payload as `submission_id`.
+  ///
+  /// It is a hash, so the server learns nothing from it: not the participant
+  /// id, not the record's local id. The same record always maps to the same
+  /// id, so an upload retried after a lost answer is stored only once.
+  @visibleForTesting
+  static String submissionIdFor({
+    required String participantUuid,
+    required String recordType,
+    required Object? recordId,
+  }) {
+    return sha256
+        .convert(utf8.encode('$participantUuid|$recordType|$recordId'))
+        .toString();
   }
 
   // -------------------------------------------------------------------------
@@ -300,7 +328,8 @@ class ResearchServerService {
   // HTTP with exponential-backoff retry
   // -------------------------------------------------------------------------
 
-  static Future<bool> _post(String surveyType, String encryptedBlob) async {
+  static Future<bool> _post(
+      String surveyType, String encryptedBlob, String submissionId) async {
     const maxRetries = 3;
     final Duration baseDelay = const Duration(seconds: 2);
 
@@ -325,6 +354,7 @@ class ResearchServerService {
                 'encrypted_data': encryptedBlob,
                 'survey_type': surveyType,
                 'timestamp': DateTime.now().toIso8601String(),
+                'submission_id': submissionId,
               }),
             )
             .timeout(timeout);

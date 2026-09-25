@@ -38,27 +38,11 @@
 		<false/>
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>lambda-url.af-south-1.on.aws</key>
-			<dict>
-				<key>NSExceptionRequiresForwardSecrecy</key>
-				<false/>
-				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.2</string>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-			</dict>
-			<key>6p7hir7licc5yisxhkner4wt2i0yhtzo.lambda-url.af-south-1.on.aws</key>
-			<dict>
-				<key>NSExceptionRequiresForwardSecrecy</key>
-				<false/>
-				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.2</string>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-			</dict>
-		</dict>
+		<!-- Plain HTTP only to local hosts, for scripts/run-with-local-server.sh
+		     (SERVER_BASE_URL=http://localhost:3000/api/v1). The research
+		     server itself is HTTPS only. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
 	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Wellbeing Mapper uses your location to track where you spend time so you can map your activity spaces and compare them to your wellbeing responses. This helps you understand how different places affect your mental health.</string>

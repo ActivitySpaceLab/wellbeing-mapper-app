@@ -20,12 +20,11 @@ class ENV {
     defaultValue: 'https://research-server.example.com/api/v1',
   );
 
-  /// Endpoint paths (appended to [apiBaseUrl]).
+  /// Endpoint paths (appended to [apiBaseUrl]); the server implements exactly
+  /// these. Location history travels inside the biweekly survey payload.
   static const String encryptedSurveyPath = '/surveys/encrypted';
   static const String encryptedConsentPath = '/consent/encrypted';
-  static const String encryptedLocationPath = '/locations/encrypted';
   static const String participantValidationPath = '/participants/validate';
-  static const String participantRegistrationPath = '/participants/register';
 
   /// Default study/sample identifier bundled with uploads when no participant
   /// code has been entered.
@@ -39,11 +38,14 @@ class ENV {
   /// Returns true when [apiBaseUrl] points to a real (non-placeholder) host.
   static bool get isServerConfigured => !apiBaseUrl.contains('example.com');
 
-  /// RSA-2048 public key used for hybrid encryption on device.
+  /// The study's RSA public key; every upload is encrypted with it on the
+  /// device (AES-256-GCM, key wrapped with RSA-OAEP-SHA-256).
   ///
-  /// The matching private key is held by the research server and is required
-  /// to decrypt incoming submissions. Replace this with the production key
-  /// before shipping.
+  /// The matching private key stays offline with the research team and is
+  /// never on the server; only it can decrypt submissions
+  /// (wellbeing-mapper-server/tools/decrypt_received.py). This is a
+  /// placeholder pair: generate the study's own before collecting data (see
+  /// the server README, "Keys") and paste the public key here.
   static const String researchPublicKey = '''-----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAvzeHQfOYDT8XgiDyHsTG
 80/lQY1+AQa2NLIJERK6WuYxVrveDoY5V99V9rlFTRXdYcD5iBDL3WGHQmkOUDQL
