@@ -1,211 +1,172 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../lib/ui/consent_form_screen.dart';
 
+/// Tests for [ConsentFormScreen].
+///
+/// The live app always passes researchSite 'wellbeing_mapper' (the Italy /
+/// Southern Europe site); 'barcelona' is a legacy fallback that is only
+/// reachable when route arguments omit the site. Both branches are covered
+/// here so a regression in either shows up.
 void main() {
-  group('Consent Form Tests', () {
-    // tearDown(() {
-    //   // Reset screen size after each test - deprecated API removed
-    // });
+  setUp(() {
+    // ConsentFormScreen checks ConsentTrackingService on init; give it an
+    // empty prefs store so no prior consent is found and the form renders.
+    SharedPreferences.setMockInitialValues({});
+  });
 
-    testWidgets('Should require all consent checkboxes for Gauteng research site', (WidgetTester tester) async {
-      // Set a much larger surface size to accommodate the very long consent form
-      tester.view.physicalSize = Size(800, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      
-      // Build the consent form for Gauteng research site
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ConsentFormScreen(
-            participantCode: 'TEST001',
-            researchSite: 'gauteng',
-            isTestingMode: true,
-          ),
+  Future<void> pumpConsentScreen(
+    WidgetTester tester, {
+    String researchSite = 'wellbeing_mapper',
+  }) async {
+    tester.view.physicalSize = Size(800, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConsentFormScreen(
+          participantCode: 'TEST001',
+          researchSite: researchSite,
+          isTestingMode: true,
         ),
-      );
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
 
-      // Wait for the widget to build
-      await tester.pumpAndSettle();
+  /// Taps the info sheet's continue button to reach the consent checkboxes.
+  Future<void> continueToConsentForm(WidgetTester tester) async {
+    final continueButton = find.text('Continue to Consent Form');
+    await tester.ensureVisible(continueButton);
+    await tester.tap(continueButton);
+    await tester.pumpAndSettle();
+  }
 
-      // Scroll to find the Continue button and tap it
-      await tester.scrollUntilVisible(
-        find.text('Continue to Consent Form'),
-        500.0, // scroll distance
-      );
-      await tester.tap(find.text('Continue to Consent Form'));
-      await tester.pumpAndSettle();
+  /// Checks a consent checkbox by tapping its label text.
+  Future<void> tapConsentText(WidgetTester tester, String text) async {
+    final finder = find.textContaining(text);
+    expect(finder, findsOneWidget, reason: 'consent item "$text" should exist');
+    await tester.ensureVisible(finder);
+    await tester.tap(finder);
+    await tester.pump();
+  }
 
-      // Try to find the submit button - it should be disabled initially
-      expect(find.byType(ElevatedButton), findsOneWidget);
-      
-      // The button should be disabled when no consents are checked
-      final ElevatedButton button = tester.widget(find.byType(ElevatedButton));
-      expect(button.onPressed, isNull); // Disabled button has null onPressed
+  ElevatedButton submitButton(WidgetTester tester) =>
+      tester.widget<ElevatedButton>(find.byType(ElevatedButton));
 
-      // Check that we can find all the required consent checkboxes for Gauteng
-      final requiredConsentTexts = [
-        'to participate in this study',
-        'for my personal data to be processed by Qualtrics',
-        'to being asked about by race/ethnicity',
-        'to being asked about my health',
-        'to being asked about my sexual orientation', 
-        'to being asked about my location and mobility',
-        'to transferring my personal data to countries outside South Africa',
-        'to researchers reporting what I contribute',
-        'to what I contribute being shared with national and international researchers',
-        'to what I contribute being used for further research',
-        'to what I contribute being placed in a public repository',
-        'to being contacted about participation in possible follow-up studies',
-      ];
+  // The five required consent items on the Italy-site form (English locale).
+  const italyConsentTexts = [
+    'to participate in this study',
+    'to being asked about my race/ethnicity',
+    'to being asked about my health condition',
+    'to being asked about my sexual orientation',
+    'to being asked about my location and mobility',
+  ];
 
-      // Verify all required consent texts are present
-      for (String consentText in requiredConsentTexts) {
-        expect(find.textContaining(consentText), findsOneWidget);
-      }
+  group('Italy site (wellbeing_mapper)', () {
+    testWidgets('information sheet shows key sections and leads to the form',
+        (WidgetTester tester) async {
+      await pumpConsentScreen(tester);
 
-      // Find and check all required consent checkboxes
-      for (String consentText in requiredConsentTexts) {
-        // Scroll to make sure the checkbox is visible
-        await tester.scrollUntilVisible(
-          find.textContaining(consentText),
-          200.0,
-        );
-        
-        // Find the text widget first
-        final textWidget = find.textContaining(consentText);
-        expect(textWidget, findsOneWidget);
-        
-        // Tap the text to check the associated checkbox (they are in the same GestureDetector)
-        await tester.tap(textWidget);
-        await tester.pump();
-      }
+      // Info sheet first.
+      expect(find.text('Continue to Consent Form'), findsOneWidget);
+      expect(find.textContaining('Universitat Pompeu Fabra'), findsWidgets);
+      expect(find.textContaining('Compensation'), findsOneWidget);
+      expect(find.textContaining('Data protection'), findsOneWidget);
 
-      // After checking all required boxes, the submit button should be enabled
-      await tester.pumpAndSettle();
-      final ElevatedButton enabledButton = tester.widget(find.byType(ElevatedButton));
-      expect(enabledButton.onPressed, isNotNull); // Enabled button has non-null onPressed
+      await continueToConsentForm(tester);
+
+      expect(find.text('Informed Consent Form'), findsOneWidget);
+      expect(find.textContaining('Participant Code: TEST001'), findsOneWidget);
     });
 
-    testWidgets('Should allow optional follow-up consent to remain unchecked', (WidgetTester tester) async {
-      // Set a much larger surface size to accommodate the very long consent form
-      tester.view.physicalSize = Size(800, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      
-      // Build the consent form for Gauteng research site
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ConsentFormScreen(
-            participantCode: 'TEST002',
-            researchSite: 'gauteng',
-            isTestingMode: true,
-          ),
-        ),
-      );
+    testWidgets('submit stays disabled until all five consents are checked',
+        (WidgetTester tester) async {
+      await pumpConsentScreen(tester);
+      await continueToConsentForm(tester);
 
-      await tester.pumpAndSettle();
+      expect(submitButton(tester).onPressed, isNull,
+          reason: 'submit must be disabled with nothing checked');
 
-      // Scroll to find the Continue button and tap it
-      await tester.scrollUntilVisible(
-        find.text('Continue to Consent Form'),
-        500.0, // scroll distance
-      );
-      await tester.tap(find.text('Continue to Consent Form'));
-      await tester.pumpAndSettle();
-
-      // Check all required consent boxes (same as previous test)
-      final requiredConsentTexts = [
-        'to participate in this study',
-        'for my personal data to be processed by Qualtrics',
-        'to being asked about by race/ethnicity',
-        'to being asked about my health',
-        'to being asked about my sexual orientation', 
-        'to being asked about my location and mobility',
-        'to transferring my personal data to countries outside South Africa',
-        'to researchers reporting what I contribute',
-        'to what I contribute being shared with national and international researchers',
-        'to what I contribute being used for further research',
-        'to what I contribute being placed in a public repository',
-        'to being contacted about participation in possible follow-up studies',
-      ];
-
-      for (String consentText in requiredConsentTexts) {
-        // Scroll to make sure the checkbox is visible
-        await tester.scrollUntilVisible(
-          find.textContaining(consentText),
-          200.0,
-        );
-        
-        // Tap the text to check the associated checkbox
-        await tester.tap(find.textContaining(consentText));
-        await tester.pump();
+      for (final text in italyConsentTexts) {
+        await tapConsentText(tester, text);
       }
-
-      // Verify the follow-up consent checkbox exists and IS required for Gauteng
-      expect(find.textContaining('to being contacted about participation in possible follow-up studies'), findsOneWidget);
-
-      // The submit button should be enabled after checking all required consents (including follow-up)
       await tester.pumpAndSettle();
-      final ElevatedButton enabledButton = tester.widget(find.byType(ElevatedButton));
-      expect(enabledButton.onPressed, isNotNull);
+
+      expect(submitButton(tester).onPressed, isNotNull,
+          reason: 'submit must be enabled once every item is checked');
     });
 
-    testWidgets('Should disable submit button if any required consent is unchecked', (WidgetTester tester) async {
-      // Set a much larger surface size to accommodate the very long consent form
-      tester.view.physicalSize = Size(800, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ConsentFormScreen(
-            participantCode: 'TEST003',
-            researchSite: 'gauteng',
-            isTestingMode: true,
-          ),
-        ),
-      );
+    testWidgets('submit stays disabled when one consent is left unchecked',
+        (WidgetTester tester) async {
+      await pumpConsentScreen(tester);
+      await continueToConsentForm(tester);
 
-      await tester.pumpAndSettle();
-
-      // Scroll to find the Continue button and tap it
-      await tester.scrollUntilVisible(
-        find.text('Continue to Consent Form'),
-        500.0, // scroll distance
-      );
-      await tester.tap(find.text('Continue to Consent Form'));
-      await tester.pumpAndSettle();
-
-      // Check all required consent boxes except one
-      final requiredConsentTexts = [
-        'to participate in this study',
-        'for my personal data to be processed by Qualtrics',
-        'to being asked about by race/ethnicity',
-        'to being asked about my health',
-        'to being asked about my sexual orientation', 
-        'to being asked about my location and mobility',
-        'to transferring my personal data to countries outside South Africa',
-        'to researchers reporting what I contribute',
-        'to what I contribute being shared with national and international researchers',
-        'to what I contribute being used for further research',
-        // Intentionally skip 'to what I contribute being placed in a public repository'
-        'to being contacted about participation in possible follow-up studies',
-      ];
-
-      for (String consentText in requiredConsentTexts) {
-        // Scroll to make sure the checkbox is visible
-        await tester.scrollUntilVisible(
-          find.textContaining(consentText),
-          200.0,
-        );
-        
-        // Tap the text to check the associated checkbox
-        await tester.tap(find.textContaining(consentText));
-        await tester.pump();
+      // Check all but the last item.
+      for (final text
+          in italyConsentTexts.sublist(0, italyConsentTexts.length - 1)) {
+        await tapConsentText(tester, text);
       }
-
-      // The submit button should be disabled because we intentionally skipped one required consent
       await tester.pumpAndSettle();
-      final ElevatedButton disabledButton = tester.widget(find.byType(ElevatedButton));
-      expect(disabledButton.onPressed, isNull); // Disabled button has null onPressed
+
+      expect(submitButton(tester).onPressed, isNull);
+      expect(
+        find.textContaining('Please check all required consent items'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('unchecking a consent disables submit again',
+        (WidgetTester tester) async {
+      await pumpConsentScreen(tester);
+      await continueToConsentForm(tester);
+
+      for (final text in italyConsentTexts) {
+        await tapConsentText(tester, text);
+      }
+      await tester.pumpAndSettle();
+      expect(submitButton(tester).onPressed, isNotNull);
+
+      await tapConsentText(tester, italyConsentTexts.first);
+      await tester.pumpAndSettle();
+      expect(submitButton(tester).onPressed, isNull);
+    });
+  });
+
+  group('Legacy site fallback (barcelona)', () {
+    // The seven required consent items on the legacy form.
+    const legacyConsentTexts = [
+      'My participation is voluntary',
+      'To participate in this study',
+      'To being asked about my race/ethnicity',
+      'To being asked about my health condition',
+      'To being asked about my sexual orientation',
+      'To being asked about my location and mobility',
+      'To transferring my personal data to countries outside the European Economic Area',
+    ];
+
+    testWidgets('requires all seven consents; LimeSurvey item stays optional',
+        (WidgetTester tester) async {
+      await pumpConsentScreen(tester, researchSite: 'barcelona');
+      await continueToConsentForm(tester);
+
+      expect(submitButton(tester).onPressed, isNull);
+
+      // The LimeSurvey processing consent is optional (no trailing *).
+      expect(
+        find.textContaining('LimeSurvey GmbH'),
+        findsOneWidget,
+      );
+
+      for (final text in legacyConsentTexts) {
+        await tapConsentText(tester, text);
+      }
+      await tester.pumpAndSettle();
+
+      expect(submitButton(tester).onPressed, isNotNull,
+          reason: 'all required items checked; optional item left unchecked');
     });
   });
 }

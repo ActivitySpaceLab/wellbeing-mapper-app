@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:background_fetch/background_fetch.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,7 +27,11 @@ class GlobalData {
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 /// Handles BackgroundFetch events when the app is in a headless/terminated state.
-void backgroundFetchHeadlessTask(HeadlessTask task) async {
+///
+/// The pragma is required so AOT (release) builds keep this entry point:
+/// without it the callback is tree-shaken and headless execution fails.
+@pragma('vm:entry-point')
+void backgroundFetchHeadlessTask(HeadlessEvent task) async {
   final taskId = task.taskId;
   if (task.timeout) {
     debugPrint('[BackgroundFetch] HeadlessTask timeout: $taskId');
