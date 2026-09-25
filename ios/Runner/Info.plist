@@ -6,6 +6,7 @@
 	<array>
 		<string>com.transistorsoft.fetch</string>
 		<string>com.transistorsoft.wellbeingmapper</string>
+		<string>com.wellbeingmapper.survey_notification</string>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>

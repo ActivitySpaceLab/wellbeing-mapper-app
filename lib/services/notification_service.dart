@@ -28,6 +28,10 @@ class NotificationService {
   static bool _notificationsInitialized = false;
   static String? _pendingNotificationPayload;
 
+  /// Prefs key used to hand a notification-tap payload from the background
+  /// isolate (where statics are invisible to the app) to the next app start.
+  static const String _backgroundTapPayloadKey = 'background_notification_tap_payload';
+
   /// Initialize the notification service
   static Future<void> initialize() async {
     // Initialize timezone data
@@ -61,6 +65,16 @@ class NotificationService {
         debugPrint('[NotificationService] Payload: $_pendingNotificationPayload');
       } else {
         debugPrint('[NotificationService] App was NOT launched from notification');
+      }
+
+      // A tap handled by the background isolate is persisted to prefs; pick
+      // it up here if the launch-details API did not already provide one.
+      final prefs = await SharedPreferences.getInstance();
+      final storedPayload = prefs.getString(_backgroundTapPayloadKey);
+      if (storedPayload != null) {
+        await prefs.remove(_backgroundTapPayloadKey);
+        _pendingNotificationPayload ??= storedPayload;
+        debugPrint('[NotificationService] Recovered background-tap payload: $storedPayload');
       }
       debugPrint('[NotificationService] ===== END LAUNCH CHECK =====');
     } catch (e) {
@@ -198,16 +212,24 @@ class NotificationService {
   }
 
   /// Handle background notification tap (when app is not running)
+  ///
+  /// This runs in a separate isolate, so writing to a static field would be
+  /// invisible to the app; persist the payload to SharedPreferences instead,
+  /// where [_checkAppLaunchFromNotification] picks it up on next startup.
   @pragma('vm:entry-point')
   static void _onBackgroundNotificationTapped(NotificationResponse response) {
     debugPrint('[NotificationService] ===== BACKGROUND NOTIFICATION TAPPED =====');
     debugPrint('[NotificationService] Payload: ${response.payload}');
-    debugPrint('[NotificationService] Notification ID: ${response.id}');
-    debugPrint('[NotificationService] Action ID: ${response.actionId}');
-    
-    // Store the payload for when the app starts up
-    _pendingNotificationPayload = response.payload;
-    debugPrint('[NotificationService] Stored payload for app startup: ${response.payload}');
+
+    final payload = response.payload;
+    if (payload != null) {
+      SharedPreferences.getInstance().then((prefs) {
+        return prefs.setString(_backgroundTapPayloadKey, payload);
+      }).catchError((e) {
+        debugPrint('[NotificationService] Failed to persist background tap payload: $e');
+        return false;
+      });
+    }
     debugPrint('[NotificationService] ===== END BACKGROUND NOTIFICATION TAP =====');
   }
 
@@ -244,14 +266,16 @@ class NotificationService {
           debugPrint('[NotificationService] - Payload mismatch: expected "$_surveyRoute" (or legacy "$_legacySurveyRoute"), got "${response.payload}"');
         }
         debugPrint('[NotificationService] Setting pending survey prompt as fallback');
-        // If navigation is not available, set a pending prompt flag
-        _setPendingSurveyPrompt();
+        // If navigation is not available, set a pending prompt flag. The user
+        // just tapped a device notification, so only set the in-app flag —
+        // posting another device notification here would duplicate it.
+        _setPendingSurveyPromptFlag();
       }
     } catch (e, stackTrace) {
       debugPrint('[NotificationService] Error in notification tap handler: $e');
       debugPrint('[NotificationService] Stack trace: $stackTrace');
       // Fallback: set pending prompt
-      _setPendingSurveyPrompt();
+      _setPendingSurveyPromptFlag();
     }
   }
 
@@ -287,22 +311,31 @@ class NotificationService {
       final DateTime now = DateTime.now();
       bool shouldShowNotification = false;
       
-      // Always recalculate next notification date from consent to ensure accuracy
+      // Always recalculate the schedule from the consent date to ensure accuracy
       final String? consentTimestampStr = prefs.getString('consent_timestamp');
       if (consentTimestampStr != null) {
         try {
           final DateTime consentDate = DateTime.parse(consentTimestampStr);
           final Duration effectiveInterval = await getEffectiveNotificationInterval();
           final DateTime correctNextNotificationDate = _calculateNextNotificationFromConsent(consentDate, effectiveInterval);
-          
+
           // Update stored next notification date to ensure it's always correct
           await prefs.setInt(_nextNotificationDateKey, correctNextNotificationDate.millisecondsSinceEpoch);
-          
-          // Check if we should show notification now
-          if (now.isAfter(correctNextNotificationDate) || now.isAtSameMomentAs(correctNextNotificationDate)) {
+
+          // A notification is due when an interval boundary (consent date +
+          // k*interval) has passed that is newer than the last notification we
+          // showed. Comparing against the *next* (always-future) date instead
+          // would never fire.
+          final DateTime? lastDueBoundary =
+              lastDueBoundaryFromConsent(consentDate, effectiveInterval, now);
+          final int? lastShownMs = prefs.getInt(_lastNotificationKey);
+          if (lastDueBoundary != null &&
+              (lastShownMs == null ||
+                  DateTime.fromMillisecondsSinceEpoch(lastShownMs)
+                      .isBefore(lastDueBoundary))) {
             shouldShowNotification = true;
           }
-          
+
           debugPrint('[NotificationService] Recalculated next notification from consent date: $correctNextNotificationDate');
         } catch (e) {
           debugPrint('[NotificationService] Error parsing consent timestamp: $e');
@@ -360,13 +393,21 @@ class NotificationService {
     }
   }
 
-  /// Set a flag that a survey prompt should be shown when the app opens
-  /// Also shows a device notification for better visibility
-  static Future<void> _setPendingSurveyPrompt() async {
+  /// Set the in-app pending-survey-prompt flag only (no device notification).
+  ///
+  /// Used from notification-tap fallbacks, where the user has already seen a
+  /// device notification and showing another would duplicate it.
+  static Future<void> _setPendingSurveyPromptFlag() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_pendingSurveyKey, true);
     await prefs.setInt('${_pendingSurveyKey}_timestamp', DateTime.now().millisecondsSinceEpoch);
-    
+  }
+
+  /// Set a flag that a survey prompt should be shown when the app opens
+  /// Also shows a device notification for better visibility
+  static Future<void> _setPendingSurveyPrompt() async {
+    await _setPendingSurveyPromptFlag();
+
     // Show device notification for better visibility
     await _showDeviceNotification();
   }
@@ -548,6 +589,19 @@ class NotificationService {
     };
   }
 
+  /// The most recent due boundary (consentDate + k*interval, k >= 1) at or
+  /// before [now], or null if the first interval has not elapsed yet.
+  ///
+  /// Visible for testing.
+  static DateTime? lastDueBoundaryFromConsent(
+      DateTime consentDate, Duration interval, DateTime now) {
+    if (interval <= Duration.zero) return null;
+    final int elapsedMs = now.difference(consentDate).inMilliseconds;
+    final int k = elapsedMs ~/ interval.inMilliseconds;
+    if (k < 1) return null;
+    return consentDate.add(interval * k);
+  }
+
   /// Calculate the next notification date based on consent date + 14-day intervals
   static DateTime _calculateNextNotificationFromConsent(DateTime consentDate, Duration interval) {
     final now = DateTime.now();
@@ -627,9 +681,12 @@ class NotificationService {
   static Future<void> _scheduleDirectTestingNotification(int minutes) async {
     try {
       debugPrint('[NotificationService] Scheduling direct testing notification in $minutes minutes');
-      
-      // Cancel any existing testing notifications first
-      await _localNotifications.cancel(999);
+
+      // Cancel any existing testing notifications first (single-shot ID 999
+      // and the rapid-testing series 1000-1004).
+      for (int id = 999; id <= 1004; id++) {
+        await _localNotifications.cancel(id);
+      }
       
       final tz.TZDateTime scheduledDate = tz.TZDateTime.now(tz.local).add(Duration(minutes: minutes));
       
@@ -693,9 +750,10 @@ class NotificationService {
           payload: _surveyRoute, // Add the payload for proper navigation
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-          matchDateTimeComponents: DateTimeComponents.time,
+          // No matchDateTimeComponents: this is a one-shot testing reminder,
+          // not a daily repeat.
         );
-        
+
         debugPrint('[NotificationService] Direct testing notification scheduled for: $scheduledDate');
       }
     } catch (error) {
@@ -1248,12 +1306,13 @@ class NotificationService {
 
 /// Headless task handler for notification checking
 /// This runs in the background even when the app is terminated
+///
+/// The caller (backgroundFetchHeadlessTask in main.dart) is responsible for
+/// calling BackgroundFetch.finish; finishing here too would double-finish.
 Future<void> notificationHeadlessTask(String taskId) async {
   debugPrint('[NotificationService] Headless task executed: $taskId');
-  
+
   if (taskId == NotificationService._notificationTaskId) {
     await NotificationService.checkNotificationTiming();
   }
-  
-  BackgroundFetch.finish(taskId);
 }

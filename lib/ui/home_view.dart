@@ -187,20 +187,20 @@ class HomeViewState extends State<HomeView>
           requiredNetworkType: NetworkType.NONE,
         ),
         (String taskId) async {
+          // While the app process is alive, ALL background_fetch events land
+          // here (the headless task in main.dart only runs when terminated),
+          // so the survey-notification task must be dispatched explicitly or
+          // reminders never fire for users who keep the app running.
           debugPrint('[BackgroundFetch] received event $taskId');
-          final prefs = await SharedPreferences.getInstance();
-          int count = (prefs.getInt('fetch-count') ?? 0) + 1;
-          await prefs.setInt('fetch-count', count);
-
-          BackgroundFetch.scheduleTask(TaskConfig(
-            taskId: 'com.transistorsoft.wellbeingmapper',
-            delay: 5000,
-            periodic: false,
-            forceAlarmManager: true,
-            stopOnTerminate: false,
-            enableHeadless: true,
-          ));
-          BackgroundFetch.finish(taskId);
+          try {
+            if (taskId == 'com.wellbeingmapper.survey_notification') {
+              await NotificationService.checkNotificationTiming();
+            }
+          } catch (e) {
+            debugPrint('[BackgroundFetch] task $taskId error: $e');
+          } finally {
+            BackgroundFetch.finish(taskId);
+          }
         },
       );
     } catch (e) {
