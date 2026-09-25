@@ -70,7 +70,7 @@ dependencies:
   open_background_locator:
     git:
       url: https://github.com/ActivitySpaceLab/open-background-locator.git
-      ref: 321b056b01f293c72955bb6a4353382b66054a5f
+      ref: bd761aeb4eb817d34472cbe2e471b4f4e5826b00
   
   # Additional dependencies from original app
   ffi: ^2.1.3
