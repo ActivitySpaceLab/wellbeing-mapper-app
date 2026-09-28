@@ -643,7 +643,7 @@ What the app sends is in `ResearchServerService` (`services/research_server_serv
 | `POST /api/v1/consent/encrypted` | the consent form |
 | `POST /api/v1/participants/validate` | a participant enters a code (only its SHA-256 hash is sent) |
 
-Each upload carries a `submission_id`, a hash of the participant id, record type and local id, so a retry after a lost answer is not stored twice. Uploads happen only in research mode, after consent, in builds made with `SERVER_BASE_URL`. See [Server Setup](SERVER_SETUP.md).
+Each upload carries a `submission_id`, a hash of the participant id, record type and local id, so a retry after a lost answer is not stored twice. Uploads happen only in research mode, after consent, for a participant code the server itself accepted, in builds made with `SERVER_BASE_URL`. See [Server Setup](SERVER_SETUP.md).
 
 ## Development Workflow
 

@@ -37,9 +37,13 @@ not check it again.
 Without a server URL in the build, or in a debug build when the server cannot
 be reached, the app accepts only the fixed test codes `TESTER`, `TEST123`
 and `DEV001` (`ParticipantValidationService`). They are meant for trying the
-research flow without a server. Do not add them to the production
-`participant_codes.json` (the generator leaves them out unless asked), or
-anyone who knows them could unlock research mode in the released app.
+research flow without a server. A participant whose code was accepted that
+way never uploads anything, not even after the app is updated to a build
+with a server URL: uploads require a code the server itself confirmed
+(`ResearchServerService.uploadBlockedReason`). Do not add the test codes to
+the production `participant_codes.json` (the generator leaves them out unless
+asked), or anyone who knows them could unlock research mode in the released
+app.
 
 ## Checking
 

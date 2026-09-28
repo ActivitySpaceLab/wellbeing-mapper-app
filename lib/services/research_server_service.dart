@@ -13,6 +13,7 @@ import '../db/survey_database.dart';
 import '../main.dart';
 import '../services/app_mode_service.dart';
 import '../services/consent_tracking_service.dart';
+import '../services/participant_validation_service.dart';
 import '../util/env.dart';
 
 /// Outcome of a [ResearchServerService.syncPendingSurveys] call, so callers
@@ -66,42 +67,51 @@ class ResearchServerService {
   /// [submissionIdFor] id, which covers a retry after a lost answer.)
   static bool _syncInFlight = false;
 
+  /// Why nothing may be uploaded right now, or `null` when uploads may go
+  /// ahead. Every condition must hold:
+  ///
+  /// * the build has a server URL (checked first, before any storage is
+  ///   touched, so builds without one never read or send anything);
+  /// * the app has a participant UUID;
+  /// * it is in research mode ([AppModeService.sendsDataToResearch]; demo
+  ///   builds never are);
+  /// * the participant completed the consent flow
+  ///   ([ConsentTrackingService.hasCompletedCurrentConsent]);
+  /// * the research server itself accepted their participant code
+  ///   ([ParticipantValidationService.isValidatedByServer]). A code accepted
+  ///   offline, such as the published test codes, never leads to uploads.
+  ///
+  /// [serverConfigured] overrides the build's setting, for tests.
+  @visibleForTesting
+  static Future<String?> uploadBlockedReason({bool? serverConfigured}) async {
+    if (!(serverConfigured ?? _isServerConfigured)) {
+      return 'Research server not configured';
+    }
+    if (GlobalData.userUUID.isEmpty) return 'No participant UUID';
+    if (!await AppModeService.sendsDataToResearch()) {
+      return 'Not in research mode';
+    }
+    if (!await ConsentTrackingService.hasCompletedCurrentConsent()) {
+      return 'Consent not completed';
+    }
+    if (!await ParticipantValidationService.isValidatedByServer()) {
+      return 'Participant code not confirmed by the research server';
+    }
+    return null;
+  }
+
   /// Sync all locally-stored, unsynced surveys to the research server.
   ///
-  /// This is a no-op while the server URL is unconfigured. Surveys are
-  /// retained in the local database and will be uploaded automatically once
-  /// a valid URL is set.
-  ///
-  /// Uploads happen only when [AppModeService.sendsDataToResearch] is true
-  /// (research mode, non-demo build) and the participant has completed the
-  /// consent flow ([ConsentTrackingService.hasCompletedCurrentConsent]).
-  /// The consent form itself is uploaded under the same gate: the local
-  /// consent record is only created when the consent flow completes, which
-  /// is also the moment the gate opens.
+  /// Nothing is uploaded unless [uploadBlockedReason] allows it; surveys stay
+  /// in the local database until a sync succeeds. The consent form is
+  /// uploaded under the same conditions: its local record is only created
+  /// when the consent flow completes.
   static Future<SyncOutcome> syncPendingSurveys() async {
-    if (!_isServerConfigured) {
-      debugPrint(
-          '[ResearchServerService] Server not yet configured – surveys '
-          'retained locally for future upload.');
-      return const SyncOutcome.skipped('Research server not configured');
-    }
-
-    // Only sync when the user has given research consent.
-    final participantUUID = GlobalData.userUUID;
-    if (participantUUID.isEmpty) {
-      debugPrint('[ResearchServerService] No participant UUID – skipping sync.');
-      return const SyncOutcome.skipped('No participant UUID');
-    }
-
-    // Only research mode uploads; demo builds never do, regardless of mode.
-    if (!await AppModeService.sendsDataToResearch()) {
-      debugPrint('[ResearchServerService] Mode does not upload – skipping sync.');
-      return const SyncOutcome.skipped('Not in research mode');
-    }
-
-    if (!await ConsentTrackingService.hasCompletedCurrentConsent()) {
-      debugPrint('[ResearchServerService] Consent not completed – skipping sync.');
-      return const SyncOutcome.skipped('Consent not completed');
+    final blocked = await uploadBlockedReason();
+    if (blocked != null) {
+      debugPrint('[ResearchServerService] Not syncing: $blocked. '
+          'Surveys stay on this device.');
+      return SyncOutcome.skipped(blocked);
     }
 
     if (_syncInFlight) {

@@ -42,6 +42,17 @@ class ParticipantValidationService {
     return stored != null && stored.isNotEmpty;
   }
 
+  /// Returns `true` only if the research server itself accepted the stored
+  /// code. Codes accepted offline (the published test codes, see
+  /// [_localFallback]) or auto-accepted by a demo build return `false`, so
+  /// they never lead to uploads, not even after the app is updated to a
+  /// build that has a server URL.
+  static Future<bool> isValidatedByServer() async {
+    final prefs = await SharedPreferences.getInstance();
+    return await isParticipantValidated() &&
+        prefs.getString(_lastApiValidationKey) == _apiValidationSource;
+  }
+
   /// Returns the stored SHA-256 hash of the validated participant code, or
   /// `null` if the user has not yet been validated.
   static Future<String?> getValidatedParticipantCode() async {

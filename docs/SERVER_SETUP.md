@@ -16,7 +16,8 @@ day-to-day operation and decrypting the data. This page covers the app side.
 ## What the app sends
 
 Only in research mode, only after the participant has completed the consent
-form, and only when the build was given a server URL (below):
+form, only when the server itself accepted their participant code, and only
+when the build was given a server URL (below):
 
 | What | Endpoint | Contents |
 | --- | --- | --- |
