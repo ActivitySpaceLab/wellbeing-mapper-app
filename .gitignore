@@ -205,3 +205,6 @@ data_analysis_toolkit/**/*_key.pem
 data_analysis_toolkit/**/.env
 data_analysis_toolkit/**/config.json
 data_analysis_toolkit/**/api_config.*
+
+# Claude Code personal settings (machine-specific paths)
+.claude/settings.local.json
