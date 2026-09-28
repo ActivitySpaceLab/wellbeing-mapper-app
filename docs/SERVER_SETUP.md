@@ -39,11 +39,10 @@ them. A survey is never lost by a failed upload.
 
 ## Building the app for a server
 
-1. **Key**: generate the study's key pair as described in the server README
-   ("Keys") and paste the *public* key into `ENV.researchPublicKey` in
-   `lib/util/env.dart`. The app ships with a placeholder key whose private
-   half is not held by anyone, so this step is required before data
-   collection. The private key stays offline with the research team.
+1. **Key**: the app carries the study's public key (`ENV.researchPublicKey`
+   in `lib/util/env.dart`, generated 2026-09-28); the private key stays
+   offline with the research team. Replacing it is described in the server
+   README ("Keys") and needs a new app release.
 2. **URL**: build with the server's address.
 
 ```bash

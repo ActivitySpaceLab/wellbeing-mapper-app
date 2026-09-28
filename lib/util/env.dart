@@ -43,22 +43,27 @@ class ENV {
   ///
   /// The matching private key stays offline with the research team and is
   /// never on the server; only it can decrypt submissions
-  /// (wellbeing-mapper-server/tools/decrypt_received.py). This is a
-  /// placeholder pair: generate the study's own before collecting data (see
-  /// the server README, "Keys") and paste the public key here.
+  /// (wellbeing-mapper-server/tools/decrypt_received.py).
+  ///
+  /// The study's key pair, generated 2026-09-28 (RSA-4096). SHA-256 of this
+  /// key in DER form: 9a3e44f9cb187deb18a6a2b18685515f11d7b8c59b75b0577da328cd2a395568.
+  /// To check that a private key is its partner:
+  /// `openssl pkey -in private.pem -pubout -outform DER | shasum -a 256`.
+  /// Replacing the key is a new app release, and data encrypted with the old
+  /// key still needs the old private key.
   static const String researchPublicKey = '''-----BEGIN PUBLIC KEY-----
-MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAvzeHQfOYDT8XgiDyHsTG
-80/lQY1+AQa2NLIJERK6WuYxVrveDoY5V99V9rlFTRXdYcD5iBDL3WGHQmkOUDQL
-PMZ6YjTlU5ACcBf43+yo09Nyt1g7Ib3E95USml2jws7vjZMydhaEcJcBJXb0ty99
-EQvis5gJ1GI99BDRzJIArvFTCwsPCm7zan+ai5QPz78SE5RuDwrXloR1vYkf54hN
-eyMpUKXFlp3PHKudoE1XlPh9yKkVPPmJkWkl9wECHG+fF8ia/c0/d7IIr1gUWLM1
-/IAm6EFnRJLruBOjPK8/3fry9FcDIRv3I8WxVXar8qfVN2mbNtInJ3T2MPXVizqh
-VWEWZTYqXiQHQkWjKpbzpVLXzIT7fs3ABk4oBbkH563JSeZHVuv6Xt3DgN7ZzL/Z
-QeBb1Gt2dHHGpApT64TTFPv/DFC8CvCauyWEFaAcr3yUr0ah9uGzFtWg/fOWFkDs
-lhxw98hOu+mhHVCitzGjLp54zmUASnQfjQLaOEPJITXlX5UYbgbCiH0B4w9NE6o6
-F9XaMHUHsRDFZccRlM8AR5fkUVZqiBrI7eHl4e0aSUmc7I8wX3DCA0L16sQQQl18
-ZOidCTGzOD8p7DghyDZfnsyBce1qVqJi4bMc05lJSib30DQGMaxbv3hzc/rhmz87
-64BAgUuyskUvkMsgsgzf7NcCAwEAAQ==
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxYlWAfL1SeCDTVHyeYH+
+JSnlfD1PzanCIIbUOyEaX7l5a7i/lz7Vg2uWUmB6d08JR9HusogG5EzLUn7Oogef
+qqZ1nRt6NXKPQai4chnj5gPpMEn0DALuXgyaTdZW47c1NTPQ5B2+WoDWcfyHnCUC
+sMECepKgwx1eORJZMoxvNWLuJYjcJgRgHrnRmwipkZ0amB4x+qGU2OsULSCWhG7z
+rxH5ud2YH7mRW0N/cLNyhtR+BWbYvLNeeA+/kDpmvTSZDhFI2PV6GhPy8hP9YF6a
+JxT44oUMkmPT4q/ZzHhfjjXoFhtFUpCDUaYvSD6SvrUU6Zg7jZ7k4+VVA8wLcPL4
+jhWC4kffd0MpcmrtTblVZIT0q/3Uvvlzka77S2QXSgQGKDdvOUbeCd9u7Ei5tGyB
+UsGDRTexQ0mNhkZajjTCKY0oVdlr3+kAVUrwT6EYtzCaxZC+JJT7hFweqjVIfV1F
+mZd+8jWjgfP9ehwykA7bAC7m/t7HzOFNURsDXZhc6N4/LQL90+xpOVt2h+yBI96h
+hpwHFJp4x1Y47vB50hjVWRdPZRh5u5Q4qKFbFq0PU6fvQInPlNPmsUNGtLNq7q4u
+85NF0cqMz3Ddi5uMfFtC5SL1FkCX2u86z0pCKnaNxEvtl0jEaJ5aArvDqse9HMbX
+Ae5fhYf39X9qQM+GRNeuEx0CAwEAAQ==
 -----END PUBLIC KEY-----''';
 
   // Legacy alias retained until call sites migrate; remove once unused.

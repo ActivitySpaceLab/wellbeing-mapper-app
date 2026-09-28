@@ -41,9 +41,9 @@ openssl rsa -in wellbeing_private_key.pem -pubout -out wellbeing_public_key.pem
   cannot be recovered; if it leaks, generate a new pair and ship a new app
   version. Data encrypted with the old key still needs the old private key.
 
-The repository ships with a placeholder public key. Its private half is not
-held by anyone, so a study must generate its own pair before collecting
-data.
+The app carries the study's public key, generated on 2026-09-28. Its SHA-256
+fingerprint is in the comment above `ENV.researchPublicKey`, with the command
+that checks a private key against it.
 
 ## Decrypting
 
